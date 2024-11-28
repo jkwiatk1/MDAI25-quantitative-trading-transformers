@@ -28,7 +28,7 @@ def load_finance_data_xlsx(path):
             "ticker",
         ]
         data_dict[sheet] = df
-    return data_dict
+    return data_dict, excel_data.sheet_names
 
 
 def prepare_finance_data(df, tickers, cols):
@@ -47,11 +47,16 @@ def prepare_finance_data(df, tickers, cols):
 
 
 def calc_daily_profit_features(df):
+    # daily profit rate
     df["Daily profit"] = (df["Close"] - df["Close"].shift(1)) / df["Close"].shift(1)
     df["Daily profit"].fillna(0, inplace=True)
+
+    # daily turnover rate
+    df["Turnover"] = df["Volume"] / df["Close"]
+    df["Turnover"].fillna(0, inplace=True)
     return df
 
-def calc_input_features(df, tickers, cols):
+def calc_input_features(df, tickers, cols, time_step):
     for ticker in tickers:
         df[ticker]["Intraday profit"] = (df[ticker][cols[1]] - df[ticker][cols[0]]) / df[ticker][cols[0]]
         df[ticker] = calc_daily_profit_features(df[ticker])
@@ -70,6 +75,48 @@ def create_sequences(data, lookback):
         targets.append(target)
     return np.array(sequences), np.array(targets)
 
+
+# Function to fill in missing days with default values
+def fill_missing_days(df, tickers):
+    """
+    Fill missing dates.
+
+    - Fills missing weekends or other gaps in trading days.
+    - Uses forward-fill for 'Close'.
+    - Sets default values for missing fields as specified:
+      - 'Adj Close' = 'Close'
+      - 'High' = 'Close'
+      - 'Low' = 'Close'
+      - 'Open' = 'Close'
+      - 'Volume' = 0
+    """
+    # Ensure the 'Date' column is a datetime object and set it as the index
+    for ticker in tickers:
+        df[ticker]['Date'] = pd.to_datetime(df[ticker]['Date'])
+        df[ticker].set_index('Date', inplace=True)
+
+        # Create a full range of dates from the minimum to the maximum in the dataset
+        full_date_range = pd.date_range(start=df[ticker].index.min(), end=df[ticker].index.max(), freq='D')
+
+        # Reindex the DataFrame to include all dates in the range
+        df[ticker] = df[ticker].reindex(full_date_range)
+
+        # Fill missing 'Close' values with the value from the previous day (forward-fill)
+        df[ticker]['Close'].fillna(method='ffill', inplace=True)
+
+        # Assign default values for other columns based on 'Close' or specific rules
+        df[ticker]['Adj Close'] = df[ticker]['Close']  # Adjusted Close equals Close
+        df[ticker]['High'] = df[ticker]['Close']  # High equals Close
+        df[ticker]['Low'] = df[ticker]['Close']  # Low equals Close
+        df[ticker]['Open'] = df[ticker]['Close']  # Open equals Close
+        df[ticker]['Volume'].fillna(0, inplace=True)  # Volume defaults to 0
+        df[ticker]['ticker'].fillna(method='ffill', inplace=True)  # Forward-fill for Ticker
+
+        # Reset the index to return 'Date' as a regular column
+        # df[ticker].reset_index(inplace=True)
+        # df[ticker].rename(columns={'index': 'Date'}, inplace=True)
+
+    return df
 
 class FinanceDataset(Dataset):
     def __init__(self, sequences, targets):
@@ -120,6 +167,7 @@ test_split = 0.2
 val_split = 0.1
 batch_size = 32
 tickers_to_use = ["SOL-USD"]
+# tickers_to_use = ["SOL-USD", "BTC-USD", "TSLA"]
 cols_to_use = [
     "Close",
     "Open",
@@ -138,41 +186,53 @@ dim_feedforward = 128
 dropout = 0.05
 
 # data load
-data_raw = load_finance_data_xlsx(load_file)
+data_raw, all_tickers = load_finance_data_xlsx(load_file)
+data_raw = fill_missing_days(data_raw, all_tickers)
 data = prepare_finance_data(
     data_raw,
     tickers_to_use,
     cols_to_use,
 )
-data = calc_input_features(df=data,tickers=tickers_to_use, cols=cols_to_use)
+data = calc_input_features(df=data,tickers=tickers_to_use, cols=cols_to_use, time_step = lookback)
 # normalization
-scalers = {feature: MinMaxScaler(feature_range=(0, 1)) for feature in data["SOL-USD"].columns}
+# scalers = {feature: MinMaxScaler(feature_range=(0, 1)) for feature in data["SOL-USD"].columns}
+scalers = {ticker: {feature: MinMaxScaler(feature_range=(0, 1)) for feature in data[ticker].columns} for ticker in tickers_to_use}
 data_scaled = data.copy()
+# Scale the data for each ticker and feature
 for ticker in tickers_to_use:
     for feature in cols_to_use:
-        data_scaled[ticker].loc[:, feature] = scalers[feature].fit_transform(
+        """
+        Fit and transform the data for the current ticker and feature.
+        The scaler for each feature is stored in the nested scalers dictionary.
+        """
+        data_scaled[ticker].loc[:, feature] = scalers[ticker][feature].fit_transform(
             data[ticker][[feature]]
         )
 
+for ticker in tickers_to_use:
+    data_scaled[ticker] = data_scaled[ticker].reset_index(drop=True)
+
 # Train test split
 train_size = int((1 - test_split) * len(data_scaled[tickers_to_use[0]]))
-val_size = int(val_split * train_size)
+# val_size = int(val_split * train_size)
 train_data = data_scaled[tickers_to_use[0]][:train_size]
 test_data = data_scaled[tickers_to_use[0]][train_size:]
 train_sequences, train_targets = create_sequences(train_data, lookback)
 test_sequences, test_targets = create_sequences(test_data, lookback)
 
-val_sequences = train_sequences[-val_size:]
-val_targets = train_targets[-val_size:]
-train_sequences = train_sequences[:-val_size]
-train_targets = train_targets[:-val_size]
+# val_sequences = train_sequences[-val_size:]
+# val_targets = train_targets[-val_size:]
+# train_sequences = train_sequences[:-val_size]
+# train_targets = train_targets[:-val_size]
+# train_sequences = train_sequences[:-train_size]
+# train_targets = train_targets[:-train_size]
 
 train_dataset = FinanceDataset(train_sequences, train_targets)
-val_dataset = FinanceDataset(val_sequences, val_targets)
+# val_dataset = FinanceDataset(val_sequences, val_targets)
 test_dataset = FinanceDataset(test_sequences, test_targets)
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+# val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 model = build_transformer(
@@ -203,17 +263,17 @@ for epoch in range(n_epochs):
     train_loss /= len(train_loader.dataset)
 
     # Vals
-    model.eval()
-    val_loss = 0.0
-    with torch.no_grad():
-        for batch_sequences, batch_targets in val_loader:
-            batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(device)
-            predictions = model(batch_sequences).squeeze()
-            loss = criterion(predictions, batch_targets)
-            val_loss += loss.item() * batch_sequences.size(0)
-    val_loss /= len(val_loader.dataset)
+    # model.eval()
+    # val_loss = 0.0
+    # with torch.no_grad():
+    #     for batch_sequences, batch_targets in val_loader:
+    #         batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(device)
+    #         predictions = model(batch_sequences).squeeze()
+    #         loss = criterion(predictions, batch_targets)
+    #         val_loss += loss.item() * batch_sequences.size(0)
+    # val_loss /= len(val_loader.dataset)
 
-    print(f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+    print(f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}") #, Val Loss: {val_loss:.4f}")
 
 # Test
 model.eval()
