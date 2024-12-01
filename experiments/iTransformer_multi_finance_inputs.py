@@ -216,7 +216,7 @@ def build_transformer(
 
 
 # Params
-n_epochs = 200
+n_epochs = 1000
 lookback = 30
 n_samples = 200
 num_features = 3
@@ -316,7 +316,7 @@ model = build_transformer(
 
 # Training
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
+optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
 
 for epoch in range(n_epochs):
     model.train()
@@ -367,6 +367,23 @@ print(f"Test Loss: {test_loss:.4f}")
 
 test_predictions = torch.cat(predictions_list).numpy()
 test_targets = torch.cat(targets_list).numpy()
+
+for i, ticker in enumerate(tickers_to_use):
+    """
+    Apply inverse transform for each ticker's predictions.
+    Use the scalers dictionary to inverse transform the 'Close' feature for each ticker.
+    """
+    test_predictions[:, i] = (
+        scalers[ticker]["Close"]
+        .inverse_transform(test_predictions[:, i].reshape(-1, 1))
+        .flatten()
+    )
+    test_targets[:, i] = (
+        scalers[ticker]["Close"]
+        .inverse_transform(test_targets[:, i].reshape(-1, 1))
+        .flatten()
+    )
+
 plt.figure(figsize=(10, 5))
 plt.plot(test_targets, label="True Values", linestyle="dashed")
 plt.plot(test_predictions, label="Predictions")
