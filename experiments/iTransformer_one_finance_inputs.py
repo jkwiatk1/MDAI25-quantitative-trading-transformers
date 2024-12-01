@@ -95,7 +95,8 @@ def build_transformer(
 
 
 # Params
-lookback = 20
+n_epochs = 200
+lookback = 30
 n_samples = 200
 num_features = 3
 test_split = 0.2
@@ -167,7 +168,6 @@ model = build_transformer(
 # Training
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-n_epochs = 50
 
 for epoch in range(n_epochs):
     model.train()

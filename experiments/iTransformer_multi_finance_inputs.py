@@ -58,7 +58,7 @@ def calc_daily_profit_features(df):
 
 def calc_input_features(df, tickers, cols, time_step):
     for ticker in tickers:
-        df[ticker]["Intraday profit"] = (df[ticker][cols[1]] - df[ticker][cols[0]]) / df[ticker][cols[0]]
+        df[ticker]["Intraday profit"] = (df[ticker][cols[0]] - df[ticker][cols[3]]) / df[ticker][cols[3]]
         df[ticker] = calc_daily_profit_features(df[ticker])
     return df
 
@@ -77,7 +77,7 @@ def create_sequences(data, lookback):
 
 
 # Function to fill in missing days with default values
-def fill_missing_days(df, tickers):
+def fill_missing_days(df, tickers, start_date, end_date):
     """
     Fill missing dates.
 
@@ -96,7 +96,8 @@ def fill_missing_days(df, tickers):
         df[ticker].set_index('Date', inplace=True)
 
         # Create a full range of dates from the minimum to the maximum in the dataset
-        full_date_range = pd.date_range(start=df[ticker].index.min(), end=df[ticker].index.max(), freq='D')
+        # end_date = df[ticker].index.max()
+        full_date_range = pd.date_range(start=start_date, end=end_date, freq='D')
 
         # Reindex the DataFrame to include all dates in the range
         df[ticker] = df[ticker].reindex(full_date_range)
@@ -105,12 +106,12 @@ def fill_missing_days(df, tickers):
         df[ticker]['Close'].fillna(method='ffill', inplace=True)
 
         # Assign default values for other columns based on 'Close' or specific rules
-        df[ticker]['Adj Close'] = df[ticker]['Close']  # Adjusted Close equals Close
-        df[ticker]['High'] = df[ticker]['Close']  # High equals Close
-        df[ticker]['Low'] = df[ticker]['Close']  # Low equals Close
-        df[ticker]['Open'] = df[ticker]['Close']  # Open equals Close
-        df[ticker]['Volume'].fillna(0, inplace=True)  # Volume defaults to 0
-        df[ticker]['ticker'].fillna(method='ffill', inplace=True)  # Forward-fill for Ticker
+        df[ticker]['Adj Close'].fillna(method='ffill', inplace=True)
+        df[ticker]['High'].fillna(method='ffill', inplace=True)
+        df[ticker]['Low'].fillna(method='ffill', inplace=True)
+        df[ticker]['Open'].fillna(method='ffill', inplace=True)
+        df[ticker]['Volume'].fillna(method='ffill', inplace=True)
+        df[ticker]['ticker'].fillna(method='ffill', inplace=True)
 
         # Reset the index to return 'Date' as a regular column
         # df[ticker].reset_index(inplace=True)
@@ -160,19 +161,22 @@ def build_transformer(
 
 
 # Params
-lookback = 20
+n_epochs = 200
+lookback = 30
 n_samples = 200
 num_features = 3
 test_split = 0.2
 val_split = 0.1
 batch_size = 32
 tickers_to_use = ["SOL-USD"]
+start_date = pd.to_datetime("2023-01-03")
+end_date = pd.to_datetime("2024-10-25")
 # tickers_to_use = ["SOL-USD", "BTC-USD", "TSLA"]
 cols_to_use = [
     "Close",
-    "Open",
     "High",
     "Low",
+    "Open",
     "Volume",
 ]
 load_file = f"../data/finance/historical_data_2023-01-01-2024-10-26-1d.xlsx"
@@ -187,7 +191,7 @@ dropout = 0.05
 
 # data load
 data_raw, all_tickers = load_finance_data_xlsx(load_file)
-data_raw = fill_missing_days(data_raw, all_tickers)
+data_raw = fill_missing_days(data_raw.copy(), all_tickers, start_date, end_date)
 data = prepare_finance_data(
     data_raw,
     tickers_to_use,
@@ -200,7 +204,7 @@ scalers = {ticker: {feature: MinMaxScaler(feature_range=(0, 1)) for feature in d
 data_scaled = data.copy()
 # Scale the data for each ticker and feature
 for ticker in tickers_to_use:
-    for feature in cols_to_use:
+    for feature in data[ticker].columns:
         """
         Fit and transform the data for the current ticker and feature.
         The scaler for each feature is stored in the nested scalers dictionary.
@@ -247,7 +251,6 @@ model = build_transformer(
 # Training
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-n_epochs = 50
 
 for epoch in range(n_epochs):
     model.train()
