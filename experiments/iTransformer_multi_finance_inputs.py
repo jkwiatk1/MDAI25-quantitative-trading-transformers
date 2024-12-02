@@ -90,7 +90,7 @@ def prepare_combined_data(data_scaled, tickers_to_use, lookback):
 
 
 # Adjusted create_sequences function
-def create_combined_sequences(data, lookback, cols_to_use=["Close"]):
+def create_combined_sequences(data, lookback, cols_to_use=["Close"], target_col="Close"):
     """
     Create sequences and targets for time series forecasting.
 
@@ -115,7 +115,7 @@ def create_combined_sequences(data, lookback, cols_to_use=["Close"]):
     columns_to_include = [col for col in data.columns if col in columns_to_include]
 
     # Filter "Close" columns for multi-target values
-    target_columns = [col for col in columns_to_include if "Close" in col]
+    target_columns = [col for col in columns_to_include if target_col in col]
 
     for i in range(len(data) - lookback):
         # Extract sequence of features
@@ -127,52 +127,6 @@ def create_combined_sequences(data, lookback, cols_to_use=["Close"]):
         targets.append(target)
 
     return np.array(sequences), np.array(targets)
-
-
-# Ver 2
-# def create_combined_sequences(data, lookback):
-#     """
-#     Create sequences and targets for time series forecasting, organized by ticker.
-#
-#     Args:
-#         data (pd.DataFrame): Input DataFrame with time series data.
-#         lookback (int): Number of past time steps to include in each sequence.
-#
-#     Returns:
-#         sequences (np.array): Array of input sequences with shape (batch, lookback, tickers * features).
-#         targets (np.array): Array of target values with shape (batch, tickers).
-#     """
-#     sequences, targets = [], []
-#
-#     # Get tickers by splitting column names (assumes naming convention like 'AAPL_Close')
-#     tickers = list(set(col.split('_')[1] for col in data.columns))
-#
-#     # Organize features by ticker
-#     ticker_features = {ticker: [col for col in data.columns if col.split('_')[1] == ticker] for ticker in tickers}
-#
-#     # Ensure consistent ordering of tickers
-#     tickers = sorted(ticker_features.keys())
-#
-#     for i in range(len(data) - lookback):
-#         # Collect features for all tickers for the current sequence
-#         seq = []
-#         for ticker in tickers:
-#             # Extract features for the current ticker in the lookback window
-#             ticker_data = data.iloc[i: i + lookback][ticker_features[ticker]].values
-#             seq.append(ticker_data)  # Shape (lookback, num_features_per_ticker)
-#
-#         # Concatenate features for all tickers along the second dimension
-#         seq = np.concatenate(seq, axis=-1)  # Shape (lookback, tickers * num_features_per_ticker)
-#
-#         # Extract target values for all tickers (assuming 'Close' is the target feature)
-#         target = [
-#             data.iloc[i + lookback][f"Close_{ticker}"] for ticker in tickers
-#         ]  # Shape (tickers,)
-#
-#         sequences.append(seq)
-#         targets.append(target)
-#
-#     return np.array(sequences), np.array(targets)
 
 
 # Function to fill in missing days with default values
@@ -265,14 +219,14 @@ def build_transformer(
 
 # Params
 n_epochs = 100
-lookback = 10
+lookback = 20
 num_features = 3
 test_split = 0.2
 val_split = 0.1
 batch_size = 32
 learning_rate = 0.005
 start_date = pd.to_datetime("2023-01-03")
-end_date = pd.to_datetime("2024-10-25")
+end_date = pd.to_datetime("2024-12-01")
 tickers_to_use = [
     "USDT-USD",
     "BTC-USD",
@@ -303,7 +257,7 @@ preproc_cols_to_use = [
     "Daily",
     # "Turnover"
 ]
-# load_file = f"../data/finance/historical_data_2023-01-01-2024-10-26-1d.xlsx"
+preproc_target_col="Close"
 load_file = "../data/finance/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 
 # Model params
@@ -349,7 +303,7 @@ combined_data, ticker_mapping = prepare_combined_data(
     data_scaled, tickers_to_use, lookback
 )
 sequences, targets = create_combined_sequences(
-    combined_data, lookback, preproc_cols_to_use
+    combined_data, lookback, preproc_cols_to_use, preproc_target_col
 )
 
 # Train test split
@@ -454,23 +408,39 @@ for i, ticker in enumerate(tickers_to_use):
     Apply inverse transform for each ticker's predictions.
     Use the scalers dictionary to inverse transform the 'Close' feature for each ticker.
     """
-    test_predictions[:, i] = (
-        scalers[ticker]["Close"]
-        .inverse_transform(test_predictions[:, i].reshape(-1, 1))
-        .flatten()
-    )
-    test_targets[:, i] = (
-        scalers[ticker]["Close"]
-        .inverse_transform(test_targets[:, i].reshape(-1, 1))
-        .flatten()
-    )
+    if len(tickers_to_use) == 1:
+        test_predictions[i] = (
+            scalers[ticker][preproc_target_col]
+            .inverse_transform(test_predictions[i].reshape(-1, 1))
+            .flatten()
+        )
+        test_targets[i] = (
+            scalers[ticker][preproc_target_col]
+            .inverse_transform(test_targets[i].reshape(-1, 1))
+            .flatten()
+        )
+    else:
+        test_predictions[:, i] = (
+            scalers[ticker][preproc_target_col]
+            .inverse_transform(test_predictions[:, i].reshape(-1, 1))
+            .flatten()
+        )
+        test_targets[:, i] = (
+            scalers[ticker][preproc_target_col]
+            .inverse_transform(test_targets[:, i].reshape(-1, 1))
+            .flatten()
+        )
 
 # Separe plots for each ticker
 for i, ticker in enumerate(tickers_to_use):
     plt.figure(figsize=(10, 5))
 
-    plt.plot(test_targets[:, i], label=f"True Values - {ticker}", linestyle="dashed")
-    plt.plot(test_predictions[:, i], label=f"Predictions - {ticker}")
+    if len(tickers_to_use) == 1:
+        plt.plot(test_targets, label=f"True Values - {ticker}", linestyle="dashed")
+        plt.plot(test_predictions, label=f"Predictions - {ticker}")
+    else:
+        plt.plot(test_targets[:, i], label=f"True Values - {ticker}", linestyle="dashed")
+        plt.plot(test_predictions[:, i], label=f"Predictions - {ticker}")
 
     plt.legend()
     plt.title(f"{ticker} Predictions on Test Set")
