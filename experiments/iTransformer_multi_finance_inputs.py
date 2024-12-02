@@ -59,9 +59,10 @@ def calc_daily_profit_features(df):
 
 def calc_input_features(df, tickers, cols, time_step):
     for ticker in tickers:
-        df[ticker]["Intraday profit"] = (
+        df[ticker].loc[:, "Intraday profit"] = (
             df[ticker][cols[0]] - df[ticker][cols[3]]
         ) / df[ticker][cols[3]]
+
         df[ticker] = calc_daily_profit_features(df[ticker])
     return df
 
@@ -75,10 +76,10 @@ def prepare_combined_data(data_scaled, tickers_to_use, lookback):
 
     for ticker in tickers_to_use:
         df = data_scaled[ticker].copy()
-        df["ticker_id"] = ticker_mapping[ticker]  # Add ticker ID
-        # ticker_id_col = df.pop('ticker_id')
+        df["ticker id"] = ticker_mapping[ticker]  # Add ticker ID
+        # ticker_id_col = df.pop('ticker id')
         df = df.add_suffix(f"_{ticker}")
-        # df['ticker_id'] = ticker_id_col
+        # df['ticker id'] = ticker_id_col
         combined_data.append(df)
 
     combined_data = pd.concat(combined_data, axis=1)
@@ -89,7 +90,7 @@ def prepare_combined_data(data_scaled, tickers_to_use, lookback):
 
 
 # Adjusted create_sequences function
-def create_combined_sequences(data, lookback):
+def create_combined_sequences(data, lookback, cols_to_use=["Close"]):
     """
     Create sequences and targets for time series forecasting.
 
@@ -101,13 +102,14 @@ def create_combined_sequences(data, lookback):
         sequences (np.array): Array of input sequences.
         targets (np.array): Array of target values.
     """
+    if cols_to_use is None:
+        cols_to_use = ["Close", "Intraday", "Daily", "Turnover"]
     sequences, targets = [], []
 
     # Select columns matching the specified keywords
-    columns_to_include = data.filter(like="Close", axis=1).columns.tolist()
-    columns_to_include += data.filter(like="Intraday", axis=1).columns.tolist()
-    columns_to_include += data.filter(like="Daily", axis=1).columns.tolist()
-    columns_to_include += data.filter(like="Turnover", axis=1).columns.tolist()
+    columns_to_include = []
+    for col in cols_to_use:
+        columns_to_include += data.filter(like=col, axis=1).columns.tolist()
 
     # Column order matches the input DataFrame order
     columns_to_include = [col for col in data.columns if col in columns_to_include]
@@ -125,6 +127,52 @@ def create_combined_sequences(data, lookback):
         targets.append(target)
 
     return np.array(sequences), np.array(targets)
+
+
+# Ver 2
+# def create_combined_sequences(data, lookback):
+#     """
+#     Create sequences and targets for time series forecasting, organized by ticker.
+#
+#     Args:
+#         data (pd.DataFrame): Input DataFrame with time series data.
+#         lookback (int): Number of past time steps to include in each sequence.
+#
+#     Returns:
+#         sequences (np.array): Array of input sequences with shape (batch, lookback, tickers * features).
+#         targets (np.array): Array of target values with shape (batch, tickers).
+#     """
+#     sequences, targets = [], []
+#
+#     # Get tickers by splitting column names (assumes naming convention like 'AAPL_Close')
+#     tickers = list(set(col.split('_')[1] for col in data.columns))
+#
+#     # Organize features by ticker
+#     ticker_features = {ticker: [col for col in data.columns if col.split('_')[1] == ticker] for ticker in tickers}
+#
+#     # Ensure consistent ordering of tickers
+#     tickers = sorted(ticker_features.keys())
+#
+#     for i in range(len(data) - lookback):
+#         # Collect features for all tickers for the current sequence
+#         seq = []
+#         for ticker in tickers:
+#             # Extract features for the current ticker in the lookback window
+#             ticker_data = data.iloc[i: i + lookback][ticker_features[ticker]].values
+#             seq.append(ticker_data)  # Shape (lookback, num_features_per_ticker)
+#
+#         # Concatenate features for all tickers along the second dimension
+#         seq = np.concatenate(seq, axis=-1)  # Shape (lookback, tickers * num_features_per_ticker)
+#
+#         # Extract target values for all tickers (assuming 'Close' is the target feature)
+#         target = [
+#             data.iloc[i + lookback][f"Close_{ticker}"] for ticker in tickers
+#         ]  # Shape (tickers,)
+#
+#         sequences.append(seq)
+#         targets.append(target)
+#
+#     return np.array(sequences), np.array(targets)
 
 
 # Function to fill in missing days with default values
@@ -216,17 +264,32 @@ def build_transformer(
 
 
 # Params
-n_epochs = 1000
-lookback = 30
-n_samples = 200
+n_epochs = 100
+lookback = 10
 num_features = 3
 test_split = 0.2
 val_split = 0.1
 batch_size = 32
+learning_rate = 0.005
 start_date = pd.to_datetime("2023-01-03")
 end_date = pd.to_datetime("2024-10-25")
-tickers_to_use = ["SOL-USD", "BTC-USD", "TSLA"]
-cols_to_use = [
+tickers_to_use = [
+    "USDT-USD",
+    "BTC-USD",
+    "XRP-USD",
+    "ETH-USD",
+    "BNB-USD",
+    "DOGE-USD",
+    "SOL-USD",
+    "STETH-USD",
+    "DOT-USD",
+    "TSLA",
+    "AAPL",
+    "NVDA",
+    "PLTR",
+    "SMCI",
+]
+init_cols_to_use = [
     "Close",
     "High",
     "Low",
@@ -234,7 +297,14 @@ cols_to_use = [
     "Volume",
     # "ticker"
 ]
-load_file = f"../data/finance/historical_data_2023-01-01-2024-10-26-1d.xlsx"
+preproc_cols_to_use = [
+    "Close",
+    "Intraday",
+    "Daily",
+    # "Turnover"
+]
+# load_file = f"../data/finance/historical_data_2023-01-01-2024-10-26-1d.xlsx"
+load_file = "../data/finance/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 
 # Model params
 input_dim = num_features
@@ -250,10 +320,10 @@ data_raw = fill_missing_days(data_raw.copy(), all_tickers, start_date, end_date)
 data = prepare_finance_data(
     data_raw,
     tickers_to_use,
-    cols_to_use,
+    init_cols_to_use,
 )
 data = calc_input_features(
-    df=data, tickers=tickers_to_use, cols=cols_to_use, time_step=lookback
+    df=data.copy(), tickers=tickers_to_use, cols=init_cols_to_use, time_step=lookback
 )
 # normalization
 scalers = {
@@ -278,29 +348,31 @@ for ticker in tickers_to_use:
 combined_data, ticker_mapping = prepare_combined_data(
     data_scaled, tickers_to_use, lookback
 )
-sequences, targets = create_combined_sequences(combined_data, lookback)
+sequences, targets = create_combined_sequences(
+    combined_data, lookback, preproc_cols_to_use
+)
 
 # Train test split
 train_size = int((1 - test_split) * len(sequences))
-# val_size = int(val_split * train_size)
+val_size = int(val_split * train_size)
 
 train_sequences = sequences[:train_size]
 train_targets = targets[:train_size]
 test_sequences = sequences[train_size:]
 test_targets = targets[train_size:]
 
-# val_sequences = train_sequences[-val_size:]
-# val_targets = train_targets[-val_size:]
-# train_sequences = train_sequences[:-val_size]
-# train_targets = train_targets[:-val_size]
+val_sequences = train_sequences[-val_size:]
+val_targets = train_targets[-val_size:]
+train_sequences = train_sequences[:-val_size]
+train_targets = train_targets[:-val_size]
 
 # Create datasets and dataloaders
 train_dataset = MultiTickerDataset(train_sequences, train_targets)
-# val_dataset = MultiTickerDataset(val_sequences, val_targets)
+val_dataset = MultiTickerDataset(val_sequences, val_targets)
 test_dataset = MultiTickerDataset(test_sequences, test_targets)
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-# val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 model = build_transformer(
@@ -316,7 +388,7 @@ model = build_transformer(
 
 # Training
 criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 for epoch in range(n_epochs):
     model.train()
@@ -334,19 +406,21 @@ for epoch in range(n_epochs):
     train_loss /= len(train_loader.dataset)
 
     # Validation
-    # model.eval()
-    # val_loss = 0.0
-    # with torch.no_grad():
-    #     for batch_sequences, batch_targets in val_loader:
-    #         batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(device)
-    #         predictions = model(batch_sequences).squeeze()
-    #         loss = criterion(predictions, batch_targets)
-    #         val_loss += loss.item() * batch_sequences.size(0)
-    # val_loss /= len(val_loader.dataset)
+    model.eval()
+    val_loss = 0.0
+    with torch.no_grad():
+        for batch_sequences, batch_targets in val_loader:
+            batch_sequences, batch_targets = batch_sequences.to(
+                device
+            ), batch_targets.to(device)
+            predictions = model(batch_sequences).squeeze()
+            loss = criterion(predictions, batch_targets)
+            val_loss += loss.item() * batch_sequences.size(0)
+    val_loss /= len(val_loader.dataset)
 
     print(
-        f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}"
-    )  # , Val Loss: {val_loss:.4f}")
+        f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
+    )
 
 # Test
 model.eval()
@@ -368,6 +442,13 @@ print(f"Test Loss: {test_loss:.4f}")
 test_predictions = torch.cat(predictions_list).numpy()
 test_targets = torch.cat(targets_list).numpy()
 
+plt.figure(figsize=(10, 5))
+plt.plot(test_targets, label="True Values", linestyle="dashed")
+plt.plot(test_predictions, label="Predictions")
+plt.legend()
+plt.title("iTransformer Multi-Ticker Predictions on Test Set")
+plt.show()
+
 for i, ticker in enumerate(tickers_to_use):
     """
     Apply inverse transform for each ticker's predictions.
@@ -383,13 +464,6 @@ for i, ticker in enumerate(tickers_to_use):
         .inverse_transform(test_targets[:, i].reshape(-1, 1))
         .flatten()
     )
-
-plt.figure(figsize=(10, 5))
-plt.plot(test_targets, label="True Values", linestyle="dashed")
-plt.plot(test_predictions, label="Predictions")
-plt.legend()
-plt.title("iTransformer Multi-Ticker Predictions on Test Set")
-plt.show()
 
 # Separe plots for each ticker
 for i, ticker in enumerate(tickers_to_use):
