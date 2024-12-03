@@ -46,6 +46,54 @@ def prepare_finance_data(df, tickers, cols):
     return {ticker: data[cols] for ticker, data in df.items() if ticker in tickers}
 
 
+def calc_next_step_profit_rate(df, tickers):
+    """
+    Calculate the profit rate for each ticker at the next time step.
+
+    Args:
+        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
+        tickers (list): List of ticker symbols.
+
+    Returns:
+        dict of pd.DataFrame: Updated DataFrames with 'Profit Rate' column.
+    """
+    for ticker in tickers:
+        # profit rate t+1
+        df[ticker]["Profit Rate"] = (
+            df[ticker]["Close"].shift(-1) - df[ticker]["Close"]
+        ) / df[ticker]["Close"]
+
+        df[ticker]["Profit Rate"].fillna(0, inplace=True)
+
+    return df
+
+
+def calc_cumulative_features(df, tickers, time_step):
+    """
+    Calculate cumulative daily profit and turnover features for each ticker.
+
+    Args:
+        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
+        tickers (list): List of ticker symbols.
+        time_step (int): Time step for cumulative calculations.
+
+    Returns:
+        dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
+    """
+    for ticker in tickers:
+        df[ticker]["Cumulative profit"] = (
+            df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
+        )
+        df[ticker]["Cumulative turnover"] = (
+            df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
+        )
+
+        df[ticker]["Cumulative profit"].fillna(0, inplace=True)
+        df[ticker]["Cumulative turnover"].fillna(0, inplace=True)
+
+    return df
+
+
 def calc_daily_profit_features(df):
     # daily profit rate
     df["Daily profit"] = (df["Close"] - df["Close"].shift(1)) / df["Close"].shift(1)
@@ -58,12 +106,29 @@ def calc_daily_profit_features(df):
 
 
 def calc_input_features(df, tickers, cols, time_step):
+    """
+    Calculate input features for all tickers, including intraday profit,
+    daily profit, turnover, and cumulative features.
+
+    Args:
+        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
+        tickers (list): List of ticker symbols.
+        cols (list): Column names used to calculate intraday profit.
+        time_step (int): Time step for cumulative calculations.
+
+    Returns:
+        dict of pd.DataFrame: Updated dictionary of DataFrames with all features.
+    """
     for ticker in tickers:
         df[ticker].loc[:, "Intraday profit"] = (
             df[ticker][cols[0]] - df[ticker][cols[3]]
         ) / df[ticker][cols[3]]
 
         df[ticker] = calc_daily_profit_features(df[ticker])
+
+    df = calc_cumulative_features(df, tickers, time_step)
+    df = calc_next_step_profit_rate(df, tickers)
+
     return df
 
 
@@ -90,7 +155,9 @@ def prepare_combined_data(data_scaled, tickers_to_use, lookback):
 
 
 # Adjusted create_sequences function
-def create_combined_sequences(data, lookback, cols_to_use=["Close"], target_col="Close"):
+def create_combined_sequences(
+    data, lookback, cols_to_use=["Close"], target_col="Close"
+):
     """
     Create sequences and targets for time series forecasting.
 
@@ -252,12 +319,14 @@ init_cols_to_use = [
     # "ticker"
 ]
 preproc_cols_to_use = [
-    "Close",
+    # "Close",
     "Intraday",
     "Daily",
+    # "Cumulative profit",
+    "Profit Rate"
     # "Turnover"
 ]
-preproc_target_col="Close"
+preproc_target_col = "Profit Rate"
 load_file = "../data/finance/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 
 # Model params
@@ -406,7 +475,7 @@ plt.show()
 for i, ticker in enumerate(tickers_to_use):
     """
     Apply inverse transform for each ticker's predictions.
-    Use the scalers dictionary to inverse transform the 'Close' feature for each ticker.
+    Use the scalers dictionary to inverse transform the target feature for each ticker.
     """
     if len(tickers_to_use) == 1:
         test_predictions[i] = (
@@ -439,7 +508,9 @@ for i, ticker in enumerate(tickers_to_use):
         plt.plot(test_targets, label=f"True Values - {ticker}", linestyle="dashed")
         plt.plot(test_predictions, label=f"Predictions - {ticker}")
     else:
-        plt.plot(test_targets[:, i], label=f"True Values - {ticker}", linestyle="dashed")
+        plt.plot(
+            test_targets[:, i], label=f"True Values - {ticker}", linestyle="dashed"
+        )
         plt.plot(test_predictions[:, i], label=f"Predictions - {ticker}")
 
     plt.legend()
