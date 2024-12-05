@@ -73,6 +73,7 @@ class iTransformerModel(nn.Module):
         dim_feedforward=1024,
         dropout=0.1,
         num_features=1,
+        columns_amount=1,
     ):
         super(iTransformerModel, self).__init__()
         self.model_type = "iTransformer"
@@ -96,18 +97,21 @@ class iTransformerModel(nn.Module):
         self.transformer_encoder = Encoder(nn.ModuleList(encoder_blocks))
         self.d_model = d_model
         self.num_features = num_features
-        self.projection = nn.Linear(d_model, num_features)
-        # self.prediction = nn.Sequential(
-        #     nn.Linear(d_model, dim_feedforward),
-        #     nn.ReLU(),
-        #     nn.Linear(dim_feedforward, num_features)
-        # )
+        # self.projection = nn.Linear(d_model, num_features)
+        self.projection = nn.Sequential(
+            nn.Linear(d_model, dim_feedforward),
+            nn.ReLU(),
+            nn.Flatten(start_dim=1),
+            nn.Linear(dim_feedforward * columns_amount, num_features)
+        )
         self.init_weights()
 
     def init_weights(self):
         initrange = 0.1
-        self.projection.bias.data.zero_()
-        self.projection.weight.data.uniform_(-initrange, initrange)
+        for layer in self.projection:
+            if isinstance(layer, nn.Linear):
+                layer.bias.data.zero_()
+                layer.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x, x_mark=None):
         """
@@ -120,15 +124,13 @@ class iTransformerModel(nn.Module):
             x_mark = x_mark.permute(0, 2, 1)
 
         x = self.embedding(x, x_mark)  # [Batch, Features, d_model]
-
-        # x = x.permute(2, 0, 1)  # [Sequence Length, Batch, Features]
         x = self.transformer_encoder(x, None)
+        x = self.projection(x)
 
-        # Back to [Batch, Sequence Length, Features]
-        # x = x.permute(0, 2, 1)
-        # x = [Batch, Features, Sequence Length] => x = [Batch, Sequence Length, Features]
-        x = self.projection(x).permute(0, 2, 1)
-        x = x[:, :, -1]  # [:, -1, :]
-        # TODO to jest tymczasowo tak chyba nie powinno byc...
-        # x = x.mean(dim=1)
+
+        # # Back to [Batch, Sequence Length, Features]
+        # # x = x.permute(0, 2, 1)
+        # # x = [Batch, Features, Sequence Length] => x = [Batch, Sequence Length, Features]
+        # x = self.projection(x).permute(0, 2, 1)
+        # x = x[:, :, -1]  # [:, -1, :]
         return x

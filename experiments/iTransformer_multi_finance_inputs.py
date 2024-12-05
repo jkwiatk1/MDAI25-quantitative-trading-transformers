@@ -81,12 +81,8 @@ def calc_cumulative_features(df, tickers, time_step):
         dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
     """
     for ticker in tickers:
-        df[ticker]["Cumulative profit"] = (
-            df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
-        )
-        df[ticker]["Cumulative turnover"] = (
-            df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
-        )
+        df[ticker]["Cumulative profit"] = df[ticker]["Daily profit"].cumsum()
+        df[ticker]["Cumulative turnover"] = df[ticker]["Turnover"].cumsum()
 
         df[ticker]["Cumulative profit"].fillna(0, inplace=True)
         df[ticker]["Cumulative turnover"].fillna(0, inplace=True)
@@ -240,6 +236,13 @@ def fill_missing_days(df, tickers, start_date, end_date):
     return df
 
 
+def data_normalization(x):
+    mean = x.mean(axis=0)
+    std = x.std(axis=0)
+    x = (x - mean) / (std + 1e-5)
+    return x
+
+
 # Dataset for multi-ticker
 class MultiTickerDataset(Dataset):
     def __init__(self, sequences, targets):
@@ -261,6 +264,7 @@ def build_transformer(
     dim_feedforward: int = 2048,
     dropout: float = 0.1,
     num_features=1,
+    columns_amount=1,
 ) -> iTransformerModel:
     """
     Args:
@@ -281,6 +285,7 @@ def build_transformer(
         dim_feedforward=dim_feedforward,
         dropout=dropout,
         num_features=num_features,
+        columns_amount=columns_amount,
     )
 
 
@@ -290,10 +295,10 @@ lookback = 20
 num_features = 3
 test_split = 0.2
 val_split = 0.1
-batch_size = 32
+batch_size = 64
 learning_rate = 0.005
 start_date = pd.to_datetime("2023-01-03")
-end_date = pd.to_datetime("2024-12-01")
+end_date = pd.to_datetime("2024-01-12")
 tickers_to_use = [
     "USDT-USD",
     "BTC-USD",
@@ -321,20 +326,20 @@ init_cols_to_use = [
 preproc_cols_to_use = [
     # "Close",
     "Intraday",
-    "Daily",
-    # "Cumulative profit",
-    "Profit Rate"
+    "Daily profit",
+    "Cumulative profit",
+    # "Profit Rate",
     # "Turnover"
 ]
-preproc_target_col = "Profit Rate"
+preproc_target_col = "Daily profit"
 load_file = "../data/finance/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 
 # Model params
 input_dim = num_features
-d_model = 128
-nhead = 2
+d_model = 64  # check [3,512]
+nhead = 1  # check [1, 4]
 num_encoder_layers = 1
-dim_feedforward = 128
+dim_feedforward = 64  # check [3, 512]
 dropout = 0.05
 
 # data load
@@ -348,8 +353,13 @@ data = prepare_finance_data(
 data = calc_input_features(
     df=data.copy(), tickers=tickers_to_use, cols=init_cols_to_use, time_step=lookback
 )
+
+# Normalization on raw  data
+# for ticker in tickers_to_use:
+#     data[ticker] = data_normalization(data[ticker].copy())
+
 # normalization
-scalers = {
+feat_scalers = {
     ticker: {
         feature: MinMaxScaler(feature_range=(0, 1)) for feature in data[ticker].columns
     }
@@ -363,14 +373,17 @@ for ticker in tickers_to_use:
         Fit and transform the data for the current ticker and feature.
         The scaler for each feature is stored in the nested scalers dictionary.
         """
-        data_scaled[ticker].loc[:, feature] = scalers[ticker][feature].fit_transform(
-            data[ticker][[feature]]
-        )
+        data_scaled[ticker].loc[:, feature] = feat_scalers[ticker][
+            feature
+        ].fit_transform(data[ticker][[feature]])
 
 # Prepare combined dataset
 combined_data, ticker_mapping = prepare_combined_data(
     data_scaled, tickers_to_use, lookback
 )
+
+# Normalization on scaled data
+# combined_data = data_normalization(combined_data.copy())
 sequences, targets = create_combined_sequences(
     combined_data, lookback, preproc_cols_to_use, preproc_target_col
 )
@@ -407,6 +420,7 @@ model = build_transformer(
     dim_feedforward=dim_feedforward,
     dropout=dropout,
     num_features=len(tickers_to_use),
+    columns_amount=train_sequences.shape[2],
 ).to(device)
 
 # Training
@@ -479,23 +493,23 @@ for i, ticker in enumerate(tickers_to_use):
     """
     if len(tickers_to_use) == 1:
         test_predictions[i] = (
-            scalers[ticker][preproc_target_col]
+            feat_scalers[ticker][preproc_target_col]
             .inverse_transform(test_predictions[i].reshape(-1, 1))
             .flatten()
         )
         test_targets[i] = (
-            scalers[ticker][preproc_target_col]
+            feat_scalers[ticker][preproc_target_col]
             .inverse_transform(test_targets[i].reshape(-1, 1))
             .flatten()
         )
     else:
         test_predictions[:, i] = (
-            scalers[ticker][preproc_target_col]
+            feat_scalers[ticker][preproc_target_col]
             .inverse_transform(test_predictions[:, i].reshape(-1, 1))
             .flatten()
         )
         test_targets[:, i] = (
-            scalers[ticker][preproc_target_col]
+            feat_scalers[ticker][preproc_target_col]
             .inverse_transform(test_targets[:, i].reshape(-1, 1))
             .flatten()
         )
