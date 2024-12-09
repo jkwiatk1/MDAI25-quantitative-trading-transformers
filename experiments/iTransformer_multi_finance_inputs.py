@@ -332,7 +332,7 @@ preproc_cols_to_use = [
     # "Turnover"
 ]
 preproc_target_col = "Daily profit"
-load_file = "../data/finance/historical_data_2022-01-01-2024-12-01-1d.xlsx"
+load_file = "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 
 # Model params
 input_dim = num_features
