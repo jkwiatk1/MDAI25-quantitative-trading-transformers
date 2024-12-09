@@ -12,11 +12,14 @@ print(f"Using device: {device}")
 
 
 # Data load
-def load_finance_data_xlsx(path):
+def load_finance_data_xlsx(path, is_from_yahoo=True):
     excel_data = pd.ExcelFile(path)
     data_dict = {}
     for sheet in excel_data.sheet_names:
-        df = excel_data.parse(sheet, skiprows=2)
+        if is_from_yahoo == True:
+            df = excel_data.parse(sheet, skiprows=2)
+        else:
+            df = excel_data.parse(sheet)
         df.columns = [
             "Date",
             "Adj Close",
@@ -297,23 +300,49 @@ test_split = 0.2
 val_split = 0.1
 batch_size = 64
 learning_rate = 0.005
-start_date = pd.to_datetime("2023-01-03")
+start_date = pd.to_datetime("2020-01-03")
 end_date = pd.to_datetime("2024-01-12")
-tickers_to_use = [
-    "USDT-USD",
-    "BTC-USD",
-    "XRP-USD",
-    "ETH-USD",
-    "BNB-USD",
-    "DOGE-USD",
-    "SOL-USD",
-    "STETH-USD",
-    "DOT-USD",
-    "TSLA",
+IS_DATA_FROM_YAHOO = False
+# tickers_to_use = [
+#     "USDT-USD",
+#     "BTC-USD",
+#     "XRP-USD",
+#     "ETH-USD",
+#     "BNB-USD",
+#     "DOGE-USD",
+#     "SOL-USD",
+#     "STETH-USD",
+#     "DOT-USD",
+#     "TSLA",
+#     "AAPL",
+#     "NVDA",
+#     "PLTR",
+#     "SMCI",
+# ]
+tickers_to_use = [  # ~top 20 market cap
     "AAPL",
     "NVDA",
-    "PLTR",
-    "SMCI",
+    "MSFT",
+    "AMZN",
+    "GOOG",
+    "GOOGL",
+    "META",
+    "TSLA",
+    "BRK-B",
+    "AVGO",
+    "WMT",
+    "LLY",
+    "JPM",
+    "V",
+    "ORCL",
+    "UNH",
+    "XOM",
+    "MA",
+    "COST",
+    "HD",
+    "PG",
+    "NFLX",
+    "JNJ",
 ]
 init_cols_to_use = [
     "Close",
@@ -332,7 +361,9 @@ preproc_cols_to_use = [
     # "Turnover"
 ]
 preproc_target_col = "Daily profit"
-load_file = "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
+# load_file = "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
+load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
+
 
 # Model params
 input_dim = num_features
@@ -343,7 +374,7 @@ dim_feedforward = 64  # check [3, 512]
 dropout = 0.05
 
 # data load
-data_raw, all_tickers = load_finance_data_xlsx(load_file)
+data_raw, all_tickers = load_finance_data_xlsx(load_file,  IS_DATA_FROM_YAHOO)
 data_raw = fill_missing_days(data_raw.copy(), all_tickers, start_date, end_date)
 data = prepare_finance_data(
     data_raw,
