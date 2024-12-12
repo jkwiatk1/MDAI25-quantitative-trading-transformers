@@ -1,10 +1,11 @@
-import pandas as pd
-import numpy as np
-import torch
 import matplotlib.pyplot as plt
-from torch import nn
+import numpy as np
+import pandas as pd
+import torch
 from sklearn.preprocessing import MinMaxScaler
+from torch import nn
 from torch.utils.data import Dataset, DataLoader
+
 from models.iTransformer import iTransformerModel
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -32,6 +33,50 @@ def load_finance_data_xlsx(path, is_from_yahoo=True):
         ]
         data_dict[sheet] = df
     return data_dict, excel_data.sheet_names
+
+
+# Function to fill in missing days with default values
+def fill_missing_days(df, tickers, start_date, end_date):
+    """
+    Fill missing dates.
+
+    - Fills missing weekends or other gaps in trading days.
+    - Uses forward-fill for 'Close'.
+    - Sets default values for missing fields as specified:
+      - 'Adj Close' = 'Close'
+      - 'High' = 'Close'
+      - 'Low' = 'Close'
+      - 'Open' = 'Close'
+      - 'Volume' = 0
+    """
+    # Ensure the 'Date' column is a datetime object and set it as the index
+    for ticker in tickers:
+        df[ticker]["Date"] = pd.to_datetime(df[ticker]["Date"])
+        df[ticker].set_index("Date", inplace=True)
+
+        # Create a full range of dates from the minimum to the maximum in the dataset
+        # end_date = df[ticker].index.max()
+        full_date_range = pd.date_range(start=start_date, end=end_date, freq="D")
+
+        # Reindex the DataFrame to include all dates in the range
+        df[ticker] = df[ticker].reindex(full_date_range)
+
+        # Fill missing 'Close' values with the value from the previous day (forward-fill)
+        df[ticker]["Close"].fillna(method="ffill", inplace=True)
+
+        # Assign default values for other columns based on 'Close' or specific rules
+        df[ticker]["Adj Close"].fillna(method="ffill", inplace=True)
+        df[ticker]["High"].fillna(method="ffill", inplace=True)
+        df[ticker]["Low"].fillna(method="ffill", inplace=True)
+        df[ticker]["Open"].fillna(method="ffill", inplace=True)
+        df[ticker]["Volume"].fillna(method="ffill", inplace=True)
+        df[ticker]["ticker"].fillna(method="ffill", inplace=True)
+
+        # Reset the index to return 'Date' as a regular column
+        # df[ticker].reset_index(inplace=True)
+        # df[ticker].rename(columns={'index': 'Date'}, inplace=True)
+
+    return df
 
 
 def prepare_finance_data(df, tickers, cols):
@@ -78,18 +123,21 @@ def calc_cumulative_features(df, tickers, time_step):
     Args:
         df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
         tickers (list): List of ticker symbols.
-        time_step (int): Time step for cumulative calculations.
+        time_step (int): Time step (lookback window) for cumulative calculations.
 
     Returns:
         dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
     """
     for ticker in tickers:
-        df[ticker]["Cumulative profit"] = df[ticker]["Daily profit"].cumsum()
-        df[ticker]["Cumulative turnover"] = df[ticker]["Turnover"].cumsum()
+        df[ticker]["Cumulative profit"] = (
+            df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
+        )
+        df[ticker]["Cumulative turnover"] = (
+            df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
+        )
 
         df[ticker]["Cumulative profit"].fillna(0, inplace=True)
         df[ticker]["Cumulative turnover"].fillna(0, inplace=True)
-
     return df
 
 
@@ -127,7 +175,6 @@ def calc_input_features(df, tickers, cols, time_step):
 
     df = calc_cumulative_features(df, tickers, time_step)
     df = calc_next_step_profit_rate(df, tickers)
-
     return df
 
 
@@ -195,50 +242,6 @@ def create_combined_sequences(
     return np.array(sequences), np.array(targets)
 
 
-# Function to fill in missing days with default values
-def fill_missing_days(df, tickers, start_date, end_date):
-    """
-    Fill missing dates.
-
-    - Fills missing weekends or other gaps in trading days.
-    - Uses forward-fill for 'Close'.
-    - Sets default values for missing fields as specified:
-      - 'Adj Close' = 'Close'
-      - 'High' = 'Close'
-      - 'Low' = 'Close'
-      - 'Open' = 'Close'
-      - 'Volume' = 0
-    """
-    # Ensure the 'Date' column is a datetime object and set it as the index
-    for ticker in tickers:
-        df[ticker]["Date"] = pd.to_datetime(df[ticker]["Date"])
-        df[ticker].set_index("Date", inplace=True)
-
-        # Create a full range of dates from the minimum to the maximum in the dataset
-        # end_date = df[ticker].index.max()
-        full_date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-
-        # Reindex the DataFrame to include all dates in the range
-        df[ticker] = df[ticker].reindex(full_date_range)
-
-        # Fill missing 'Close' values with the value from the previous day (forward-fill)
-        df[ticker]["Close"].fillna(method="ffill", inplace=True)
-
-        # Assign default values for other columns based on 'Close' or specific rules
-        df[ticker]["Adj Close"].fillna(method="ffill", inplace=True)
-        df[ticker]["High"].fillna(method="ffill", inplace=True)
-        df[ticker]["Low"].fillna(method="ffill", inplace=True)
-        df[ticker]["Open"].fillna(method="ffill", inplace=True)
-        df[ticker]["Volume"].fillna(method="ffill", inplace=True)
-        df[ticker]["ticker"].fillna(method="ffill", inplace=True)
-
-        # Reset the index to return 'Date' as a regular column
-        # df[ticker].reset_index(inplace=True)
-        # df[ticker].rename(columns={'index': 'Date'}, inplace=True)
-
-    return df
-
-
 def data_normalization(x):
     mean = x.mean(axis=0)
     std = x.std(axis=0)
@@ -293,7 +296,7 @@ def build_transformer(
 
 
 # Params
-n_epochs = 100
+n_epochs = 2
 lookback = 20
 num_features = 3
 test_split = 0.2
@@ -363,7 +366,6 @@ preproc_cols_to_use = [
 preproc_target_col = "Daily profit"
 # load_file = "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
-
 
 # Model params
 input_dim = num_features
