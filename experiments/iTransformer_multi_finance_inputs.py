@@ -17,7 +17,7 @@ def load_finance_data_xlsx(path, is_from_yahoo=True):
     excel_data = pd.ExcelFile(path)
     data_dict = {}
     for sheet in excel_data.sheet_names:
-        if is_from_yahoo == True:
+        if is_from_yahoo == False:
             df = excel_data.parse(sheet, skiprows=2)
         else:
             df = excel_data.parse(sheet)
@@ -94,41 +94,32 @@ def prepare_finance_data(df, tickers, cols):
     return {ticker: data[cols] for ticker, data in df.items() if ticker in tickers}
 
 
-def calc_next_step_profit_rate(df, tickers):
-    """
-    Calculate the profit rate for each ticker at the next time step.
-
-    Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-
-    Returns:
-        dict of pd.DataFrame: Updated DataFrames with 'Profit Rate' column.
-    """
-    for ticker in tickers:
-        # profit rate t+1
-        df[ticker]["Profit Rate"] = (
-            df[ticker]["Close"].shift(-1) - df[ticker]["Close"]
-        ) / df[ticker]["Close"]
-
-        df[ticker]["Profit Rate"].fillna(0, inplace=True)
-
-    return df
-
-
-def calc_cumulative_features(df, tickers, time_step):
+def calc_cumulative_features(df, tickers, time_step, cols):
     """
     Calculate cumulative daily profit and turnover features for each ticker.
 
     Args:
         df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
         tickers (list): List of ticker symbols.
-        time_step (int): Time step (lookback window) for cumulative calculations.
+        time_step (int): Lookback window for cumulative calculations.
 
     Returns:
         dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
     """
     for ticker in tickers:
+        # df[ticker].loc[:, "Intraday profit"] = (
+        #     df[ticker][cols[0]] - df[ticker][cols[3]]
+        # ) / df[ticker][cols[3]]
+        # # profit rate t+1
+        # df[ticker]["Profit Rate"] = (
+        #     df[ticker]["Close"].shift(-1) - df[ticker]["Close"]
+        # ) / df[ticker]["Close"]
+        # df[ticker]["Profit Rate"].fillna(0, inplace=True)
+
+        df[ticker]["Daily profit"] = (
+            df[ticker]["Close"] - df[ticker]["Close"].shift(1)
+        ) / df[ticker]["Close"].shift(1)
+        df[ticker]["Turnover"] = df[ticker]["Volume"] / df[ticker]["Close"]
         df[ticker]["Cumulative profit"] = (
             df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
         )
@@ -136,26 +127,20 @@ def calc_cumulative_features(df, tickers, time_step):
             df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
         )
 
+        df[ticker]["Daily profit"].fillna(0, inplace=True)
+        df[ticker]["Turnover"].fillna(0, inplace=True)
         df[ticker]["Cumulative profit"].fillna(0, inplace=True)
         df[ticker]["Cumulative turnover"].fillna(0, inplace=True)
     return df
 
 
-def calc_daily_profit_features(df):
-    # daily profit rate
-    df["Daily profit"] = (df["Close"] - df["Close"].shift(1)) / df["Close"].shift(1)
-    df["Daily profit"].fillna(0, inplace=True)
-
-    # daily turnover rate
-    df["Turnover"] = df["Volume"] / df["Close"]
-    df["Turnover"].fillna(0, inplace=True)
-    return df
-
-
 def calc_input_features(df, tickers, cols, time_step):
     """
-    Calculate input features for all tickers, including intraday profit,
-    daily profit, turnover, and cumulative features.
+    Calculate input features for all tickers, including:
+    - intraday profit, NOT USED
+    - daily profit,
+    - turnover,
+    - cumulative features.
 
     Args:
         df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
@@ -166,15 +151,8 @@ def calc_input_features(df, tickers, cols, time_step):
     Returns:
         dict of pd.DataFrame: Updated dictionary of DataFrames with all features.
     """
-    for ticker in tickers:
-        df[ticker].loc[:, "Intraday profit"] = (
-            df[ticker][cols[0]] - df[ticker][cols[3]]
-        ) / df[ticker][cols[3]]
 
-        df[ticker] = calc_daily_profit_features(df[ticker])
-
-    df = calc_cumulative_features(df, tickers, time_step)
-    df = calc_next_step_profit_rate(df, tickers)
+    df = calc_cumulative_features(df, tickers, time_step, cols)
     return df
 
 
@@ -243,8 +221,8 @@ def create_combined_sequences(
 
 
 def data_normalization(x):
-    mean = x.mean(axis=0)
-    std = x.std(axis=0)
+    mean = x.mean()
+    std = x.std()
     x = (x - mean) / (std + 1e-5)
     return x
 
@@ -303,50 +281,57 @@ test_split = 0.2
 val_split = 0.1
 batch_size = 64
 learning_rate = 0.005
-start_date = pd.to_datetime("2020-01-03")
-end_date = pd.to_datetime("2024-01-12")
 IS_DATA_FROM_YAHOO = False
-# tickers_to_use = [
-#     "USDT-USD",
-#     "BTC-USD",
-#     "XRP-USD",
-#     "ETH-USD",
-#     "BNB-USD",
-#     "DOGE-USD",
-#     "SOL-USD",
-#     "STETH-USD",
-#     "DOT-USD",
-#     "TSLA",
-#     "AAPL",
-#     "NVDA",
-#     "PLTR",
-#     "SMCI",
-# ]
-tickers_to_use = [  # ~top 20 market cap
-    "AAPL",
-    "NVDA",
-    "MSFT",
-    "AMZN",
-    "GOOG",
-    "GOOGL",
-    "META",
-    "TSLA",
-    "BRK-B",
-    "AVGO",
-    "WMT",
-    "LLY",
-    "JPM",
-    "V",
-    "ORCL",
-    "UNH",
-    "XOM",
-    "MA",
-    "COST",
-    "HD",
-    "PG",
-    "NFLX",
-    "JNJ",
-]
+
+if IS_DATA_FROM_YAHOO:
+    start_date = pd.to_datetime("2020-01-03")
+else:
+    start_date = pd.to_datetime("2022-01-03")
+end_date = pd.to_datetime("2024-01-12")
+
+if IS_DATA_FROM_YAHOO == False:
+    tickers_to_use = [
+        "USDT-USD",
+        "BTC-USD",
+        "XRP-USD",
+        "ETH-USD",
+        "BNB-USD",
+        "DOGE-USD",
+        "SOL-USD",
+        "STETH-USD",
+        "DOT-USD",
+        "TSLA",
+        "AAPL",
+        "NVDA",
+        "PLTR",
+        "SMCI",
+    ]
+else:
+    tickers_to_use = [  # ~top 20 market cap
+        "AAPL",
+        "NVDA",
+        "MSFT",
+        "AMZN",
+        "GOOG",
+        "GOOGL",
+        "META",
+        "TSLA",
+        "BRK-B",
+        "AVGO",
+        "WMT",
+        "LLY",
+        "JPM",
+        "V",
+        "ORCL",
+        "UNH",
+        "XOM",
+        "MA",
+        "COST",
+        "HD",
+        "PG",
+        "NFLX",
+        "JNJ",
+    ]
 init_cols_to_use = [
     "Close",
     "High",
@@ -357,15 +342,17 @@ init_cols_to_use = [
 ]
 preproc_cols_to_use = [
     # "Close",
-    "Intraday",
+    # "Intraday",
     "Daily profit",
     "Cumulative profit",
     # "Profit Rate",
     # "Turnover"
 ]
 preproc_target_col = "Daily profit"
-# load_file = "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
-load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
+load_file = (
+    "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
+)
+# load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
 
 # Model params
 input_dim = num_features
