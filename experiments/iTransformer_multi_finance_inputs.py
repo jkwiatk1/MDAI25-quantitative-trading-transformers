@@ -376,20 +376,21 @@ dim_feedforward = 64  # check [3, 512]
 dropout = 0.05
 
 # data load
-data_raw, all_tickers = load_finance_data_xlsx(load_file,  IS_DATA_FROM_YAHOO)
-data_raw = fill_missing_days(data_raw.copy(), all_tickers, start_date, end_date)
+data_raw, all_tickers = load_finance_data_xlsx(load_file, IS_DATA_FROM_YAHOO)
+data_raw = fill_missing_days(data_raw.copy(), tickers_to_use, start_date, end_date)
 data = prepare_finance_data(
     data_raw,
     tickers_to_use,
     init_cols_to_use,
 )
+# Normalization on raw  data
+for ticker in tickers_to_use:
+    df = data[ticker]
+    data[ticker] = df.apply(data_normalization)
+
 data = calc_input_features(
     df=data.copy(), tickers=tickers_to_use, cols=init_cols_to_use, time_step=lookback
 )
-
-# Normalization on raw  data
-# for ticker in tickers_to_use:
-#     data[ticker] = data_normalization(data[ticker].copy())
 
 # normalization
 feat_scalers = {
