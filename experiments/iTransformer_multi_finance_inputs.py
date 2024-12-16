@@ -1,9 +1,10 @@
-import matplotlib.pyplot as plt
 import yaml
 import pandas as pd
 import torch
+import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader
+from sklearn.preprocessing import QuantileTransformer
 
 from experiments.utils.data_loading import (
     fill_missing_days,
@@ -17,7 +18,58 @@ from experiments.utils.datasets import (
     MultiTickerDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
-from experiments.utils.training import build_transformer
+from experiments.utils.training import (
+    build_transformer,
+    train_model,
+    evaluate_model,
+    inverse_transform_predictions,
+    plot_predictions,
+)
+
+
+def quantize_labels(labels, n_quantiles=3):
+    """
+    Quantize returns into discrete classes based on quantiles.
+
+    Parameters:
+    labels: array-like
+        Continuous values of returns to be quantized.
+    n_quantiles: int
+        Number of quantiles to divide the data into (e.g., 3 for low, middle, high).
+
+    Returns:
+    np.ndarray
+        Array of discrete class labels (e.g., 0 for lowest quantile, 1 for middle, etc.).
+    """
+    # Fit QuantileTransformer to map values to the range [0, 1]
+    quantizer = QuantileTransformer(
+        n_quantiles=n_quantiles, output_distribution="uniform"
+    )
+    normalized_labels = quantizer.fit_transform(labels.reshape(-1, 1))
+
+    # Create quantile bins with equal probability
+    bins = np.linspace(0, 1, n_quantiles + 1)[
+        1:-1
+    ]  # Quantile boundaries excluding 0 and 1
+
+    # Assign each label to a quantile class (e.g., 0 for lowest quantile)
+    quantized_labels = np.digitize(normalized_labels.flatten(), bins=bins)
+
+    return quantized_labels
+
+
+# Strategy Implementation
+def trading_strategy(model, data_loader, device, cash):
+    stock_pool = []
+    model.eval()
+    with torch.no_grad():
+        for sequences, _ in data_loader:
+            sequences = sequences.to(device)
+            predictions = model(sequences)
+            ranked_stocks = torch.argsort(predictions, dim=-1, descending=True)
+            stock_pool = ranked_stocks[:, : cash // len(ranked_stocks)]
+    return stock_pool
+
 
 IS_DATA_FROM_YAHOO = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -49,6 +101,7 @@ dim_feedforward = config["model"]["dim_feedforward"]  # check [3, 512]
 dropout = config["model"]["dropout"]  # check [3, 512]
 num_features = config["model"]["num_features"]
 input_dim = num_features
+np.random.seed(42)
 
 
 init_cols_to_use = [
@@ -103,6 +156,8 @@ sequences, targets = create_combined_sequences(
     combined_data, lookback, preproc_cols_to_use, preproc_target_col
 )
 
+# targets = quantize_labels(targets, n_quantiles=5)  # TODO test n_quantiles param
+
 # Train test split
 train_size = int((1 - test_split) * len(sequences))
 val_size = int(val_split * train_size)
@@ -140,114 +195,20 @@ model = build_transformer(
 # Training
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-for epoch in range(n_epochs):
-    model.train()
-    train_loss = 0.0
-    for batch_sequences, batch_targets in train_loader:
-        batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(
-            device
-        )
-        optimizer.zero_grad()
-        predictions = model(batch_sequences).squeeze()
-        loss = criterion(predictions, batch_targets)
-        loss.backward()
-        optimizer.step()
-        train_loss += loss.item() * batch_sequences.size(0)
-    train_loss /= len(train_loader.dataset)
-
-    # Validation
-    model.eval()
-    val_loss = 0.0
-    with torch.no_grad():
-        for batch_sequences, batch_targets in val_loader:
-            batch_sequences, batch_targets = batch_sequences.to(
-                device
-            ), batch_targets.to(device)
-            predictions = model(batch_sequences).squeeze()
-            loss = criterion(predictions, batch_targets)
-            val_loss += loss.item() * batch_sequences.size(0)
-    val_loss /= len(val_loader.dataset)
-
-    print(
-        f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
-    )
+train_model(model, train_loader, val_loader, criterion, optimizer, device, n_epochs)
 
 # Test
-model.eval()
-test_loss = 0.0
-predictions_list, targets_list = [], []
-with torch.no_grad():
-    for batch_sequences, batch_targets in test_loader:
-        batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(
-            device
-        )
-        predictions = model(batch_sequences).squeeze()
-        loss = criterion(predictions, batch_targets)
-        test_loss += loss.item() * batch_sequences.size(0)
-        predictions_list.append(predictions.cpu())
-        targets_list.append(batch_targets.cpu())
-test_loss /= len(test_loader.dataset)
+test_predictions, test_targets, test_loss = evaluate_model(
+    model, test_loader, criterion, device
+)
 print(f"Test Loss: {test_loss:.4f}")
 
-test_predictions = torch.cat(predictions_list).numpy()
-test_targets = torch.cat(targets_list).numpy()
+test_predictions, test_targets = inverse_transform_predictions(
+    test_predictions, test_targets, tickers_to_use, feat_scalers, preproc_target_col
+)
 
-plt.figure(figsize=(10, 5))
-plt.plot(test_targets, label="True Values", linestyle="dashed")
-plt.plot(test_predictions, label="Predictions")
-plt.legend()
-plt.title("iTransformer Multi-Ticker Predictions on Test Set")
-plt.show()
+plot_predictions(test_predictions, test_targets, tickers_to_use)
 
-for i, ticker in enumerate(tickers_to_use):
-    """
-    Apply inverse transform for each ticker's predictions.
-    Use the scalers dictionary to inverse transform the target feature for each ticker.
-    """
-    if len(tickers_to_use) == 1:
-        test_predictions[i] = (
-            feat_scalers[ticker][preproc_target_col]
-            .inverse_transform(test_predictions[i].reshape(-1, 1))
-            .flatten()
-        )
-        test_targets[i] = (
-            feat_scalers[ticker][preproc_target_col]
-            .inverse_transform(test_targets[i].reshape(-1, 1))
-            .flatten()
-        )
-    else:
-        test_predictions[:, i] = (
-            feat_scalers[ticker][preproc_target_col]
-            .inverse_transform(test_predictions[:, i].reshape(-1, 1))
-            .flatten()
-        )
-        test_targets[:, i] = (
-            feat_scalers[ticker][preproc_target_col]
-            .inverse_transform(test_targets[:, i].reshape(-1, 1))
-            .flatten()
-        )
-
-# Separe plots for each ticker
-for i, ticker in enumerate(tickers_to_use):
-    plt.figure(figsize=(10, 5))
-
-    if len(tickers_to_use) == 1:
-        plt.plot(test_targets, label=f"True Values - {ticker}", linestyle="dashed")
-        plt.plot(test_predictions, label=f"Predictions - {ticker}")
-    else:
-        plt.plot(
-            test_targets[:, i], label=f"True Values - {ticker}", linestyle="dashed"
-        )
-        plt.plot(test_predictions[:, i], label=f"Predictions - {ticker}")
-
-    plt.legend()
-    plt.title(f"{ticker} Predictions on Test Set")
-    plt.xlabel("Time Steps")
-    plt.ylabel("Values")
-    plt.show()
-
-#     plt.savefig(f"{ticker}_predictions.png")
-#     plt.close()
-#
-# print("Plots saved for each ticker!")
+# Backtest Strategy
+cash = 100000
+print(trading_strategy(model, test_loader, device, cash))

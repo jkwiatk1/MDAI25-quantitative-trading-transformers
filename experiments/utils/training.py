@@ -1,3 +1,6 @@
+import torch
+from matplotlib import pyplot as plt
+
 from models.iTransformer import iTransformerModel
 
 
@@ -32,3 +35,132 @@ def build_transformer(
         num_features=num_features,
         columns_amount=columns_amount,
     )
+
+
+def train_model(
+    model, train_loader, val_loader, criterion, optimizer, device, n_epochs
+):
+    for epoch in range(n_epochs):
+        model.train()
+        train_loss = 0.0
+        for batch_sequences, batch_targets in train_loader:
+            batch_sequences, batch_targets = batch_sequences.to(
+                device
+            ), batch_targets.to(device)
+            optimizer.zero_grad()
+            outputs = model(batch_sequences)
+            loss = criterion(outputs, batch_targets)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item() * batch_sequences.size(0)
+        train_loss /= len(train_loader.dataset)
+
+        # Validation
+        model.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for batch_sequences, batch_targets in val_loader:
+                batch_sequences, batch_targets = batch_sequences.to(
+                    device
+                ), batch_targets.to(device)
+                outputs = model(batch_sequences)
+                loss = criterion(outputs, batch_targets)
+                val_loss += loss.item() * batch_sequences.size(0)
+        val_loss /= len(val_loader.dataset)
+
+        print(
+            f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
+        )
+
+
+def evaluate_model(model, test_loader, criterion, device):
+    model.eval()
+    test_loss = 0.0
+    predictions_list, targets_list = [], []
+
+    with torch.no_grad():
+        for batch_sequences, batch_targets in test_loader:
+            batch_sequences, batch_targets = batch_sequences.to(
+                device
+            ), batch_targets.to(device)
+            predictions = model(batch_sequences).squeeze()
+            loss = criterion(predictions, batch_targets)
+            test_loss += loss.item() * batch_sequences.size(0)
+            predictions_list.append(predictions.cpu())
+            targets_list.append(batch_targets.cpu())
+
+    test_loss /= len(test_loader.dataset)
+    test_predictions = torch.cat(predictions_list).numpy()
+    test_targets = torch.cat(targets_list).numpy()
+
+    return test_predictions, test_targets, test_loss
+
+
+def inverse_transform_predictions(
+    predictions, targets, tickers, feat_scalers, preproc_target_col
+):
+    """
+    Apply inverse transform for each ticker's predictions.
+    Use the scalers dictionary to inverse transform the target feature for each ticker.
+    """
+    for i, ticker in enumerate(tickers):
+        if len(tickers) == 1:
+            predictions = (
+                feat_scalers[ticker][preproc_target_col]
+                .inverse_transform(predictions.reshape(-1, 1))
+                .flatten()
+            )
+            targets = (
+                feat_scalers[ticker][preproc_target_col]
+                .inverse_transform(targets.reshape(-1, 1))
+                .flatten()
+            )
+        else:
+            predictions[:, i] = (
+                feat_scalers[ticker][preproc_target_col]
+                .inverse_transform(predictions[:, i].reshape(-1, 1))
+                .flatten()
+            )
+            targets[:, i] = (
+                feat_scalers[ticker][preproc_target_col]
+                .inverse_transform(targets[:, i].reshape(-1, 1))
+                .flatten()
+            )
+    return predictions, targets
+
+
+def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
+    """
+    Plots for tickers
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(test_targets, label="True Values", linestyle="dashed")
+    plt.plot(test_predictions, label="Predictions")
+    plt.legend()
+    plt.title("iTransformer Multi-Ticker Predictions on Test Set")
+    plt.show()
+
+    # Separe plots for each ticker
+    for i, ticker in enumerate(tickers):
+        plt.figure(figsize=(10, 5))
+        if len(tickers) == 1:
+            plt.plot(test_targets, label=f"True Values - {ticker}", linestyle="dashed")
+            plt.plot(test_predictions, label=f"Predictions - {ticker}")
+        else:
+            plt.plot(
+                test_targets[:, i], label=f"True Values - {ticker}", linestyle="dashed"
+            )
+            plt.plot(test_predictions[:, i], label=f"Predictions - {ticker}")
+
+        plt.legend()
+        plt.title(f"{ticker} Predictions on Test Set")
+        plt.xlabel("Time Steps")
+        plt.ylabel("Values")
+        plt.show()
+
+        if save_path is not None:
+            plt.savefig(f"{save_path}/{ticker}_predictions.png")
+            plt.close()
+
+    if save_path is not None:
+        print("Plots saved for each ticker!")
