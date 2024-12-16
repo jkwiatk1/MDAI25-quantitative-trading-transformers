@@ -12,6 +12,31 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 
+# TODO VERIFY Function to prepare input tensor for QuantFormer
+def prepare_input_tensor_for_quantformer(df, tickers, lookback, features):
+    """
+    Prepare input tensor of shape (N, T, F) for QuantFormer.
+
+    Args:
+        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
+        tickers (list): List of ticker symbols.
+        lookback (int): Lookback window.
+        features (list): List of feature names to include in the input tensor.
+
+    Returns:
+        np.ndarray: Input tensor of shape (N, T, F).
+    """
+    input_tensors = []
+    for ticker in tickers:
+        ticker_data = df[ticker][features].tail(lookback).values
+        if ticker_data.shape[0] < lookback:
+            # Pad with zeros if data is shorter than the lookback window
+            padding = np.zeros((lookback - ticker_data.shape[0], len(features)))
+            ticker_data = np.vstack((padding, ticker_data))
+        input_tensors.append(ticker_data)
+    return np.stack(input_tensors, axis=0)
+
+
 # Data load
 def load_finance_data_xlsx(path, is_from_yahoo=True):
     excel_data = pd.ExcelFile(path)
@@ -71,11 +96,6 @@ def fill_missing_days(df, tickers, start_date, end_date):
         df[ticker]["Open"].fillna(method="ffill", inplace=True)
         df[ticker]["Volume"].fillna(method="ffill", inplace=True)
         df[ticker]["ticker"].fillna(method="ffill", inplace=True)
-
-        # Reset the index to return 'Date' as a regular column
-        # df[ticker].reset_index(inplace=True)
-        # df[ticker].rename(columns={'index': 'Date'}, inplace=True)
-
     return df
 
 
@@ -94,6 +114,13 @@ def prepare_finance_data(df, tickers, cols):
     return {ticker: data[cols] for ticker, data in df.items() if ticker in tickers}
 
 
+def data_normalization(x):
+    mean = x.mean()
+    std = x.std()
+    x = (x - mean) / (std + 1e-5)
+    return x
+
+
 def calc_cumulative_features(df, tickers, time_step, cols):
     """
     Calculate cumulative daily profit and turnover features for each ticker.
@@ -107,6 +134,8 @@ def calc_cumulative_features(df, tickers, time_step, cols):
         dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
     """
     for ticker in tickers:
+        # df[ticker] = df[ticker].apply(data_normalization)  # TODO verify if okey
+
         # df[ticker].loc[:, "Intraday profit"] = (
         #     df[ticker][cols[0]] - df[ticker][cols[3]]
         # ) / df[ticker][cols[3]]
@@ -134,6 +163,7 @@ def calc_cumulative_features(df, tickers, time_step, cols):
     return df
 
 
+# Function to calculate cumulative features as described in the article
 def calc_input_features(df, tickers, cols, time_step):
     """
     Calculate input features for all tickers, including:
@@ -220,11 +250,28 @@ def create_combined_sequences(
     return np.array(sequences), np.array(targets)
 
 
-def data_normalization(x):
-    mean = x.mean()
-    std = x.std()
-    x = (x - mean) / (std + 1e-5)
-    return x
+# Function to normalize data for each ticker
+def normalize_data_for_quantformer(df, tickers, features_to_normalize):
+    """
+    Normalize features using MinMaxScaler for each ticker.
+
+    Args:
+        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
+        tickers (list): List of ticker symbols.
+
+    Returns:
+        dict of pd.DataFrame: Normalized data.
+        dict: Dictionary of scalers used for each feature.
+    """
+    scalers = {ticker: {} for ticker in tickers}
+
+    for ticker in tickers:
+        # features_to_normalize = df[ticker].columns
+        for feature in features_to_normalize:
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            df[ticker][feature] = scaler.fit_transform(df[ticker][[feature]])
+            scalers[ticker][feature] = scaler
+    return df, scalers
 
 
 # Dataset for multi-ticker
@@ -274,7 +321,7 @@ def build_transformer(
 
 
 # Params
-n_epochs = 2
+n_epochs = 20
 lookback = 20
 num_features = 3
 test_split = 0.2
@@ -293,18 +340,18 @@ if IS_DATA_FROM_YAHOO == False:
     tickers_to_use = [
         "USDT-USD",
         "BTC-USD",
-        "XRP-USD",
+        # "XRP-USD",
         "ETH-USD",
-        "BNB-USD",
-        "DOGE-USD",
-        "SOL-USD",
-        "STETH-USD",
-        "DOT-USD",
+        # "BNB-USD",
+        # "DOGE-USD",
+        # "SOL-USD",
+        # "STETH-USD",
+        # "DOT-USD",
         "TSLA",
         "AAPL",
         "NVDA",
-        "PLTR",
-        "SMCI",
+        # "PLTR",
+        # "SMCI",
     ]
 else:
     tickers_to_use = [  # ~top 20 market cap
@@ -343,12 +390,13 @@ init_cols_to_use = [
 preproc_cols_to_use = [
     # "Close",
     # "Intraday",
-    "Daily profit",
-    "Cumulative profit",
+    # "Daily profit",
     # "Profit Rate",
     # "Turnover"
+    "Cumulative profit",
+    "Cumulative turnover",
 ]
-preproc_target_col = "Daily profit"
+preproc_target_col = "Cumulative profit"
 load_file = (
     "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
 )
@@ -370,41 +418,22 @@ data = prepare_finance_data(
     tickers_to_use,
     init_cols_to_use,
 )
-# Normalization on raw  data
-for ticker in tickers_to_use:
-    df = data[ticker]
-    data[ticker] = df.apply(data_normalization)
-
 data = calc_input_features(
-    df=data.copy(), tickers=tickers_to_use, cols=init_cols_to_use, time_step=lookback
+    df=data, tickers=tickers_to_use, cols=init_cols_to_use, time_step=lookback
 )
 
-# normalization
-feat_scalers = {
-    ticker: {
-        feature: MinMaxScaler(feature_range=(0, 1)) for feature in data[ticker].columns
-    }
-    for ticker in tickers_to_use
-}
-data_scaled = data.copy()
-# Scale the data for each ticker and feature
-for ticker in tickers_to_use:
-    for feature in data[ticker].columns:
-        """
-        Fit and transform the data for the current ticker and feature.
-        The scaler for each feature is stored in the nested scalers dictionary.
-        """
-        data_scaled[ticker].loc[:, feature] = feat_scalers[ticker][
-            feature
-        ].fit_transform(data[ticker][[feature]])
+# normalization & prepare combined dataset & create seq
+data_scaled, feat_scalers = normalize_data_for_quantformer(
+    data, tickers_to_use, preproc_cols_to_use
+)
 
-# Prepare combined dataset
+# input_tensor = prepare_input_tensor_for_quantformer(
+#     data, tickers_to_use, lookback, preproc_cols_to_use
+# )
+
 combined_data, ticker_mapping = prepare_combined_data(
     data_scaled, tickers_to_use, lookback
 )
-
-# Normalization on scaled data
-# combined_data = data_normalization(combined_data.copy())
 sequences, targets = create_combined_sequences(
     combined_data, lookback, preproc_cols_to_use, preproc_target_col
 )
@@ -428,13 +457,12 @@ train_dataset = MultiTickerDataset(train_sequences, train_targets)
 val_dataset = MultiTickerDataset(val_sequences, val_targets)
 test_dataset = MultiTickerDataset(test_sequences, test_targets)
 
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 model = build_transformer(
     input_dim=lookback,
-    # input_dim=lookback * 3,  # Include features (Close, Volume, ticker_id)
     d_model=d_model,
     nhead=nhead,
     num_encoder_layers=num_encoder_layers,
