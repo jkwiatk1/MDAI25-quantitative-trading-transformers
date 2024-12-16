@@ -1,0 +1,43 @@
+#device: "cuda"
+data:
+  start_date: "2020-01-03"
+  end_date: "2024-01-12"
+  tickers: [
+    "AAPL",
+    "NVDA",
+    "MSFT",
+    "AMZN",
+    "GOOG",
+    "GOOGL",
+    "META",
+    "TSLA",
+    "BRK-B",
+    "AVGO",
+    "WMT",
+    "LLY",
+    "JPM",
+    "V",
+    "ORCL",
+    "UNH",
+    "XOM",
+    "MA",
+    "COST",
+    "HD",
+    "PG",
+    "NFLX",
+    "JNJ",
+  ]
+model:
+  d_model: 64
+  nhead: 2
+  num_encoder_layers: 2
+  dim_feedforward: 2048
+  dropout: 0.1
+  num_features: 3
+training:
+  n_epochs: 20
+  lookback: 20
+  batch_size: 64
+  learning_rate: 0.005
+  test_split: 0.2
+  val_split: 0.1

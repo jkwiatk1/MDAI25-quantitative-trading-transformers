@@ -1,384 +1,56 @@
 import matplotlib.pyplot as plt
-import numpy as np
+import yaml
 import pandas as pd
 import torch
-from sklearn.preprocessing import MinMaxScaler
 from torch import nn
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 
-from models.iTransformer import iTransformerModel
+from experiments.utils.data_loading import (
+    fill_missing_days,
+    load_finance_data_xlsx,
+    prepare_finance_data,
+)
+from experiments.utils.datasets import (
+    prepare_combined_data,
+    create_combined_sequences,
+    normalize_data_for_quantformer,
+    MultiTickerDataset,
+)
+from experiments.utils.feature_engineering import calc_input_features
+from experiments.utils.training import build_transformer
 
+IS_DATA_FROM_YAHOO = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-
-# TODO VERIFY Function to prepare input tensor for QuantFormer
-def prepare_input_tensor_for_quantformer(df, tickers, lookback, features):
-    """
-    Prepare input tensor of shape (N, T, F) for QuantFormer.
-
-    Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-        lookback (int): Lookback window.
-        features (list): List of feature names to include in the input tensor.
-
-    Returns:
-        np.ndarray: Input tensor of shape (N, T, F).
-    """
-    input_tensors = []
-    for ticker in tickers:
-        ticker_data = df[ticker][features].tail(lookback).values
-        if ticker_data.shape[0] < lookback:
-            # Pad with zeros if data is shorter than the lookback window
-            padding = np.zeros((lookback - ticker_data.shape[0], len(features)))
-            ticker_data = np.vstack((padding, ticker_data))
-        input_tensors.append(ticker_data)
-    return np.stack(input_tensors, axis=0)
-
-
-# Data load
-def load_finance_data_xlsx(path, is_from_yahoo=True):
-    excel_data = pd.ExcelFile(path)
-    data_dict = {}
-    for sheet in excel_data.sheet_names:
-        if is_from_yahoo == False:
-            df = excel_data.parse(sheet, skiprows=2)
-        else:
-            df = excel_data.parse(sheet)
-        df.columns = [
-            "Date",
-            "Adj Close",
-            "Close",
-            "High",
-            "Low",
-            "Open",
-            "Volume",
-            "ticker",
-        ]
-        data_dict[sheet] = df
-    return data_dict, excel_data.sheet_names
-
-
-# Function to fill in missing days with default values
-def fill_missing_days(df, tickers, start_date, end_date):
-    """
-    Fill missing dates.
-
-    - Fills missing weekends or other gaps in trading days.
-    - Uses forward-fill for 'Close'.
-    - Sets default values for missing fields as specified:
-      - 'Adj Close' = 'Close'
-      - 'High' = 'Close'
-      - 'Low' = 'Close'
-      - 'Open' = 'Close'
-      - 'Volume' = 0
-    """
-    # Ensure the 'Date' column is a datetime object and set it as the index
-    for ticker in tickers:
-        df[ticker]["Date"] = pd.to_datetime(df[ticker]["Date"])
-        df[ticker].set_index("Date", inplace=True)
-
-        # Create a full range of dates from the minimum to the maximum in the dataset
-        # end_date = df[ticker].index.max()
-        full_date_range = pd.date_range(start=start_date, end=end_date, freq="D")
-
-        # Reindex the DataFrame to include all dates in the range
-        df[ticker] = df[ticker].reindex(full_date_range)
-
-        # Fill missing 'Close' values with the value from the previous day (forward-fill)
-        df[ticker]["Close"].fillna(method="ffill", inplace=True)
-
-        # Assign default values for other columns based on 'Close' or specific rules
-        df[ticker]["Adj Close"].fillna(method="ffill", inplace=True)
-        df[ticker]["High"].fillna(method="ffill", inplace=True)
-        df[ticker]["Low"].fillna(method="ffill", inplace=True)
-        df[ticker]["Open"].fillna(method="ffill", inplace=True)
-        df[ticker]["Volume"].fillna(method="ffill", inplace=True)
-        df[ticker]["ticker"].fillna(method="ffill", inplace=True)
-    return df
-
-
-def prepare_finance_data(df, tickers, cols):
-    """
-        Prepares financial data by selecting specific tickers and columns.
-
-    Args:
-        df (pd.DataFrame): A data frame containing financial data.
-        tickers (list): List of tickers to be selected.
-        cols (list): List of column names to be included.
-
-    Returns:
-        pd.DataFrame: The filtered data frame.
-    """
-    return {ticker: data[cols] for ticker, data in df.items() if ticker in tickers}
-
-
-def data_normalization(x):
-    mean = x.mean()
-    std = x.std()
-    x = (x - mean) / (std + 1e-5)
-    return x
-
-
-def calc_cumulative_features(df, tickers, time_step, cols):
-    """
-    Calculate cumulative daily profit and turnover features for each ticker.
-
-    Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-        time_step (int): Lookback window for cumulative calculations.
-
-    Returns:
-        dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
-    """
-    for ticker in tickers:
-        # df[ticker] = df[ticker].apply(data_normalization)  # TODO verify if okey
-
-        # df[ticker].loc[:, "Intraday profit"] = (
-        #     df[ticker][cols[0]] - df[ticker][cols[3]]
-        # ) / df[ticker][cols[3]]
-        # # profit rate t+1
-        # df[ticker]["Profit Rate"] = (
-        #     df[ticker]["Close"].shift(-1) - df[ticker]["Close"]
-        # ) / df[ticker]["Close"]
-        # df[ticker]["Profit Rate"].fillna(0, inplace=True)
-
-        df[ticker]["Daily profit"] = (
-            df[ticker]["Close"] - df[ticker]["Close"].shift(1)
-        ) / df[ticker]["Close"].shift(1)
-        df[ticker]["Turnover"] = df[ticker]["Volume"] / df[ticker]["Close"]
-        df[ticker]["Cumulative profit"] = (
-            df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
-        )
-        df[ticker]["Cumulative turnover"] = (
-            df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
-        )
-
-        df[ticker]["Daily profit"].fillna(0, inplace=True)
-        df[ticker]["Turnover"].fillna(0, inplace=True)
-        df[ticker]["Cumulative profit"].fillna(0, inplace=True)
-        df[ticker]["Cumulative turnover"].fillna(0, inplace=True)
-    return df
-
-
-# Function to calculate cumulative features as described in the article
-def calc_input_features(df, tickers, cols, time_step):
-    """
-    Calculate input features for all tickers, including:
-    - intraday profit, NOT USED
-    - daily profit,
-    - turnover,
-    - cumulative features.
-
-    Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-        cols (list): Column names used to calculate intraday profit.
-        time_step (int): Time step for cumulative calculations.
-
-    Returns:
-        dict of pd.DataFrame: Updated dictionary of DataFrames with all features.
-    """
-
-    df = calc_cumulative_features(df, tickers, time_step, cols)
-    return df
-
-
-# Combine all tickers into a single dataset
-def prepare_combined_data(data_scaled, tickers_to_use, lookback):
-    combined_data = []
-    ticker_mapping = {
-        ticker: idx for idx, ticker in enumerate(tickers_to_use)
-    }  # Assign IDs to tickers
-
-    for ticker in tickers_to_use:
-        df = data_scaled[ticker].copy()
-        df["ticker id"] = ticker_mapping[ticker]  # Add ticker ID
-        # ticker_id_col = df.pop('ticker id')
-        df = df.add_suffix(f"_{ticker}")
-        # df['ticker id'] = ticker_id_col
-        combined_data.append(df)
-
-    combined_data = pd.concat(combined_data, axis=1)
-
-    # # Concatenate data for all tickers
-    # combined_data = pd.concat(combined_data, keys=tickers_to_use)
-    return combined_data, ticker_mapping
-
-
-# Adjusted create_sequences function
-def create_combined_sequences(
-    data, lookback, cols_to_use=["Close"], target_col="Close"
-):
-    """
-    Create sequences and targets for time series forecasting.
-
-    Args:
-        data (pd.DataFrame): Input DataFrame with time series data.
-        lookback (int): Number of past time steps to include in each sequence.
-
-    Returns:
-        sequences (np.array): Array of input sequences.
-        targets (np.array): Array of target values.
-    """
-    if cols_to_use is None:
-        cols_to_use = ["Close", "Intraday", "Daily", "Turnover"]
-    sequences, targets = [], []
-
-    # Select columns matching the specified keywords
-    columns_to_include = []
-    for col in cols_to_use:
-        columns_to_include += data.filter(like=col, axis=1).columns.tolist()
-
-    # Column order matches the input DataFrame order
-    columns_to_include = [col for col in data.columns if col in columns_to_include]
-
-    # Filter "Close" columns for multi-target values
-    target_columns = [col for col in columns_to_include if target_col in col]
-
-    for i in range(len(data) - lookback):
-        # Extract sequence of features
-        seq = data.iloc[i : i + lookback][columns_to_include].values
-
-        # Extract targets for all "Close" columns
-        target = data.iloc[i + lookback][target_columns].values
-        sequences.append(seq)
-        targets.append(target)
-
-    return np.array(sequences), np.array(targets)
-
-
-# Function to normalize data for each ticker
-def normalize_data_for_quantformer(df, tickers, features_to_normalize):
-    """
-    Normalize features using MinMaxScaler for each ticker.
-
-    Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-
-    Returns:
-        dict of pd.DataFrame: Normalized data.
-        dict: Dictionary of scalers used for each feature.
-    """
-    scalers = {ticker: {} for ticker in tickers}
-
-    for ticker in tickers:
-        # features_to_normalize = df[ticker].columns
-        for feature in features_to_normalize:
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            df[ticker][feature] = scaler.fit_transform(df[ticker][[feature]])
-            scalers[ticker][feature] = scaler
-    return df, scalers
-
-
-# Dataset for multi-ticker
-class MultiTickerDataset(Dataset):
-    def __init__(self, sequences, targets):
-        self.sequences = torch.tensor(sequences, dtype=torch.float32)
-        self.targets = torch.tensor(targets, dtype=torch.float32)
-
-    def __len__(self):
-        return len(self.sequences)
-
-    def __getitem__(self, idx):
-        return self.sequences[idx], self.targets[idx]
-
-
-def build_transformer(
-    input_dim=1,
-    d_model: int = 512,
-    nhead: int = 8,
-    num_encoder_layers: int = 2,
-    dim_feedforward: int = 2048,
-    dropout: float = 0.1,
-    num_features=1,
-    columns_amount=1,
-) -> iTransformerModel:
-    """
-    Args:
-        d_model:
-        num_encoder_layers: num of encoder block
-        nhead: num of heads
-        dropout: droput probability
-        dim_feedforward: hidden layer [FF] size
-        seq_len:
-    Returns:
-
-    """
-    return iTransformerModel(
-        input_dim=input_dim,
-        d_model=d_model,
-        nhead=nhead,
-        num_encoder_layers=num_encoder_layers,
-        dim_feedforward=dim_feedforward,
-        dropout=dropout,
-        num_features=num_features,
-        columns_amount=columns_amount,
-    )
-
-
-# Params
-n_epochs = 20
-lookback = 20
-num_features = 3
-test_split = 0.2
-val_split = 0.1
-batch_size = 64
-learning_rate = 0.005
-IS_DATA_FROM_YAHOO = False
-
-if IS_DATA_FROM_YAHOO:
-    start_date = pd.to_datetime("2020-01-03")
-else:
-    start_date = pd.to_datetime("2022-01-03")
-end_date = pd.to_datetime("2024-01-12")
-
 if IS_DATA_FROM_YAHOO == False:
-    tickers_to_use = [
-        "USDT-USD",
-        "BTC-USD",
-        # "XRP-USD",
-        "ETH-USD",
-        # "BNB-USD",
-        # "DOGE-USD",
-        # "SOL-USD",
-        # "STETH-USD",
-        # "DOT-USD",
-        "TSLA",
-        "AAPL",
-        "NVDA",
-        # "PLTR",
-        # "SMCI",
-    ]
+    with open("training_config.yaml", "r") as f:
+        config = yaml.safe_load(f)
 else:
-    tickers_to_use = [  # ~top 20 market cap
-        "AAPL",
-        "NVDA",
-        "MSFT",
-        "AMZN",
-        "GOOG",
-        "GOOGL",
-        "META",
-        "TSLA",
-        "BRK-B",
-        "AVGO",
-        "WMT",
-        "LLY",
-        "JPM",
-        "V",
-        "ORCL",
-        "UNH",
-        "XOM",
-        "MA",
-        "COST",
-        "HD",
-        "PG",
-        "NFLX",
-        "JNJ",
-    ]
+    with open("yahoo_training_config.yaml", "r") as f:
+        config = yaml.safe_load(f)
+
+# Training params
+n_epochs = config["training"]["n_epochs"]
+lookback = config["training"]["lookback"]
+test_split = config["training"]["test_split"]
+val_split = config["training"]["val_split"]
+batch_size = config["training"]["batch_size"]
+learning_rate = config["training"]["learning_rate"]
+start_date = pd.to_datetime(config["data"]["start_date"])
+end_date = pd.to_datetime(config["data"]["end_date"])
+tickers_to_use = config["data"]["tickers"]
+
+# Model params
+d_model = config["model"]["d_model"]  # check [3,512]
+nhead = config["model"]["nhead"]  # check [1, 4]
+num_encoder_layers = config["model"]["num_encoder_layers"]  # check [1, 4]
+dim_feedforward = config["model"]["dim_feedforward"]  # check [3, 512]
+dropout = config["model"]["dropout"]  # check [3, 512]
+num_features = config["model"]["num_features"]
+input_dim = num_features
+
+
 init_cols_to_use = [
     "Close",
     "High",
@@ -402,13 +74,6 @@ load_file = (
 )
 # load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
 
-# Model params
-input_dim = num_features
-d_model = 64  # check [3,512]
-nhead = 1  # check [1, 4]
-num_encoder_layers = 1
-dim_feedforward = 64  # check [3, 512]
-dropout = 0.05
 
 # data load
 data_raw, all_tickers = load_finance_data_xlsx(load_file, IS_DATA_FROM_YAHOO)
