@@ -1,7 +1,7 @@
 #device: "cuda"
 data:
-  path: "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
-  output_dir: "../data/exp_result/iTransformer/yahoo_data"
+  path: "./data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
+  output_dir: "./data/exp_result/iTransformer/yahoo_data"
   yahoo_data: True
   start_date: "2020-01-03"
   end_date: "2024-01-12"
