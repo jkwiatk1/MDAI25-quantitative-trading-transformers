@@ -109,7 +109,7 @@ cols_to_use = [
     "Open",
     "Volume",
 ]
-load_file = f"../data/finance/historical_data_2023-01-01-2024-10-26-1d.xlsx"
+load_file = f"../data/finance/popular_tickers/historical_data_2023-01-01-2024-10-26-1d.xlsx"
 
 # Model params
 input_dim = num_features
