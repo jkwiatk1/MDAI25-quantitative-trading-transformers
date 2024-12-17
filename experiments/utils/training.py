@@ -40,7 +40,7 @@ def build_transformer(
 
 
 def train_model(
-        model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience=5
+        model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience, scaler
 ):
     """
     Train the model, track training/validation loss, and save the best model after training.
@@ -68,10 +68,10 @@ def train_model(
 
     for epoch in range(1, n_epochs + 1):
         # Training step
-        train_loss = run_epoch(model, train_loader, criterion, optimizer, device, train=True)
+        train_loss = run_epoch(model, train_loader, criterion, optimizer, device, scaler, train=True)
 
         # Validation step
-        val_loss = run_epoch(model, val_loader, criterion, optimizer, device, train=False)
+        val_loss = run_epoch(model, val_loader, criterion, optimizer, device, scaler, train=False)
 
         # Logging losses
         train_losses.append(train_loss)
@@ -100,7 +100,7 @@ def train_model(
     return best_model_path
 
 
-def run_epoch(model, data_loader, criterion, optimizer, device, train=True):
+def run_epoch(model, data_loader, criterion, optimizer, device,scaler, train=True):
     """
     Run a single epoch (training or validation).
     """
@@ -113,19 +113,45 @@ def run_epoch(model, data_loader, criterion, optimizer, device, train=True):
     for batch_sequences, batch_targets in data_loader:
         batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(device)
 
+        with torch.cuda.amp.autocast():  # Forward pass with mixed precision
+            outputs = model(batch_sequences)
+            loss = criterion(outputs, batch_targets)
+
         if train:
             optimizer.zero_grad()
-
-        outputs = model(batch_sequences)
-        loss = criterion(outputs, batch_targets)
-
-        if train:
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()  # Backward pass with gradient scaling
+            scaler.step(optimizer)  # Update optimizer with scaled gradients
+            scaler.update()
 
         running_loss += loss.item() * batch_sequences.size(0)
 
     return running_loss / len(data_loader.dataset)
+
+
+def evaluate_model(model, test_loader, criterion, device, scaler):
+    model.eval()
+    test_loss = 0.0
+    predictions_list, targets_list = [], []
+
+    with torch.no_grad():
+        for batch_sequences, batch_targets in test_loader:
+            batch_sequences, batch_targets = batch_sequences.to(
+                device
+            ), batch_targets.to(device)
+
+            with torch.cuda.amp.autocast():  # Mixed precision during evaluation
+                predictions = model(batch_sequences).squeeze()
+                loss = criterion(predictions, batch_targets)
+
+            test_loss += loss.item() * batch_sequences.size(0)
+            predictions_list.append(predictions.cpu())
+            targets_list.append(batch_targets.cpu())
+
+    test_loss /= len(test_loader.dataset)
+    test_predictions = torch.cat(predictions_list).numpy()
+    test_targets = torch.cat(targets_list).numpy()
+
+    return test_predictions, test_targets, test_loss
 
 
 def plot_losses(train_losses, val_losses, save_path):
@@ -142,29 +168,6 @@ def plot_losses(train_losses, val_losses, save_path):
     plt.grid(True)
     plt.savefig(save_path / "training_validation_loss")
     plt.show()
-
-
-def evaluate_model(model, test_loader, criterion, device):
-    model.eval()
-    test_loss = 0.0
-    predictions_list, targets_list = [], []
-
-    with torch.no_grad():
-        for batch_sequences, batch_targets in test_loader:
-            batch_sequences, batch_targets = batch_sequences.to(
-                device
-            ), batch_targets.to(device)
-            predictions = model(batch_sequences).squeeze()
-            loss = criterion(predictions, batch_targets)
-            test_loss += loss.item() * batch_sequences.size(0)
-            predictions_list.append(predictions.cpu())
-            targets_list.append(batch_targets.cpu())
-
-    test_loss /= len(test_loader.dataset)
-    test_predictions = torch.cat(predictions_list).numpy()
-    test_targets = torch.cat(targets_list).numpy()
-
-    return test_predictions, test_targets, test_loss
 
 
 def inverse_transform_predictions(

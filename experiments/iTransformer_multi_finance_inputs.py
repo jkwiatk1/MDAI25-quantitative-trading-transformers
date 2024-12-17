@@ -48,6 +48,7 @@ def main(args):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     logging.info(f"Using device: {device}")
+    torch.cuda.empty_cache()
 
     # Setup paths
     output_dir = Path(config["data"]["output_dir"])
@@ -59,7 +60,15 @@ def main(args):
 
     start_date = pd.to_datetime(config["data"]["start_date"])
     end_date = pd.to_datetime(config["data"]["end_date"])
-    tickers_to_use = config["data"]["tickers"]
+    tickers_to_use = []
+
+    if IS_DATA_FROM_YAHOO:
+        tickers_df = pd.read_csv(config["data"]["tickers"])
+        tickers_to_use = tickers_df['Ticker'].tolist()
+        print("Tickers amount: " + str(len(tickers_to_use)))
+    else:
+        tickers_to_use = config["data"]["tickers"]
+        print("Tickers amount: " + str(len(tickers_to_use)))
 
     data_raw, all_tickers = load_finance_data_xlsx(load_file, IS_DATA_FROM_YAHOO)
     data_raw = fill_missing_days(data_raw.copy(), tickers_to_use, start_date, end_date)
@@ -139,6 +148,8 @@ def main(args):
         model.parameters(), lr=config["training"]["learning_rate"]
     )
 
+    scaler = torch.cuda.amp.GradScaler()  # Enable mixed precision training
+
     best_model_path = train_model(
         model,
         train_loader,
@@ -149,12 +160,13 @@ def main(args):
         config["training"]["n_epochs"],
         output_dir,
         config["training"]["patience"],
+        scaler=scaler,  # Pass scaler for AMP
     )
 
     # Load best model and evaluate
     model.load_state_dict(torch.load(best_model_path))
     test_predictions, test_targets, test_loss = evaluate_model(
-        model, test_loader, criterion, device
+        model, test_loader, criterion, device, scaler=scaler,
     )
     logging.info(f"Test Loss: {test_loss:.4f}")
 
