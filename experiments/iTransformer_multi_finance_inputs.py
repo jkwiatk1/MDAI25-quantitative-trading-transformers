@@ -32,53 +32,80 @@ def quantize_labels(labels, n_quantiles=3):
     Quantize returns into discrete classes based on quantiles.
 
     Parameters:
-    labels: array-like
-        Continuous values of returns to be quantized.
+    labels: torch.Tensor or np.ndarray
+        Tensor (2D) or array-like (1D/2D) of continuous values to be quantized.
+        If 2D, rows are samples, and columns are features (e.g., tickers).
     n_quantiles: int
         Number of quantiles to divide the data into (e.g., 3 for low, middle, high).
 
     Returns:
-    np.ndarray
-        Array of discrete class labels (e.g., 0 for lowest quantile, 1 for middle, etc.).
+    torch.Tensor
+        Tensor of discrete class labels for each input value.
     """
-    # Fit QuantileTransformer to map values to the range [0, 1]
-    quantizer = QuantileTransformer(
-        n_quantiles=n_quantiles, output_distribution="uniform"
-    )
-    normalized_labels = quantizer.fit_transform(labels.reshape(-1, 1))
+    if isinstance(labels, torch.Tensor):
+        labels = labels.cpu().numpy()  # Convert to numpy array for QuantileTransformer
 
-    # Create quantile bins with equal probability
-    bins = np.linspace(0, 1, n_quantiles + 1)[
-        1:-1
-    ]  # Quantile boundaries excluding 0 and 1
+    if labels.ndim == 1:  # Handle single feature (1D array)
+        labels = labels.reshape(-1, 1)
 
-    # Assign each label to a quantile class (e.g., 0 for lowest quantile)
-    quantized_labels = np.digitize(normalized_labels.flatten(), bins=bins)
+    if labels.ndim == 2:  # Handle batch (2D array)
+        quantized_labels = np.zeros_like(labels, dtype=int)
+        for i in range(labels.shape[0]):  # Iterate over columns (tickers)
+            # Fit QuantileTransformer for each column
+            quantizer = QuantileTransformer(
+                n_quantiles=n_quantiles, output_distribution="uniform"
+            )
+            normalized_labels = quantizer.fit_transform(labels[i, :].reshape(-1, 1))
 
-    return quantized_labels
+            # Define quantile bins and digitize
+            bins = np.linspace(0, 1, n_quantiles + 1)[1:-1]
+            quantized_labels[i, :] = np.digitize(normalized_labels.flatten(), bins=bins)
+    else:
+        raise ValueError("Input labels must be 1D or 2D.")
+
+    return torch.tensor(quantized_labels)
 
 
 # Strategy Implementation
-def trading_strategy(model, data_loader, device, cash):
+def trading_strategy(model, data_loader, device, cash, tickers, n_quantiles=3):
     stock_pool = []
+    df_predictions = pd.DataFrame(columns=tickers)
     model.eval()
     with torch.no_grad():
         for sequences, _ in data_loader:
             sequences = sequences.to(device)
             predictions = model(sequences)
-            ranked_stocks = torch.argsort(predictions, dim=-1, descending=True)
-            stock_pool = ranked_stocks[:, : cash // len(ranked_stocks)]
-    return stock_pool
+            predictions_quantized = quantize_labels(
+                predictions, n_quantiles=n_quantiles
+            )
+            # ranked_stocks = torch.argsort(predictions_quantized, dim=-1, descending=True)
+
+            temp_df = pd.DataFrame(
+                predictions_quantized.numpy(), columns=tickers_to_use
+            )
+            df_predictions = pd.concat([df_predictions, temp_df], ignore_index=True)
+
+            # for batch_idx in range(df_predictions.size(0)):
+            #     n_stocks_to_buy = cash // len(df_predictions[batch_idx])
+            #     best_stocks = ranked_stocks[batch_idx, :n_stocks_to_buy]
+            #     stock_pool.extend([tickers[i.item()] for i in best_stocks])
+            # stock_pool.extend(df_predictions)
+    return df_predictions  # stock_pool
 
 
-IS_DATA_FROM_YAHOO = False
+IS_DATA_FROM_YAHOO = True
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
+
 if IS_DATA_FROM_YAHOO == False:
+    load_file = (
+        "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
+    )
     with open("training_config.yaml", "r") as f:
         config = yaml.safe_load(f)
 else:
+    load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
     with open("yahoo_training_config.yaml", "r") as f:
         config = yaml.safe_load(f)
 
@@ -122,11 +149,6 @@ preproc_cols_to_use = [
     "Cumulative turnover",
 ]
 preproc_target_col = "Cumulative profit"
-load_file = (
-    "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
-)
-# load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
-
 
 # data load
 data_raw, all_tickers = load_finance_data_xlsx(load_file, IS_DATA_FROM_YAHOO)
@@ -145,18 +167,12 @@ data_scaled, feat_scalers = normalize_data_for_quantformer(
     data, tickers_to_use, preproc_cols_to_use
 )
 
-# input_tensor = prepare_input_tensor_for_quantformer(
-#     data, tickers_to_use, lookback, preproc_cols_to_use
-# )
-
 combined_data, ticker_mapping = prepare_combined_data(
     data_scaled, tickers_to_use, lookback
 )
 sequences, targets = create_combined_sequences(
     combined_data, lookback, preproc_cols_to_use, preproc_target_col
 )
-
-# targets = quantize_labels(targets, n_quantiles=5)  # TODO test n_quantiles param
 
 # Train test split
 train_size = int((1 - test_split) * len(sequences))
@@ -210,5 +226,6 @@ test_predictions, test_targets = inverse_transform_predictions(
 plot_predictions(test_predictions, test_targets, tickers_to_use)
 
 # Backtest Strategy
-cash = 100000
-print(trading_strategy(model, test_loader, device, cash))
+cash = 10000
+predicted_stocks = trading_strategy(model, test_loader, device, cash, tickers_to_use)
+predicted_stocks
