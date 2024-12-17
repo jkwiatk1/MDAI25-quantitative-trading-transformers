@@ -42,6 +42,12 @@ def build_transformer(
 def train_model(
     model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience=5
 ):
+    """
+       Train the model and log training/validation loss.
+       """
+    train_losses = []
+    val_losses = []
+
     best_val_loss = float("inf")
     epochs_no_improve = 0
     best_model_path = Path(save_path) / "best_model.pth"
@@ -61,6 +67,7 @@ def train_model(
             optimizer.step()
             train_loss += loss.item() * batch_sequences.size(0)
         train_loss /= len(train_loader.dataset)
+        train_losses.append(train_loss)
 
         # Validation
         model.eval()
@@ -73,12 +80,10 @@ def train_model(
                 outputs = model(batch_sequences)
                 loss = criterion(outputs, batch_targets)
                 val_loss += loss.item() * batch_sequences.size(0)
-        val_loss /= len(val_loader.dataset)
-        logging.info(f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
-        print(
-            f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
-        )
+        val_loss /= len(val_loader.dataset)
+        val_losses.append(val_loss)
+        logging.info(f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
         # Check for improvement
         if val_loss < best_val_loss:
@@ -92,6 +97,18 @@ def train_model(
         if epochs_no_improve >= patience:
             logging.info(f"Early stopping triggered after {epoch + 1} epochs.")
             break
+
+    # Plot training and validation loss
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label='Training Loss')
+    plt.plot(val_losses, label='Validation Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training and Validation Loss')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(Path(save_path) / "training_validation_loss")
+    plt.show()
 
     return best_model_path
 
@@ -182,7 +199,7 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
         plt.show()
 
         if save_path is not None:
-            plt.savefig(f"{save_path}/{ticker}_predictions.png")
+            plt.savefig(f"{save_path}/{ticker}_predictions")
             plt.close()
 
     if save_path is not None:
