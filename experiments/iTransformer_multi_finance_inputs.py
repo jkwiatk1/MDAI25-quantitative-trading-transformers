@@ -1,10 +1,12 @@
+import argparse
+import logging
 import yaml
 import pandas as pd
 import torch
 import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader
-from sklearn.preprocessing import QuantileTransformer
+from pathlib import Path
 
 from experiments.utils.data_loading import (
     fill_missing_days,
@@ -18,6 +20,7 @@ from experiments.utils.datasets import (
     MultiTickerDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
+from experiments.utils.quantformer_ import trading_strategy
 from experiments.utils.training import (
     build_transformer,
     train_model,
@@ -27,87 +30,169 @@ from experiments.utils.training import (
 )
 
 
-def quantize_labels(labels, n_quantiles=3):
-    """
-    Quantize returns into discrete classes based on quantiles.
-
-    Parameters:
-    labels: torch.Tensor or np.ndarray
-        Tensor (2D) or array-like (1D/2D) of continuous values to be quantized.
-        If 2D, rows are samples, and columns are features (e.g., tickers).
-    n_quantiles: int
-        Number of quantiles to divide the data into (e.g., 3 for low, middle, high).
-
-    Returns:
-    torch.Tensor
-        Tensor of discrete class labels for each input value.
-    """
-    if isinstance(labels, torch.Tensor):
-        labels = labels.cpu().numpy()  # Convert to numpy array for QuantileTransformer
-
-    if labels.ndim == 1:  # Handle single feature (1D array)
-        labels = labels.reshape(-1, 1)
-
-    if labels.ndim == 2:  # Handle batch (2D array)
-        quantized_labels = np.zeros_like(labels, dtype=int)
-        for i in range(labels.shape[0]):  # Iterate over columns (tickers)
-            # Fit QuantileTransformer for each column
-            quantizer = QuantileTransformer(
-                n_quantiles=n_quantiles, output_distribution="uniform"
-            )
-            normalized_labels = quantizer.fit_transform(labels[i, :].reshape(-1, 1))
-
-            # Define quantile bins and digitize
-            bins = np.linspace(0, 1, n_quantiles + 1)[1:-1]
-            quantized_labels[i, :] = np.digitize(normalized_labels.flatten(), bins=bins)
-    else:
-        raise ValueError("Input labels must be 1D or 2D.")
-
-    return torch.tensor(quantized_labels)
+def setup_logging(log_file):
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+        handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
+    )
 
 
-# Strategy Implementation
-def trading_strategy(model, data_loader, device, cash, tickers, n_quantiles=3):
-    stock_pool = []
-    df_predictions = pd.DataFrame(columns=tickers)
-    model.eval()
-    with torch.no_grad():
-        for sequences, _ in data_loader:
-            sequences = sequences.to(device)
-            predictions = model(sequences)
-            predictions_quantized = quantize_labels(
-                predictions, n_quantiles=n_quantiles
-            )
-            # ranked_stocks = torch.argsort(predictions_quantized, dim=-1, descending=True)
-
-            temp_df = pd.DataFrame(
-                predictions_quantized.numpy(), columns=tickers_to_use
-            )
-            df_predictions = pd.concat([df_predictions, temp_df], ignore_index=True)
-
-            # for batch_idx in range(df_predictions.size(0)):
-            #     n_stocks_to_buy = cash // len(df_predictions[batch_idx])
-            #     best_stocks = ranked_stocks[batch_idx, :n_stocks_to_buy]
-            #     stock_pool.extend([tickers[i.item()] for i in best_stocks])
-            # stock_pool.extend(df_predictions)
-    return df_predictions  # stock_pool
+def load_config(config_path):
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
 
 
-IS_DATA_FROM_YAHOO = True
+def main(args):
+    config = load_config(args.config)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logging.info(f"Using device: {device}")
+
+    # Setup paths
+    output_dir = Path(config["data"]["output_dir"])
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load data
+    IS_DATA_FROM_YAHOO = config["data"]["yahoo_data"]
+    load_file = config["data"]["path"]
+
+    start_date = pd.to_datetime(config["data"]["start_date"])
+    end_date = pd.to_datetime(config["data"]["end_date"])
+    tickers_to_use = config["data"]["tickers"]
+
+    data_raw, all_tickers = load_finance_data_xlsx(load_file, IS_DATA_FROM_YAHOO)
+    data_raw = fill_missing_days(data_raw.copy(), tickers_to_use, start_date, end_date)
+    data = prepare_finance_data(
+        data_raw,
+        tickers_to_use,
+        config["data"]["init_cols_to_use"],
+    )
+    data = calc_input_features(
+        df=data,
+        tickers=tickers_to_use,
+        cols=config["data"]["init_cols_to_use"],
+        time_step=config["training"]["lookback"],
+    )
+
+    # Normalize and prepare sequences
+    data_scaled, feat_scalers = normalize_data_for_quantformer(
+        data, tickers_to_use, config["data"]["preproc_cols_to_use"]
+    )
+    combined_data, ticker_mapping = prepare_combined_data(
+        data_scaled, tickers_to_use, config["training"]["lookback"]
+    )
+    sequences, targets = create_combined_sequences(
+        combined_data,
+        config["training"]["lookback"],
+        config["data"]["preproc_cols_to_use"],
+        config["data"]["preproc_target_col"],
+    )
+
+    # Train/test split
+    train_size = int((1 - config["training"]["test_split"]) * len(sequences))
+    val_size = int(config["training"]["val_split"] * train_size)
+
+    train_sequences = sequences[:train_size]
+    train_targets = targets[:train_size]
+    test_sequences = sequences[train_size:]
+    test_targets = targets[train_size:]
+
+    val_sequences = train_sequences[-val_size:]
+    val_targets = train_targets[-val_size:]
+    train_sequences = train_sequences[:-val_size]
+    train_targets = train_targets[:-val_size]
+
+    # Create datasets and dataloaders
+    batch_size = config["training"]["batch_size"]
+    train_loader = DataLoader(
+        MultiTickerDataset(train_sequences, train_targets),
+        batch_size=batch_size,
+        shuffle=True,
+    )
+    val_loader = DataLoader(
+        MultiTickerDataset(val_sequences, val_targets),
+        batch_size=batch_size,
+        shuffle=False,
+    )
+    test_loader = DataLoader(
+        MultiTickerDataset(test_sequences, test_targets),
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    # Build model
+    model = build_transformer(
+        input_dim=config["training"]["lookback"],
+        d_model=config["model"]["d_model"],
+        nhead=config["model"]["nhead"],
+        num_encoder_layers=config["model"]["num_encoder_layers"],
+        dim_feedforward=config["model"]["dim_feedforward"],
+        dropout=config["model"]["dropout"],
+        num_features=len(tickers_to_use),
+        columns_amount=train_sequences.shape[2],
+    ).to(device)
+
+    # Training
+    criterion = nn.MSELoss()
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=config["training"]["learning_rate"]
+    )
+
+    best_model_path = train_model(
+        model,
+        train_loader,
+        val_loader,
+        criterion,
+        optimizer,
+        device,
+        config["training"]["n_epochs"],
+        output_dir,
+        config["training"]["patience"],
+    )
+
+    # Load best model and evaluate
+    model.load_state_dict(torch.load(best_model_path))
+    test_predictions, test_targets, test_loss = evaluate_model(
+        model, test_loader, criterion, device
+    )
+    logging.info(f"Test Loss: {test_loss:.4f}")
+
+    # Inverse transform and plot results
+    test_predictions, test_targets = inverse_transform_predictions(
+        test_predictions,
+        test_targets,
+        tickers_to_use,
+        feat_scalers,
+        config["data"]["preproc_target_col"],
+    )
+    plot_predictions(
+        test_predictions, test_targets, tickers_to_use, save_path=output_dir
+    )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Path to the YAML configuration file",
+    )
+    args = parser.parse_args()
+
+    setup_logging("pipeline.log")
+    main(args)
+
+
+"""
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
+with open("training_config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 
-if IS_DATA_FROM_YAHOO == False:
-    load_file = (
-        "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
-    )
-    with open("training_config.yaml", "r") as f:
-        config = yaml.safe_load(f)
-else:
-    load_file = "../data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
-    with open("yahoo_training_config.yaml", "r") as f:
-        config = yaml.safe_load(f)
+IS_DATA_FROM_YAHOO = config["data"]["yahoo_data"]
+load_file = config["data"]["path"]
 
 # Training params
 n_epochs = config["training"]["n_epochs"]
@@ -229,3 +314,4 @@ plot_predictions(test_predictions, test_targets, tickers_to_use)
 cash = 10000
 predicted_stocks = trading_strategy(model, test_loader, device, cash, tickers_to_use)
 predicted_stocks
+"""

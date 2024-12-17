@@ -1,5 +1,7 @@
 import torch
+import logging
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 from models.iTransformer import iTransformerModel
 
@@ -38,11 +40,16 @@ def build_transformer(
 
 
 def train_model(
-    model, train_loader, val_loader, criterion, optimizer, device, n_epochs
+    model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience=5
 ):
+    best_val_loss = float("inf")
+    epochs_no_improve = 0
+    best_model_path = Path(save_path) / "best_model.pth"
+
     for epoch in range(n_epochs):
         model.train()
         train_loss = 0.0
+
         for batch_sequences, batch_targets in train_loader:
             batch_sequences, batch_targets = batch_sequences.to(
                 device
@@ -67,10 +74,26 @@ def train_model(
                 loss = criterion(outputs, batch_targets)
                 val_loss += loss.item() * batch_sequences.size(0)
         val_loss /= len(val_loader.dataset)
+        logging.info(f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
 
         print(
             f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
+
+        # Check for improvement
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
+            epochs_no_improve = 0
+            torch.save(model.state_dict(), best_model_path)
+            logging.info(f"Model improved. Saved to {best_model_path}")
+        else:
+            epochs_no_improve += 1
+
+        if epochs_no_improve >= patience:
+            logging.info(f"Early stopping triggered after {epoch + 1} epochs.")
+            break
+
+    return best_model_path
 
 
 def evaluate_model(model, test_loader, criterion, device):
