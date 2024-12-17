@@ -40,77 +40,108 @@ def build_transformer(
 
 
 def train_model(
-    model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience=5
+        model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience=5
 ):
     """
-       Train the model and log training/validation loss.
-       """
-    train_losses = []
-    val_losses = []
+    Train the model, track training/validation loss, and save the best model after training.
+    Args:
+        model: PyTorch model to be trained.
+        train_loader: DataLoader for training data.
+        val_loader: DataLoader for validation data.
+        criterion: Loss function.
+        optimizer: Optimizer for model training.
+        device: Device to run training ('cpu' or 'cuda').
+        n_epochs: Number of epochs.
+        save_path: Directory where the best model and plots will be saved.
+        patience: Number of epochs to wait for improvement before early stopping.
+    Returns:
+        Path to the best model saved.
+    """
+    # Initialization
+    save_path = Path(save_path)
+    save_path.mkdir(parents=True, exist_ok=True)
+    best_model_path = save_path / "best_model.pth"
 
+    train_losses, val_losses = [], []
     best_val_loss = float("inf")
     epochs_no_improve = 0
-    best_model_path = Path(save_path) / "best_model.pth"
 
-    for epoch in range(n_epochs):
-        model.train()
-        train_loss = 0.0
+    for epoch in range(1, n_epochs + 1):
+        # Training step
+        train_loss = run_epoch(model, train_loader, criterion, optimizer, device, train=True)
 
-        for batch_sequences, batch_targets in train_loader:
-            batch_sequences, batch_targets = batch_sequences.to(
-                device
-            ), batch_targets.to(device)
-            optimizer.zero_grad()
-            outputs = model(batch_sequences)
-            loss = criterion(outputs, batch_targets)
-            loss.backward()
-            optimizer.step()
-            train_loss += loss.item() * batch_sequences.size(0)
-        train_loss /= len(train_loader.dataset)
+        # Validation step
+        val_loss = run_epoch(model, val_loader, criterion, optimizer, device, train=False)
+
+        # Logging losses
         train_losses.append(train_loss)
-
-        # Validation
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for batch_sequences, batch_targets in val_loader:
-                batch_sequences, batch_targets = batch_sequences.to(
-                    device
-                ), batch_targets.to(device)
-                outputs = model(batch_sequences)
-                loss = criterion(outputs, batch_targets)
-                val_loss += loss.item() * batch_sequences.size(0)
-
-        val_loss /= len(val_loader.dataset)
         val_losses.append(val_loss)
-        logging.info(f"Epoch {epoch + 1}/{n_epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        logging.info(f"Epoch {epoch}/{n_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
 
-        # Check for improvement
+        # Early stopping logic
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            epochs_no_improve = 0
             torch.save(model.state_dict(), best_model_path)
-            logging.info(f"Model improved. Saved to {best_model_path}")
+            logging.info(f"New best model saved at epoch {epoch}")
+            epochs_no_improve = 0
         else:
             epochs_no_improve += 1
 
         if epochs_no_improve >= patience:
-            logging.info(f"Early stopping triggered after {epoch + 1} epochs.")
+            logging.info(f"Early stopping after {epoch} epochs with no improvement.")
             break
 
-    # Plot training and validation loss
-    plt.figure(figsize=(10, 6))
-    plt.plot(train_losses, label='Training Loss')
-    plt.plot(val_losses, label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(Path(save_path) / "training_validation_loss")
-    plt.show()
+    # Final logging
+    logging.info(f"Training complete. Best Validation Loss: {best_val_loss:.4f}")
+
+    # Plot and save the training curve
+    plot_losses(train_losses, val_losses, save_path)
 
     return best_model_path
+
+
+def run_epoch(model, data_loader, criterion, optimizer, device, train=True):
+    """
+    Run a single epoch (training or validation).
+    """
+    if train:
+        model.train()
+    else:
+        model.eval()
+
+    running_loss = 0.0
+    for batch_sequences, batch_targets in data_loader:
+        batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(device)
+
+        if train:
+            optimizer.zero_grad()
+
+        outputs = model(batch_sequences)
+        loss = criterion(outputs, batch_targets)
+
+        if train:
+            loss.backward()
+            optimizer.step()
+
+        running_loss += loss.item() * batch_sequences.size(0)
+
+    return running_loss / len(data_loader.dataset)
+
+
+def plot_losses(train_losses, val_losses, save_path):
+    """
+    Plot and save training and validation loss curves.
+    """
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_losses, label="Training Loss")
+    plt.plot(val_losses, label="Validation Loss")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.title("Training and Validation Loss")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(save_path / "training_validation_loss")
+    plt.show()
 
 
 def evaluate_model(model, test_loader, criterion, device):
@@ -173,12 +204,20 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
     """
     Plots for tickers
     """
+    save_path = Path(save_path)
+    save_path.mkdir(parents=True, exist_ok=True)
+
     plt.figure(figsize=(10, 5))
     plt.plot(test_targets, label="True Values", linestyle="dashed")
     plt.plot(test_predictions, label="Predictions")
     plt.legend()
     plt.title("iTransformer Multi-Ticker Predictions on Test Set")
-    plt.show()
+    plt.xlabel("Time Steps")
+    plt.ylabel("Values")
+    # plt.show()
+    if save_path is not None:
+        plt.savefig(save_path / f"All_predictions")
+        plt.close()
 
     # Separe plots for each ticker
     for i, ticker in enumerate(tickers):
@@ -196,11 +235,10 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
         plt.title(f"{ticker} Predictions on Test Set")
         plt.xlabel("Time Steps")
         plt.ylabel("Values")
-        plt.show()
+        # plt.show()
 
         if save_path is not None:
-            plt.savefig(f"{save_path}/{ticker}_predictions")
+            plt.savefig(save_path / f"{ticker}_predictions")
             plt.close()
-
     if save_path is not None:
         print("Plots saved for each ticker!")
