@@ -7,6 +7,7 @@ import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader
 from pathlib import Path
+from types import SimpleNamespace
 
 from experiments.utils.data_loading import (
     fill_missing_days,
@@ -182,6 +183,12 @@ def main(args):
         test_predictions, test_targets, tickers_to_use, save_path=output_dir
     )
 
+# local run
+setup_logging("../data/exp_result/logs/pipeline.log")
+args = SimpleNamespace(config="../experiments/configs/training_config.yaml")
+# args = SimpleNamespace(config="../experiments/configs/yahoo_training_config_iTransformer.yaml")
+main(args)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
@@ -194,7 +201,6 @@ if __name__ == "__main__":
 
     setup_logging("./data/exp_result/logs/pipeline.log")
     main(args)
-
 
 """
 # Backtest Strategy

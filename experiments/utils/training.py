@@ -140,7 +140,7 @@ def evaluate_model(model, test_loader, criterion, device, scaler):
             ), batch_targets.to(device)
 
             with torch.cuda.amp.autocast():  # Mixed precision during evaluation
-                predictions = model(batch_sequences).squeeze()
+                predictions = model(batch_sequences)
                 loss = criterion(predictions, batch_targets)
 
             test_loss += loss.item() * batch_sequences.size(0)
@@ -158,9 +158,15 @@ def plot_losses(train_losses, val_losses, save_path):
     """
     Plot and save training and validation loss curves.
     """
+    if len(train_losses) > 2:
+        max_loss = max(max(train_losses[2:]), max(val_losses[2:]))
+    else:
+        max_loss = max(max(train_losses), max(val_losses))
+
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label="Training Loss")
     plt.plot(val_losses, label="Validation Loss")
+    plt.ylim(0, int(1 * max_loss + 0.51))
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Training and Validation Loss")
