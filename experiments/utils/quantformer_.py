@@ -18,9 +18,7 @@ def trading_strategy(model, data_loader, device, cash, tickers, n_quantiles=3):
             )
             # ranked_stocks = torch.argsort(predictions_quantized, dim=-1, descending=True)
 
-            temp_df = pd.DataFrame(
-                predictions_quantized.numpy(), columns=tickers
-            )
+            temp_df = pd.DataFrame(predictions_quantized.numpy(), columns=tickers)
             df_predictions = pd.concat([df_predictions, temp_df], ignore_index=True)
 
             # for batch_idx in range(df_predictions.size(0)):

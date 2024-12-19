@@ -40,7 +40,16 @@ def build_transformer(
 
 
 def train_model(
-        model, train_loader, val_loader, criterion, optimizer, device, n_epochs, save_path, patience, scaler
+    model,
+    train_loader,
+    val_loader,
+    criterion,
+    optimizer,
+    device,
+    n_epochs,
+    save_path,
+    patience,
+    scaler,
 ):
     """
     Train the model, track training/validation loss, and save the best model after training.
@@ -68,15 +77,21 @@ def train_model(
 
     for epoch in range(1, n_epochs + 1):
         # Training step
-        train_loss = run_epoch(model, train_loader, criterion, optimizer, device, scaler, train=True)
+        train_loss = run_epoch(
+            model, train_loader, criterion, optimizer, device, scaler, train=True
+        )
 
         # Validation step
-        val_loss = run_epoch(model, val_loader, criterion, optimizer, device, scaler, train=False)
+        val_loss = run_epoch(
+            model, val_loader, criterion, optimizer, device, scaler, train=False
+        )
 
         # Logging losses
         train_losses.append(train_loss)
         val_losses.append(val_loss)
-        logging.info(f"Epoch {epoch}/{n_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+        logging.info(
+            f"Epoch {epoch}/{n_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}"
+        )
 
         # Early stopping logic
         if val_loss < best_val_loss:
@@ -100,7 +115,7 @@ def train_model(
     return best_model_path
 
 
-def run_epoch(model, data_loader, criterion, optimizer, device,scaler, train=True):
+def run_epoch(model, data_loader, criterion, optimizer, device, scaler, train=True):
     """
     Run a single epoch (training or validation).
     """
@@ -111,7 +126,9 @@ def run_epoch(model, data_loader, criterion, optimizer, device,scaler, train=Tru
 
     running_loss = 0.0
     for batch_sequences, batch_targets in data_loader:
-        batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(device)
+        batch_sequences, batch_targets = batch_sequences.to(device), batch_targets.to(
+            device
+        )
 
         with torch.cuda.amp.autocast():  # Forward pass with mixed precision
             outputs = model(batch_sequences)

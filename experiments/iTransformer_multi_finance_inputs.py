@@ -65,7 +65,7 @@ def main(args):
 
     if IS_DATA_FROM_YAHOO:
         tickers_df = pd.read_csv(config["data"]["tickers"])
-        tickers_to_use = tickers_df['Ticker'].tolist()
+        tickers_to_use = tickers_df["Ticker"].tolist()
         print("Tickers amount: " + str(len(tickers_to_use)))
     else:
         tickers_to_use = config["data"]["tickers"]
@@ -167,7 +167,11 @@ def main(args):
     # Load best model and evaluate
     model.load_state_dict(torch.load(best_model_path))
     test_predictions, test_targets, test_loss = evaluate_model(
-        model, test_loader, criterion, device, scaler=scaler,
+        model,
+        test_loader,
+        criterion,
+        device,
+        scaler=scaler,
     )
     logging.info(f"Test Loss: {test_loss:.4f}")
 
@@ -182,6 +186,7 @@ def main(args):
     plot_predictions(
         test_predictions, test_targets, tickers_to_use, save_path=output_dir
     )
+
 
 # local run
 setup_logging("../data/exp_result/logs/pipeline.log")
