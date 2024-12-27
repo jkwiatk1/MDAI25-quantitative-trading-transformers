@@ -78,8 +78,6 @@ class iTransformerModel(nn.Module):
         super(iTransformerModel, self).__init__()
         self.model_type = "iTransformer"
 
-        # self.encoder = nn.Linear(input_dim, d_model)
-        # self.pos_encoder = PositionalEncoding(d_model, dropout)
         self.embedding = DataEmbeddingInverted(input_dim, d_model, dropout)
 
         # Create custom encoder layers

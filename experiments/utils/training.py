@@ -4,9 +4,10 @@ from matplotlib import pyplot as plt
 from pathlib import Path
 
 from models.iTransformer import iTransformerModel
+from models.Transformer import TransformerModel
 
 
-def build_transformer(
+def build_iTransformer(
     input_dim=1,
     d_model: int = 512,
     nhead: int = 8,
@@ -37,6 +38,41 @@ def build_transformer(
         num_features=num_features,
         columns_amount=columns_amount,
     )
+
+def build_Transformer(
+    input_dim=1,
+    d_model: int = 512,
+    nhead: int = 8,
+    num_encoder_layers: int = 2,
+    dim_feedforward: int = 2048,
+    dropout: float = 0.1,
+    num_features=1,
+    columns_amount=1,
+    max_seq_len=1000
+) -> TransformerModel:
+    """
+    Args:
+        d_model:
+        num_encoder_layers: num of encoder block
+        nhead: num of heads
+        dropout: droput probability
+        dim_feedforward: hidden layer [FF] size
+        seq_len:
+    Returns:
+
+    """
+    return TransformerModel(
+        input_dim=input_dim,
+        d_model=d_model,
+        nhead=nhead,
+        num_encoder_layers=num_encoder_layers,
+        dim_feedforward=dim_feedforward,
+        dropout=dropout,
+        num_features=num_features,
+        columns_amount=columns_amount,
+        max_seq_len=max_seq_len,
+    )
+
 
 
 def train_model(
@@ -103,7 +139,7 @@ def train_model(
             epochs_no_improve += 1
 
         if epochs_no_improve >= patience:
-            logging.info(f"Early stopping after {epoch} epochs with no improvement.")
+            logging.info(f"Early stopping after {epochs_no_improve} epochs with no improvement.")
             break
 
     # Final logging

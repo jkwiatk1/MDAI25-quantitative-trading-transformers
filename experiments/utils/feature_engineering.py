@@ -36,15 +36,6 @@ def calc_cumulative_features(df, tickers, time_step, cols):
         dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
     """
     for ticker in tickers:
-        # df[ticker].loc[:, "Intraday profit"] = (
-        #     df[ticker][cols[0]] - df[ticker][cols[3]]
-        # ) / df[ticker][cols[3]]
-        # # profit rate t+1
-        # df[ticker]["Profit Rate"] = (
-        #     df[ticker]["Close"].shift(-1) - df[ticker]["Close"]
-        # ) / df[ticker]["Close"]
-        # df[ticker]["Profit Rate"].fillna(0, inplace=True)
-
         df[ticker]["Daily profit"] = (
             df[ticker]["Close"] - df[ticker]["Close"].shift(1)
         ) / df[ticker]["Close"].shift(1)

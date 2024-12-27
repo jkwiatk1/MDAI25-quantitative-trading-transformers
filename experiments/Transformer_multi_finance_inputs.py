@@ -25,7 +25,7 @@ from experiments.utils.datasets import (
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.quantformer_ import trading_strategy
 from experiments.utils.training import (
-    build_iTransformer,
+    build_Transformer,
     train_model,
     evaluate_model,
     inverse_transform_predictions,
@@ -136,15 +136,16 @@ def main(args):
     )
 
     # Build model
-    model = build_iTransformer(
-        input_dim=config["training"]["lookback"],
+    model = build_Transformer(
+        input_dim=train_sequences.shape[2],
         d_model=config["model"]["d_model"],
         nhead=config["model"]["nhead"],
         num_encoder_layers=config["model"]["num_encoder_layers"],
         dim_feedforward=config["model"]["dim_feedforward"],
         dropout=config["model"]["dropout"],
         num_features=len(tickers_to_use),
-        columns_amount=train_sequences.shape[2],
+        columns_amount=train_sequences.shape[1],
+        max_seq_len=1000,
     ).to(device)
 
     # Training

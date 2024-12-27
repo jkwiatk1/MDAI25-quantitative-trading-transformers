@@ -87,12 +87,15 @@ class TransformerModel(nn.Module):
         num_encoder_layers=4,
         dim_feedforward=1024,
         dropout=0.1,
+        num_features=1,
+        columns_amount=1,
+        max_seq_len=1000,
     ):
         super(TransformerModel, self).__init__()
         self.model_type = "Transformer"
 
         self.encoder = nn.Linear(input_dim, d_model)
-        self.pos_encoder = PositionalEncoding(d_model, dropout)
+        self.pos_encoder = PositionalEncoding(d_model, dropout, max_seq_len)
 
         # Create custom encoder layers
         encoder_blocks = []
@@ -108,18 +111,26 @@ class TransformerModel(nn.Module):
 
         self.transformer_encoder = Encoder(nn.ModuleList(encoder_blocks))
         self.d_model = d_model
-        self.projection = nn.Linear(d_model, 1)
+        self.num_features = num_features
+        self.projection = nn.Sequential(
+            nn.Linear(d_model, dim_feedforward),
+            nn.ReLU(),
+            nn.Flatten(start_dim=1),
+            nn.Linear(dim_feedforward * columns_amount, num_features)
+        )
         self.init_weights()
 
     def init_weights(self):
         initrange = 0.1
-        self.projection.bias.data.zero_()
-        self.projection.weight.data.uniform_(-initrange, initrange)
+        for layer in self.projection:
+            if isinstance(layer, nn.Linear):
+                layer.bias.data.zero_()
+                layer.weight.data.uniform_(-initrange, initrange)
 
     def forward(self, x):
         x = self.encoder(x)
         x = self.pos_encoder(x)
         x = self.transformer_encoder(x, None)
-        x = x.mean(dim=1)
+        # x = x.mean(dim=1)
         x = self.projection(x)
         return x
