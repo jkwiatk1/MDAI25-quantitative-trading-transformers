@@ -156,7 +156,7 @@ def train_model(
     # Plot and save the training curve
     plot_losses(train_losses, val_losses, save_path)
 
-    return best_model_path
+    return best_model_path, best_val_loss
 
 
 def run_epoch(model, data_loader, criterion, optimizer, device, scaler, train=True):

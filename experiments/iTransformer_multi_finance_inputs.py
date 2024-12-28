@@ -178,7 +178,6 @@ def main(args):
             mode=config["training"]["lr_scheduler"]["mode"],
             factor=config["training"]["lr_scheduler"]["factor"],
             patience=config["training"]["lr_scheduler"]["patience"],
-            verbose=True,
         )
         logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
     elif config["training"]["lr_scheduler"]["type"] == "StepLR":
@@ -200,7 +199,7 @@ def main(args):
         logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
     scaler = torch.cuda.amp.GradScaler()  # Enable mixed precision training
 
-    best_model_path = train_model(
+    best_model_path, _ = train_model(
         model,
         train_loader,
         val_loader,
