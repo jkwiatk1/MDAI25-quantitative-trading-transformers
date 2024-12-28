@@ -58,22 +58,42 @@ def main(args):
     # Setup paths
     output_dir = Path(config["data"]["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
+    logging.info(f"Output path: {output_dir}")
 
     # Load data
     IS_DATA_FROM_YAHOO = config["data"]["yahoo_data"]
     load_file = config["data"]["path"]
+    logging.info(f"Load file path: {load_file}")
 
     start_date = pd.to_datetime(config["data"]["start_date"])
     end_date = pd.to_datetime(config["data"]["end_date"])
+    logging.info(f"Start date: {start_date}")
+    logging.info(f"End date: {end_date}")
+
+    logging.info("***Model params***")
+    logging.info(f"d_model: {config['model']['d_model']}")
+    logging.info(f"nhead: {config['model']['nhead']}")
+    logging.info(f"num_encoder_layers: {config['model']['num_encoder_layers']}")
+    logging.info(f"dim_feedforward: {config['model']['dim_feedforward']}")
+    logging.info(f"dropout: {config['model']['dropout']}")
+
+    logging.info("***Training params***")
+    logging.info(f"n_epochs: {config['training']['n_epochs']}")
+    logging.info(f"lookback: {config['training']['lookback']}")
+    logging.info(f"batch_size: {config['training']['batch_size']}")
+    logging.info(f"learning_rate: {config['training']['learning_rate']}")
+    logging.info(f"test_split: {config['training']['test_split']}")
+    logging.info(f"val_split: {config['training']['val_split']}")
+    logging.info(f"patience: {config['training']['patience']}")
     tickers_to_use = []
 
     if IS_DATA_FROM_YAHOO:
         tickers_df = pd.read_csv(config["data"]["tickers"])
         tickers_to_use = tickers_df["Ticker"].tolist()
-        print("Tickers amount: " + str(len(tickers_to_use)))
+        logging.info("Tickers amount: " + str(len(tickers_to_use)))
     else:
         tickers_to_use = config["data"]["tickers"]
-        print("Tickers amount: " + str(len(tickers_to_use)))
+        logging.info("Tickers amount: " + str(len(tickers_to_use)))
 
     data_raw, all_tickers = load_finance_data_xlsx(load_file, IS_DATA_FROM_YAHOO)
     data_raw = fill_missing_days(data_raw.copy(), tickers_to_use, start_date, end_date)
@@ -138,6 +158,7 @@ def main(args):
     # Build model
     model = build_iTransformer(
         input_dim=config["training"]["lookback"],
+
         d_model=config["model"]["d_model"],
         nhead=config["model"]["nhead"],
         num_encoder_layers=config["model"]["num_encoder_layers"],
@@ -193,25 +214,27 @@ def main(args):
 
 
 # local run
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-log_file = os.path.join(base_dir, "data", "exp_result", "logs", "pipeline.log")
-setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/training_config.yaml")
-# args = SimpleNamespace(config="../experiments/configs/yahoo_training_config_iTransformer.yaml")
-main(args)
+# model_name = "iTransformer"
+# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# log_file = os.path.join(base_dir, "data", "exp_result", model_name, "logs", "pipeline.log")
+# setup_logging(log_file)
+# args = SimpleNamespace(config="../experiments/configs/test_config.yaml")
+# # args = SimpleNamespace(config="../experiments/configs/yahoo_training_config_iTransformer.yaml")
+# main(args)
 
 
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
-#     parser.add_argument(
-#         "--config",
-#         type=str,
-#         help="Path to the YAML configuration file",
-#     )
-#     args = parser.parse_args()
-#
-#     setup_logging("./data/exp_result/logs/pipeline.log")
-#     main(args)
+if __name__ == "__main__":
+    model_name = "iTransformer"
+    parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="Path to the YAML configuration file",
+    )
+    args = parser.parse_args()
+
+    setup_logging(f"./data/exp_result/{model_name}/logs/pipeline.log")
+    main(args)
 
 """
 # Backtest Strategy

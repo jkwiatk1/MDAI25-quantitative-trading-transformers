@@ -216,10 +216,14 @@ def plot_losses(train_losses, val_losses, save_path):
     else:
         max_loss = max(max(train_losses), max(val_losses))
 
+    if max_loss <= 0:
+        max_loss = 0.1
+
     plt.figure(figsize=(10, 6))
     plt.plot(train_losses, label="Training Loss")
     plt.plot(val_losses, label="Validation Loss")
-    plt.ylim(0, int(1 * max_loss + 0.51))
+    # plt.ylim(0, int(1 * max_loss + 0.51))
+    plt.ylim(0, max_loss * 1.1)
     plt.xlabel("Epoch")
     plt.ylabel("Loss")
     plt.title("Training and Validation Loss")
