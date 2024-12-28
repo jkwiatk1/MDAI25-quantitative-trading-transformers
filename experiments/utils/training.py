@@ -86,6 +86,7 @@ def train_model(
     save_path,
     patience,
     scaler,
+    scheduler=None,
 ):
     """
     Train the model, track training/validation loss, and save the best model after training.
@@ -128,6 +129,13 @@ def train_model(
         logging.info(
             f"Epoch {epoch}/{n_epochs} | Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}"
         )
+
+        # Update scheduler
+        if scheduler is not None:
+            if isinstance(scheduler, torch.optim.lr_scheduler.ReduceLROnPlateau):
+                scheduler.step(val_loss)  # ReduceLROnPlateau needs metric
+            else:
+                scheduler.step()  # other schedulers: StepLR, ExponentialLR
 
         # Early stopping logic
         if val_loss < best_val_loss:

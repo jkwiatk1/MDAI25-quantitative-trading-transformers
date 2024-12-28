@@ -9,6 +9,7 @@ import numpy as np
 from torch import nn
 from torch.utils.data import DataLoader
 from pathlib import Path
+from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, ExponentialLR
 from types import SimpleNamespace
 
 from experiments.utils.data_loading import (
@@ -40,7 +41,6 @@ def setup_logging(log_file):
         format="%(asctime)s - %(levelname)s - %(message)s",
         handlers=[logging.FileHandler(log_file), logging.StreamHandler()],
     )
-
 
 
 def load_config(config_path):
@@ -173,7 +173,32 @@ def main(args):
     optimizer = torch.optim.Adam(
         model.parameters(), lr=config["training"]["learning_rate"]
     )
-
+    if config["training"]["lr_scheduler"]["type"] == "ReduceLROnPlateau":
+        scheduler = ReduceLROnPlateau(
+            optimizer,
+            mode=config["training"]["lr_scheduler"]["mode"],
+            factor=config["training"]["lr_scheduler"]["factor"],
+            patience=config["training"]["lr_scheduler"]["patience"],
+            verbose=True,
+        )
+        logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+    elif config["training"]["lr_scheduler"]["type"] == "StepLR":
+        scheduler = StepLR(
+            optimizer,
+            step_size=config["training"]["lr_scheduler"]["step_size"],
+            gamma=config["training"]["lr_scheduler"]["gamma"],
+        )
+        logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+    elif config["training"]["lr_scheduler"]["type"] == "ExponentialLR":
+        scheduler = ExponentialLR(
+            optimizer,
+            gamma=config["training"]["lr_scheduler"]["gamma"],
+        )
+        logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+    else:
+        scheduler = None
+        logging.info("No scheduler!")
+        logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
     scaler = torch.cuda.amp.GradScaler()  # Enable mixed precision training
 
     best_model_path = train_model(
@@ -187,6 +212,7 @@ def main(args):
         output_dir,
         config["training"]["patience"],
         scaler=scaler,  # Pass scaler for AMP
+        scheduler=scheduler,
     )
 
     # Load best model and evaluate

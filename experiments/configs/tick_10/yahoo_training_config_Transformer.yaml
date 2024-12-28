@@ -38,3 +38,10 @@ training:
   test_split: 0.2
   val_split: 0.1
   patience: 5
+  lr_scheduler:
+    type: "ReduceLROnPlateau"  # or StepLR, "ExponentialLR"
+    factor: 0.5
+    patience: 3
+    mode: "min"
+    step_size: 10
+    gamma: 0.1
