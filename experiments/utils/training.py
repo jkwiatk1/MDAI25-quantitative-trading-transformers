@@ -8,6 +8,7 @@ from matplotlib import pyplot as plt
 from pathlib import Path
 
 from torch import nn
+from tqdm import tqdm
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, ExponentialLR
 from torch.utils.data import DataLoader
 
@@ -247,7 +248,8 @@ def plot_losses(train_losses, val_losses, save_path):
     plt.legend()
     plt.grid(True)
     plt.savefig(save_path / "training_validation_loss")
-    plt.show()
+    # uncomment below to print training & val loss
+    # plt.show()
 
 
 def inverse_transform_predictions(
@@ -398,8 +400,14 @@ def grid_search_train(
     criterion = nn.MSELoss()
     scaler = torch.cuda.amp.GradScaler()
 
+    # # Generate all combinations of parameters
+    # for params in itertools.product(*param_grid.values()):
+
     # Generate all combinations of parameters
-    for params in itertools.product(*param_grid.values()):
+    all_combinations = list(itertools.product(*param_grid.values()))
+    # Use tqdm for progress tracking
+    for params in tqdm(all_combinations, desc="Grid Search Progress", unit="experiment"):
+
         # Map parameters to dict
         param_dict = dict(zip(param_grid.keys(), params))
         logging.info(f"Testing parameters: {param_dict}")

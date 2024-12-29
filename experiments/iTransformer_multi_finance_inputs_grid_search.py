@@ -166,8 +166,10 @@ def main(args):
         feat_scalers,
         config["data"]["preproc_target_col"],
     )
+
+    test_dates = combined_data[train_size:].index
     plot_predictions(
-        test_predictions, test_targets, tickers_to_use, save_path=output_dir
+        test_predictions, test_targets, tickers_to_use, save_path=output_dir, dates=test_dates
     )
 
 
