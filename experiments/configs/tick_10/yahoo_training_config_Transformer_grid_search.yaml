@@ -1,7 +1,7 @@
 #device: "cuda"
 data:
   path: "./data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
-  output_dir: "./data/exp_result/Transformer/tick_10/lkb10_grid_search/yahoo_data"
+  output_dir: "./data/exp_result/Transformer/grid_search/tick_10/lkb10_grid_search/yahoo_data"
   yahoo_data: True
   start_date: "2018-01-01"
   end_date: "2024-01-01"
@@ -25,16 +25,17 @@ data:
   ]
   preproc_target_col: "Cumulative profit"
 model:
-  d_model: [16, 64]
-  nhead: [1, 4]
-  num_encoder_layers: [1, 4]
-  dim_feedforward: [256, 1024]
+  name: "Transformer"
+  d_model: [16, 32, 64]
+  nhead: [1, 2, 4]
+  num_encoder_layers: [1, 2, 4]
+  dim_feedforward: [256, 512, 1024]
   dropout: [0.1, 0.2]
 training:
   n_epochs: 40
   lookback: 10
-  batch_size: [4,16]
-  learning_rate: [0.001, 0.01]
+  batch_size: [2, 4, 16]
+  learning_rate: [0.001, 0.005, 0.01]
   test_split: 0.2
   val_split: 0.1
   patience: 5

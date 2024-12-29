@@ -21,9 +21,8 @@ from experiments.utils.datasets import (
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.training import (
     evaluate_model,
-    grid_search_train,
     inverse_transform_predictions,
-    plot_predictions,
+    plot_predictions, grid_search_train,
 )
 
 
@@ -138,9 +137,9 @@ def main(args):
         val_targets=val_targets,
         device=device,
         save_dir=output_dir,
-        input_dim=train_sequences.shape[2],
+        input_dim=config["training"]["lookback"],
         num_features=len(tickers_to_use),
-        columns_amount=train_sequences.shape[1],
+        columns_amount=train_sequences.shape[2],
         max_seq_len=1000,
     )
 
@@ -183,7 +182,7 @@ def main(args):
 
 
 if __name__ == "__main__":
-    model_name = "Transformer"
+    model_name = "iTransformer"
     parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
     parser.add_argument(
         "--config",

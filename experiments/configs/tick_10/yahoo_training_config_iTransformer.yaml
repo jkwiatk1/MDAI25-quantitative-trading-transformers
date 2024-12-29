@@ -25,6 +25,7 @@ data:
   ]
   preproc_target_col: "Cumulative profit"
 model:
+  name: "iTransformer"
   d_model: 16
   nhead: 1
   num_encoder_layers: 1
