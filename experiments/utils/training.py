@@ -283,9 +283,16 @@ def inverse_transform_predictions(
     return predictions, targets
 
 
-def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
+def plot_predictions(test_predictions, test_targets, tickers, save_path=None, dates=None):
     """
-    Plots for tickers
+    Plots for tickers with date labels on the X-axis.
+
+    Args:
+        test_predictions: Array of predictions.
+        test_targets: Array of true values.
+        tickers: List of ticker names.
+        save_path: Directory to save plots (optional).
+        dates: DatetimeIndex or list of date strings for X-axis labels.
     """
     save_path = Path(save_path)
     save_path.mkdir(parents=True, exist_ok=True)
@@ -297,6 +304,16 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
     plt.title("iTransformer Multi-Ticker Predictions on Test Set")
     plt.xlabel("Time Steps")
     plt.ylabel("Values")
+
+    # Set X-axis labels
+    if dates is not None:
+        date_labels = dates.strftime('%Y-%m-%d') if hasattr(dates, 'strftime') else dates
+        plt.xticks(ticks=range(0, len(dates), len(dates) // 10),  # Show ~10 ticks
+                   labels=date_labels[::len(dates) // 10],
+                   rotation=45)
+    else:
+        plt.xticks(ticks=range(len(test_targets)))  # Default indexing from 0
+
     # plt.show()
     if save_path is not None:
         plt.savefig(save_path / f"All_predictions")
@@ -318,6 +335,14 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None):
         plt.title(f"{ticker} Predictions on Test Set")
         plt.xlabel("Time Steps")
         plt.ylabel("Values")
+
+        # Set X-axis labels
+        if dates is not None:
+            plt.xticks(ticks=range(0, len(dates), len(dates) // 10),
+                       labels=date_labels[::len(dates) // 10],
+                       rotation=45)
+        else:
+            plt.xticks(ticks=range(len(test_targets)))  # Default indexing from 0
         # plt.show()
 
         if save_path is not None:

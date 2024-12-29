@@ -233,33 +233,34 @@ def main(args):
         feat_scalers,
         config["data"]["preproc_target_col"],
     )
+
+    test_dates = combined_data[train_size:].index
     plot_predictions(
-        test_predictions, test_targets, tickers_to_use, save_path=output_dir
+        test_predictions, test_targets, tickers_to_use, save_path=output_dir, dates=test_dates
     )
 
 
 # local run
-# model_name = "Transformer"
-# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# log_file = os.path.join(base_dir, "data", "exp_result", model_name, "logs", "pipeline.log")
-# setup_logging(log_file)
-# # args = SimpleNamespace(config="../experiments/configs/test_config.yaml")
-# args = SimpleNamespace(config="../experiments/configs/yahoo_training_config_Transformer.yaml")
-# main(args)
+model_name = "Transformer"
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+log_file = os.path.join(base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log")
+setup_logging(log_file)
+args = SimpleNamespace(config="../experiments/configs/test_config.yaml")
+main(args)
 
 
-if __name__ == "__main__":
-    model_name = "Transformer"
-    parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
-    parser.add_argument(
-        "--config",
-        type=str,
-        help="Path to the YAML configuration file",
-    )
-    args = parser.parse_args()
-
-    setup_logging(f"./data/exp_result/{model_name}/logs/pipeline.log")
-    main(args)
+# if __name__ == "__main__":
+#     model_name = "Transformer"
+#     parser = argparse.ArgumentParser(description="Run QuantFormer Training Pipeline")
+#     parser.add_argument(
+#         "--config",
+#         type=str,
+#         help="Path to the YAML configuration file",
+#     )
+#     args = parser.parse_args()
+#
+#     setup_logging(f"./data/exp_result/{model_name}/logs/pipeline.log")
+#     main(args)
 
 """
 # Backtest Strategy

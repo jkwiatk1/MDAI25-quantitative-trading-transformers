@@ -1,7 +1,7 @@
 #device: "cuda"
 data:
   path: "../data/finance/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
-  output_dir: "../data/exp_result/Random/test_data"
+  output_dir: "../data/exp_result/test/Transformer/test_data"
   yahoo_data: False
   start_date: "2022-01-03"
   end_date: "2024-01-12"
@@ -40,6 +40,7 @@ data:
   ]
   preproc_target_col: "Cumulative profit"
 model:
+  name: "Transformer"
   d_model: 64
   nhead: 1
   num_encoder_layers: 1
@@ -50,7 +51,14 @@ training:
   n_epochs: 40
   lookback: 20
   batch_size: 64
-  learning_rate: 0.002
+  learning_rate: 0.004
   test_split: 0.2
   val_split: 0.1
   patience: 5
+  lr_scheduler:
+    type: "ReduceLROnPlateau"  # or StepLR, "ExponentialLR"
+    factor: 0.5
+    patience: 3
+    mode: "min"
+    step_size: 10
+    gamma: 0.1
