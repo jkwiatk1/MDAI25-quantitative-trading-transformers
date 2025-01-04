@@ -32,6 +32,7 @@ from experiments.utils.training import (
     inverse_transform_predictions,
     plot_predictions,
 )
+from models.WeightedMAELoss import WeightedMAELoss
 
 
 def setup_logging(log_file):
@@ -169,7 +170,9 @@ def main(args):
     ).to(device)
 
     # Training
-    criterion = nn.MSELoss()
+    # criterion = nn.MSELoss()
+    criterion = WeightedMAELoss(num_outputs=len(tickers_to_use))
+    logging.info(f"loss function: {criterion.__class__}")
     optimizer = torch.optim.Adam(
         model.parameters(), lr=config["training"]["learning_rate"]
     )
