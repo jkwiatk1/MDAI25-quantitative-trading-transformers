@@ -36,19 +36,22 @@ def calc_cumulative_features(df, tickers, time_step, cols):
         dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
     """
     for ticker in tickers:
-        df[ticker]["Daily profit"] = (
+        df[ticker] = df[ticker].copy()
+        df[ticker].loc[:, "Daily profit"] = (
             df[ticker]["Close"] - df[ticker]["Close"].shift(1)
         ) / df[ticker]["Close"].shift(1)
-        df[ticker]["Turnover"] = df[ticker]["Volume"] / df[ticker]["Close"]
-        df[ticker]["Cumulative profit"] = (
+        df[ticker].loc[:, "Turnover"] = df[ticker]["Volume"] / df[ticker]["Close"]
+        df[ticker].loc[:, "Cumulative profit"] = (
             df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
         )
-        df[ticker]["Cumulative turnover"] = (
+        df[ticker].loc[:, "Cumulative turnover"] = (
             df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
         )
 
-        df[ticker]["Daily profit"].fillna(0, inplace=True)
-        df[ticker]["Turnover"].fillna(0, inplace=True)
-        df[ticker]["Cumulative profit"].fillna(0, inplace=True)
-        df[ticker]["Cumulative turnover"].fillna(0, inplace=True)
+        df[ticker].fillna({
+            "Daily profit": 0,
+            "Turnover": 0,
+            "Cumulative profit": 0,
+            "Cumulative turnover": 0
+        }, inplace=True)
     return df
