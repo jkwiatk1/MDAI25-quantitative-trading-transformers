@@ -116,7 +116,7 @@ class TransformerModel(nn.Module):
             nn.Linear(d_model, dim_feedforward),
             nn.ReLU(),
             nn.Flatten(start_dim=1),
-            nn.Linear(dim_feedforward * columns_amount, num_features)
+            nn.Linear(dim_feedforward * columns_amount, num_features),
         )
         self.init_weights()
 

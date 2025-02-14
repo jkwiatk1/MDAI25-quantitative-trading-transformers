@@ -5,8 +5,60 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset
 
 
-# Combine all tickers into a single dataset
+def prepare_sequential_data(
+    data_scaled, tickers_to_use, lookback, target_col_index=0
+):
+    """
+    Converts data into format (Batch, Time, Akcje, Featury)
+
+    Args:
+        data_scaled (dict[str, pd.DataFrame]): Dictionary {ticker: DataFrame[Time, Features]}
+        tickers_to_use (list[str]): List of actions to use
+        lookback (int): Number of historical days for prediction
+
+    Returns:
+        X (torch.Tensor): Input data (Batch, Time, Stocks, Features)
+        y (torch.Tensor): target data (Batch, Stocks, 1)
+        ticker_mapping (dict): Mapping stock names to indexes
+    """
+    ticker_mapping = {ticker: idx for idx, ticker in enumerate(tickers_to_use)}
+
+    num_time, num_features = data_scaled[tickers_to_use[0]].shape
+    num_stocks = len(tickers_to_use)
+
+    assert num_time > lookback, "Not enough period time in data to create a sequence!"
+
+    data_matrix = np.stack(
+        [data_scaled[ticker].values for ticker in tickers_to_use], axis=1
+    )  # (Time, Stocks, Features)
+
+    # Sequences
+    X, y = [], []
+    for i in range(num_time - lookback):
+        X.append(data_matrix[i : i + lookback])  # (Time, Stocks, Features)
+        y.append(data_matrix[i + lookback, :, target_col_index])
+
+    X = torch.tensor(
+        np.array(X), dtype=torch.float32
+    )  # (Batch, Time, Stocks, Features)
+    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(
+        -1
+    )  # (Batch, Stocks, 1)
+
+    return X, y, ticker_mapping
+
+
 def prepare_combined_data(data_scaled, tickers_to_use, lookback):
+    """
+    Combine all tickers into a single dataset with size [Time, Features*Stocks]
+    Args:
+        data_scaled:
+        tickers_to_use:
+        lookback:
+
+    Returns: [Time, Features*Stocks]
+
+    """
     combined_data = []
     ticker_mapping = {
         ticker: idx for idx, ticker in enumerate(tickers_to_use)
@@ -69,7 +121,6 @@ def create_combined_sequences(
     return np.array(sequences), np.array(targets)
 
 
-# Function to normalize data for each ticker
 def normalize_data_for_quantformer(df, tickers, features_to_normalize):
     """
     Normalize features using MinMaxScaler for each ticker.
@@ -93,8 +144,9 @@ def normalize_data_for_quantformer(df, tickers, features_to_normalize):
     return df, scalers
 
 
-# Dataset for multi-ticker
+# Datasets for multi-ticker
 class MultiTickerDataset(Dataset):
+    """Dataset for data in format (Batch, Time, Stocks*Features)"""
     def __init__(self, sequences, targets):
         self.sequences = torch.tensor(sequences, dtype=torch.float32)
         self.targets = torch.tensor(targets, dtype=torch.float32)
@@ -104,3 +156,17 @@ class MultiTickerDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.sequences[idx], self.targets[idx]
+
+
+class MultiStockDataset(Dataset):
+    """Dataset for data in format (Batch, Time, Stocks, Features)"""
+
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
