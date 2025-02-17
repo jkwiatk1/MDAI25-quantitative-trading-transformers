@@ -2,12 +2,12 @@ import math
 import torch
 from torch import nn
 
-# from models.modules import (
-#     LayerNormalization,
-#     FeedForwardBlock,
-#     MultiHeadAttentionBlock,
-#     ResidualConnection,
-# )
+from models.modules import (
+    LayerNormalization,
+    FeedForwardBlock,
+    MultiHeadAttentionBlock,
+    ResidualConnection,
+)
 
 
 class PositionalEncoding(nn.Module):
@@ -37,7 +37,8 @@ class SelfAttentionBlock(nn.Module):
 
     def __init__(self, d_model, nhead, dropout):
         super().__init__()
-        self.self_attention = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.self_attention = MultiHeadAttentionBlock(d_model, nhead, dropout=dropout)
+        # self.self_attention = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         self.norm = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
@@ -46,7 +47,7 @@ class SelfAttentionBlock(nn.Module):
         x = x.permute(1, 0, 2, 3).reshape(
             time, batch * stocks, d_model
         )  # (Time, Batch * Stocks, d_model)
-        attn_output, _ = self.self_attention(x, x, x)
+        attn_output = self.self_attention(x, x, x, None)
         attn_output = attn_output.view(time, batch, stocks, d_model).permute(1, 0, 2, 3) # 2, 1, 0, 3
         x = x.view(time, batch, stocks, d_model).permute(1, 0, 2, 3)
         return self.norm(x + self.dropout(attn_output))
@@ -57,7 +58,8 @@ class CrossAttentionBlock(nn.Module):
 
     def __init__(self, d_model, nhead, dropout):
         super().__init__()
-        self.cross_attention = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
+        self.cross_attention = MultiHeadAttentionBlock(d_model, nhead, dropout=dropout)
+        # self.cross_attention = nn.MultiheadAttention(d_model, nhead, dropout=dropout)
         self.norm = nn.LayerNorm(d_model)
         self.dropout = nn.Dropout(dropout)
 
@@ -66,7 +68,7 @@ class CrossAttentionBlock(nn.Module):
         x = x.permute(2, 1, 0, 3).reshape(
             stocks, batch * time, d_model
         )
-        attn_output, _ = self.cross_attention(x, x, x)
+        attn_output = self.cross_attention(x, x, x, None)
         attn_output = attn_output.view(stocks, batch, time, d_model).permute(1, 2, 0, 3) # 2, 0, 1, 3
         x = x.view(stocks, batch, time, d_model).permute(1, 2, 0, 3)
         return self.norm(x + self.dropout(attn_output))
