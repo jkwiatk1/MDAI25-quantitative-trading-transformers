@@ -5,6 +5,53 @@ from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import Dataset
 
 
+def prepare_sequential_data_CrossFormer(data_scaled, tickers_to_use, lookback, patch_size, target_col_index=0):
+    """
+     Prepares data in the format (Batch, Stocks, Patches, Patch_Size, Features) for CrossFormer.
+
+    Args:
+        data_scaled (dict[str, pd.DataFrame]): Dictionary {ticker: DataFrame[Time, Features]}
+        tickers_to_use (list[str]): List of actions to use
+        lookback (int): Number of historical days for prediction
+        patch_size (int): Number of days in one patch
+        target_col_index (int): Target column index (default 0)
+
+    Returns:
+        X (torch.Tensor): Input data  (Batch, Stocks, Patches, Patch_Size, Features)
+        y (torch.Tensor): Target data (Batch, Stocks, 1)
+        ticker_mapping (dict): Map {ticker: indeks}
+    """
+    assert lookback % patch_size == 0, "Lookback must be a multiple of patch_size!"
+
+    ticker_mapping = {ticker: idx for idx, ticker in enumerate(tickers_to_use)}
+    num_time, num_features = data_scaled[tickers_to_use[0]].shape
+    num_stocks = len(tickers_to_use)
+
+    assert num_time > lookback, "Not enough time steps in data to create sequences!"
+
+    data_matrix = np.stack(
+        [data_scaled[ticker].values for ticker in tickers_to_use], axis=1
+    )  # (Time, Stocks, Features)
+
+    num_patches = lookback // patch_size  # Number of patches in the lookback window
+
+    X, y = [], []
+    for i in range(num_time - lookback):
+        sequence = data_matrix[i : i + lookback]  # (Lookback, Stocks, Features)
+
+        # Segmentation (Patches)
+        patches = np.array(np.split(sequence, num_patches, axis=0))  # (Patches, Patch_Size, Stocks, Features)
+        patches = np.transpose(patches, (2, 0, 1, 3))  # (Stocks, Patches, Patch_Size, Features)
+
+        X.append(patches)
+        y.append(data_matrix[i + lookback, :, target_col_index])  # (Stocks,)
+
+    X = torch.tensor(np.array(X), dtype=torch.float32)  # (Batch, Stocks, Patches, Patch_Size, Features)
+    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(-1)  # (Batch, Stocks, 1)
+
+    return X, y, ticker_mapping
+
+
 def prepare_sequential_data(
     data_scaled, tickers_to_use, lookback, target_col_index=0
 ):

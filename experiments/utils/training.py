@@ -17,6 +17,7 @@ from models.WeightedMAELoss import WeightedMAELoss
 from models.iTransformer import iTransformerModel
 from models.Transformer import TransformerModel
 from models.Transformer_Cross_Attention import TransformerModel_Cross_Attention
+from models.CrossFormer import CrossFormer
 
 
 def build_iTransformer(
@@ -116,6 +117,41 @@ def build_Transformer_Cross_Attention(
         dropout=dropout,
         num_stocks=num_tickers_to_use,
         num_feat=num_features,
+    )
+
+
+def build_CrossFormer(
+    input_dim=1,
+    d_model: int = 512,
+    nhead: int = 8,
+    num_encoder_layers: int = 2,
+    dim_feedforward: int = 2048,
+    dropout: float = 0.1,
+    num_tickers_to_use: int = 1,
+    num_features: int = 1,
+    patch_size = 1,
+) -> CrossFormer:
+    """
+    Args:
+        d_model:
+        num_encoder_layers: num of encoder block
+        nhead: num of heads
+        dropout: droput probability
+        dim_feedforward: hidden layer [FF] size
+        seq_len:
+    Returns:
+
+    """
+    return CrossFormer(
+        input_dim=patch_size * num_features,
+        d_model=d_model,
+        nhead=nhead,
+        num_layers=num_encoder_layers,
+        dim_feedforward=dim_feedforward,
+        dropout=dropout,
+        num_stocks=num_tickers_to_use,
+        patch_size=patch_size,
+        num_features=num_features,
     )
 
 
