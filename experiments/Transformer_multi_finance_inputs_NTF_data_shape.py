@@ -230,6 +230,9 @@ def main(args):
     )
     logging.info(f"Test Loss: {test_loss:.4f}")
 
+    test_predictions = test_predictions.squeeze(-1)
+    test_targets = test_targets.squeeze(-1)
+
     # Inverse transform and plot results
     test_predictions, test_targets = inverse_transform_predictions(
         test_predictions,
@@ -238,8 +241,8 @@ def main(args):
         feat_scalers,
         config["data"]["preproc_target_col"],
     )
-
-    # test_dates = combined_data[train_size:].index
+    stock_to_take_date = list(data_scaled.keys())[0]
+    test_dates = data_scaled[stock_to_take_date][train_size:].index
     plot_predictions(
         test_predictions,
         test_targets,
