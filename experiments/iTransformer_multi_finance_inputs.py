@@ -24,7 +24,6 @@ from experiments.utils.datasets import (
     MultiTickerDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
-from experiments.utils.quantformer_ import trading_strategy
 from experiments.utils.training import (
     build_iTransformer,
     train_model,
@@ -259,10 +258,3 @@ if __name__ == "__main__":
 
     setup_logging(f"./data/exp_result/{model_name}/logs/pipeline.log")
     main(args)
-
-"""
-# Backtest Strategy
-cash = 10000
-predicted_stocks = trading_strategy(model, test_loader, device, cash, tickers_to_use)
-predicted_stocks
-"""
