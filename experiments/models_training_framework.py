@@ -287,7 +287,6 @@ def main(args):
             )
         elif model_type == "CrossFormer":
             logging.info("Building Portfolio Crossformer...")
-            # Sprawdź czy specyficzne parametry istnieją
             if not all(k in config["model"] for k in ("seg_len", "win_size", "factor")):
                 logging.error(
                     "Missing required parameters (seg_len, win_size, factor) for PortfolioCrossformer."
@@ -316,13 +315,10 @@ def main(args):
                 financial_features_amount=financial_features,
                 lookback=config["training"]["lookback"],
                 d_model=config["model"]["d_model"],
-                # Użyj n_heads dla obu t i s dla uproszczenia, można to zmienić w configu
-                t_n_heads=config["model"].get("t_n_heads", config["model"]["n_heads"]),
-                s_n_heads=config["model"].get("s_n_heads", config["model"]["n_heads"]),
-                t_dropout=config["model"].get("t_dropout", config["model"]["dropout"]),
-                s_dropout=config["model"].get("s_dropout", config["model"]["dropout"]),
+                n_heads=config["model"].get("n_heads", config["model"]["n_heads"]),
+                dropout=config["model"].get("dropout", config["model"]["dropout"]),
                 d_ff=config["model"]["d_ff"],
-                # num_encoder_layers=config['model']['num_encoder_layers'], # TODO dodac to do modelu wczesniej to robilem z gemini
+                num_encoder_layers=config['model']['num_encoder_layers'],
                 device=device,
             )
         else:
@@ -568,13 +564,22 @@ def main(args):
 # args = SimpleNamespace(config="../experiments/configs/training_config_TransformerCA.yaml")
 # main(args)
 
-model_name = "CrossFormer"
+# model_name = "CrossFormer"
+# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# log_file = os.path.join(
+#     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
+# )
+# setup_logging(log_file)
+# args = SimpleNamespace(config="../experiments/configs/training_config_CrossFormer.yaml")
+# main(args)
+
+model_name = "MASTER"
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 log_file = os.path.join(
     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
 )
 setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/training_config_CrossFormer.yaml")
+args = SimpleNamespace(config="../experiments/configs/training_config_MASTER.yaml")
 main(args)
 
 """

@@ -231,12 +231,11 @@ def build_MASTER(
         lookback: int,
 
         # --- MASTER Architecture Parameters ---
-        d_model: int = 128,
-        d_ff: int = 256,
-        t_n_heads: int = 4,  # Temporal attention heads
-        s_n_heads: int = 4,  # Spatial attention heads
-        t_dropout: float = 0.1,  # Temporal attention dropout
-        s_dropout: float = 0.1,  # Spatial attention dropout
+        d_model: int = 64,
+        d_ff: int = 128,
+        n_heads: int = 4,
+        dropout: float = 0.1,
+        num_encoder_layers: int = 1,
 
         # --- Deployment ---
         device: torch.device = torch.device("cpu")
@@ -265,28 +264,25 @@ def build_MASTER(
     """
     print("-" * 30)
     print("Building PortfolioMASTER with parameters:")
-    print(f"  Data: stock_amount={stock_amount}, features={financial_features_amount}, lookback={lookback}")
-    print(f"  Arch: d_model={d_model}, t_heads={t_n_heads}, s_heads={s_n_heads}")
-    print(f"  Dropout: t_dropout={t_dropout}, s_dropout={s_dropout}")
+    print(f"  Data: stocks={stock_amount}, features={financial_features_amount}, lookback={lookback}")
+    print(f"  Arch: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}, layers={num_encoder_layers}")
+    print(f"  Dropout: {dropout}")
     print(f"  Device: {device}")
     print("-" * 30)
 
     # --- Parameter Validation ---
-    if d_model % t_n_heads != 0:
-        raise ValueError(f"d_model ({d_model}) must be divisible by t_n_heads ({t_n_heads})")
-    if d_model % s_n_heads != 0:
-        raise ValueError(f"d_model ({d_model}) must be divisible by s_n_heads ({s_n_heads})")
+    if d_model % n_heads != 0:
+        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
 
     model = PortfolioMASTER(
-        finance_features_amount=financial_features_amount,
         stock_amount=stock_amount,
+        finance_features_amount=financial_features_amount,
         lookback=lookback,
         d_model=d_model,
+        n_heads=n_heads,
         d_ff=d_ff,
-        t_n_heads=t_n_heads,
-        s_n_heads=s_n_heads,
-        t_dropout=t_dropout,
-        s_dropout=s_dropout
+        dropout=dropout,
+        num_encoder_layers=num_encoder_layers,
     )
     # Move model to the target device
     return model.to(device)
