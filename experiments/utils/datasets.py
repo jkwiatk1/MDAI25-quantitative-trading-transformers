@@ -56,7 +56,7 @@ def prepare_sequential_data(
     data_scaled, tickers_to_use, lookback, target_col_index=0
 ):
     """
-    Converts data into format (Batch, Time, Akcje, Featury)
+    Converts data into format (Batch, Time, Stocks, Features)
 
     Args:
         data_scaled (dict[str, pd.DataFrame]): Dictionary {ticker: DataFrame[Time, Features]}
