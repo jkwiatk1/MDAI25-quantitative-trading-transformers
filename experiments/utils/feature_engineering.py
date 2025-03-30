@@ -1,7 +1,14 @@
 # Function to calculate cumulative features as described in the article
+import logging
+import pandas as pd
 
 
-def calc_input_features(df, tickers, cols=["Daily profit","Turnover","Cumulative profit","Cumulative turnover"], time_step=20):
+def calc_input_features(
+    df,
+    tickers,
+    cols=["Daily profit", "Turnover", "Cumulative profit", "Cumulative turnover"],
+    time_step=20,
+):
     """
     Calculate input features for all tickers, including:
     - intraday profit, NOT USED
@@ -23,46 +30,89 @@ def calc_input_features(df, tickers, cols=["Daily profit","Turnover","Cumulative
     return df
 
 
-def calc_cumulative_features(df, tickers, time_step, cols = ["Daily profit","Turnover","Cumulative profit","Cumulative turnover"]):
+def calc_cumulative_features(df_dict, tickers, time_step, cols):
     """
     Calculate cumulative daily profit and turnover features for each ticker.
 
     Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
+        df_dict (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
         tickers (list): List of ticker symbols.
         time_step (int): Lookback window for cumulative calculations.
+        cols (list): List of cumulative features to calculate.
 
     Returns:
-        dict of pd.DataFrame: Updated dictionary of DataFrames with cumulative features.
+        dict: A dictionary {ticker: pd.DataFrame} with calculated features.
     """
+    if not cols:
+        logging.warning(
+            "No columns specified for cumulative features calculation. Returning original dictionary."
+        )
+        return df_dict
+
+    output_df_dict = {}
+
     for ticker in tickers:
-        # df[ticker] = df[ticker].copy()
+        if ticker not in df_dict:
+            logging.warning(
+                f"Ticker {ticker} not found in input dict for calc_cumulative_features. Skipping."
+            )
+            continue
+
+        ticker_df = df_dict[ticker].copy()
+
         if "Daily profit" in cols:
-            df[ticker].loc[:, "Daily profit"] = (
-                df[ticker]["Close"] - df[ticker]["Close"].shift(1)
-            ) / df[ticker]["Close"].shift(1)
-            df[ticker].fillna({
-                "Daily profit": 0,
-            }, inplace=True)
+            if "Close" in ticker_df.columns:
+                daily_profit = (
+                    ticker_df["Close"] - ticker_df["Close"].shift(1)
+                ) / ticker_df["Close"].shift(1)
+                ticker_df.loc[:, "Daily profit"] = daily_profit.fillna(0)
+            else:
+                logging.warning(
+                    f"Column 'Close' not found for ticker {ticker}. Cannot calculate 'Daily profit'."
+                )
+
         if "Turnover" in cols:
-            df[ticker].loc[:, "Turnover"] = df[ticker]["Volume"] / df[ticker]["Close"]
-            df[ticker].fillna({
-                "Turnover": 0,
-            }, inplace=True)
+            if "Volume" in ticker_df.columns and "Close" in ticker_df.columns:
+                valid_close = ticker_df["Close"].replace(0, pd.NA)
+                turnover = ticker_df["Volume"] / valid_close
+                ticker_df.loc[:, "Turnover"] = turnover.fillna(0)
+            else:
+                logging.warning(
+                    f"Columns 'Volume' or 'Close' not found for ticker {ticker}. Cannot calculate 'Turnover'."
+                )
+
         if "Cumulative profit" in cols:
-            df[ticker].loc[:, "Cumulative profit"] = (
-                df[ticker]["Daily profit"].rolling(window=time_step, min_periods=1).sum()
-            )
-            df[ticker].fillna({
-                "Cumulative profit": 0,
-            }, inplace=True)
+            if "Daily profit" in ticker_df.columns:
+                cumulative_profit = (
+                    ticker_df["Daily profit"]
+                    .rolling(window=time_step, min_periods=1)
+                    .sum()
+                    .fillna(0)
+                )
+                ticker_df.loc[:, "Cumulative profit"] = cumulative_profit
+            else:
+                ticker_df.loc[:, "Cumulative profit"] = 0
+                logging.warning(
+                    f"'Daily profit' not available for ticker {ticker}. Setting 'Cumulative profit' to 0."
+                )
+
         if "Cumulative turnover" in cols:
-            df[ticker].loc[:, "Cumulative turnover"] = (
-                df[ticker]["Turnover"].rolling(window=time_step, min_periods=1).sum()
-            )
-            df[ticker].fillna({
-                "Cumulative turnover": 0
-            }, inplace=True)
-        if len(cols) == 0:
-            print("No columns selected for input features calculation.")
-    return df
+            if "Turnover" in ticker_df.columns:
+                cumulative_turnover = (
+                    ticker_df["Turnover"]
+                    .rolling(window=time_step, min_periods=1)
+                    .sum()
+                    .fillna(0)
+                )
+                ticker_df.loc[:, "Cumulative turnover"] = cumulative_turnover
+            else:
+                ticker_df.loc[:, "Cumulative turnover"] = 0
+                logging.warning(
+                    f"'Turnover' not available for ticker {ticker}. Setting 'Cumulative turnover' to 0."
+                )
+
+        # ticker_df = ticker_df.fillna(0)
+
+        output_df_dict[ticker] = ticker_df
+
+    return output_df_dict

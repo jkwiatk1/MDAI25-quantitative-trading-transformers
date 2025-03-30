@@ -22,6 +22,7 @@ from experiments.utils.datasets import (
     MultiStockDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
+from experiments.utils.metrics import RankLoss, WeightedMAELoss
 from experiments.utils.training import (
     build_TransformerCA,
     build_CrossFormer,
@@ -31,9 +32,6 @@ from experiments.utils.training import (
     inverse_transform_predictions,
     plot_predictions,
 )
-from experiments.utils.metrics import RankLoss, WeightedMAELoss
-
-
 from models.SimplePortfolioTransformer import build_SimplePortfolioTransformer
 
 
@@ -61,14 +59,17 @@ def load_config(config_path):
         logging.error(f"Error parsing configuration file {config_path}: {e}")
         exit(1)
 
+
 def get_tickers(config):
     if config["data"].get("yahoo_data", False):
         try:
             ticker_file = config["data"]["tickers"]
             tickers_df = pd.read_csv(ticker_file)
             if "Ticker" not in tickers_df.columns:
-                 logging.error(f"Ticker file {ticker_file} must contain a 'Ticker' column.")
-                 exit(1)
+                logging.error(
+                    f"Ticker file {ticker_file} must contain a 'Ticker' column."
+                )
+                exit(1)
             return tickers_df["Ticker"].tolist()
         except FileNotFoundError:
             logging.error(f"Ticker file not found at {ticker_file}")
@@ -80,7 +81,7 @@ def get_tickers(config):
         return config["data"]["tickers"]
     elif isinstance(config["data"]["tickers"], str):
         try:
-            with open(config["data"]["tickers"], 'r') as f:
+            with open(config["data"]["tickers"], "r") as f:
                 return [line.strip() for line in f if line.strip()]
         except FileNotFoundError:
             logging.error(f"Ticker file not found at {config['data']['tickers']}")
@@ -89,7 +90,9 @@ def get_tickers(config):
             logging.error(f"Error reading ticker file {config['data']['tickers']}: {e}")
             exit(1)
     else:
-        logging.error("Invalid format for config['data']['tickers']. Expected list or file path.")
+        logging.error(
+            "Invalid format for config['data']['tickers']. Expected list or file path."
+        )
         exit(1)
 
 
@@ -129,18 +132,21 @@ def main(args):
     logging.info(f"Number of features per stock: {financial_features}")
 
     try:
-        data_raw, _ = load_finance_data_xlsx(load_file, config["data"].get("yahoo_data", False))
-        data_raw = fill_missing_days(data_raw.copy(), tickers_to_use, start_date, end_date)
+        data_raw_dict, _ = load_finance_data_xlsx(
+            load_file, config["data"].get("yahoo_data", False)
+        )
+        data_filled_dict = fill_missing_days(
+            data_raw_dict, tickers_to_use, start_date, end_date
+        )
         data = prepare_finance_data(
-            data_raw, tickers_to_use, config["data"]["init_cols_to_use"]
+            data_filled_dict, tickers_to_use, config["data"]["init_cols_to_use"]
         )
         data = calc_input_features(
             df=data,
             tickers=tickers_to_use,
-            cols=preproc_cols,  # Użyj zweryfikowanej listy
+            cols=preproc_cols,
             time_step=config["training"]["lookback"],
         )
-        # Wybierz tylko potrzebne kolumny
         data = {key: value[preproc_cols] for key, value in data.items()}
 
         data_scaled, feat_scalers = normalize_data_for_quantformer(
@@ -151,8 +157,10 @@ def main(args):
         # Przygotowanie sekwencji - ZAKŁADAMY, ŻE ZWRACA [samples, T, N, F] lub Dataset to obsłuży
         # Jeśli zwraca [samples, T, N*F], trzeba będzie dodać reshape w Dataset.__getitem__
         # Lub zmodyfikować prepare_sequential_data
-        target_col = config['data'].get('preproc_target_col', "Daily profit")
-        logging.info(f"Using '{target_col}' for target variable extraction (index 0 assumed).")
+        target_col = config["data"].get("preproc_target_col", "Daily profit")
+        logging.info(
+            f"Using '{target_col}' for target variable extraction (index 0 assumed)."
+        )
         sequences, targets, ticker_mapping = prepare_sequential_data(
             data_scaled=data_scaled,
             tickers_to_use=tickers_to_use,
@@ -160,9 +168,12 @@ def main(args):
             target_col_index=0,  # Zmień jeśli target jest inną kolumną w danych po `calc_input_features`
             # Dodaj argumenty, aby funkcja zwracała [samples, T, N, F] jeśli to możliwe
         )
-        logging.info(f"Data sequences prepared. Shape: {sequences.shape}, Targets shape: {targets.shape}")
         logging.info(
-            f"Targets - Mean: {targets.mean():.6f}, Std: {targets.std():.6f}, Min: {targets.min():.6f}, Max: {targets.max():.6f}")
+            f"Data sequences prepared. Shape: {sequences.shape}, Targets shape: {targets.shape}"
+        )
+        logging.info(
+            f"Targets - Mean: {targets.mean():.6f}, Std: {targets.std():.6f}, Min: {targets.min():.6f}, Max: {targets.max():.6f}"
+        )
 
     except Exception as e:
         logging.error(f"Error during data loading/preparation: {e}", exc_info=True)
@@ -187,21 +198,26 @@ def main(args):
 
     if val_split_ratio > 0:
         val_size_abs = int(val_split_ratio * train_size_abs)
-        if val_size_abs == 0 and train_size_abs > 0:  # Zapewnij co najmniej 1 próbkę walidacyjną jeśli to możliwe
+        if (
+            val_size_abs == 0 and train_size_abs > 0
+        ):  # Zapewnij co najmniej 1 próbkę walidacyjną jeśli to możliwe
             val_size_abs = 1
-        train_sequences = sequences[:train_size_abs - val_size_abs]
-        train_targets = targets[:train_size_abs - val_size_abs]
-        val_sequences = sequences[train_size_abs - val_size_abs:train_size_abs]
-        val_targets = targets[train_size_abs - val_size_abs:train_size_abs]
+        train_sequences = sequences[: train_size_abs - val_size_abs]
+        train_targets = targets[: train_size_abs - val_size_abs]
+        val_sequences = sequences[train_size_abs - val_size_abs : train_size_abs]
+        val_targets = targets[train_size_abs - val_size_abs : train_size_abs]
         logging.info(
-            f"Train size: {len(train_sequences)}, Validation size: {len(val_sequences)}, Test size: {len(test_sequences)}")
+            f"Train size: {len(train_sequences)}, Validation size: {len(val_sequences)}, Test size: {len(test_sequences)}"
+        )
         if len(train_sequences) == 0 or len(val_sequences) == 0:
             logging.warning("Train or Validation set is empty after splitting!")
     else:
         train_sequences = sequences[:train_size_abs]
         train_targets = targets[:train_size_abs]
         val_sequences, val_targets = None, None  # Brak walidacji
-        logging.info(f"Train size: {len(train_sequences)}, Test size: {len(test_sequences)} (No validation set)")
+        logging.info(
+            f"Train size: {len(train_sequences)}, Test size: {len(test_sequences)} (No validation set)"
+        )
         if len(train_sequences) == 0:
             logging.warning("Train set is empty after splitting!")
 
@@ -211,25 +227,37 @@ def main(args):
     # --- Create DataLoaders ---
     logging.info("--- Creating DataLoaders ---")
     batch_size = config["training"]["batch_size"]
-    num_workers = config["training"].get("num_workers", 0)  # Dodaj do configu, domyślnie 0
+    num_workers = config["training"].get(
+        "num_workers", 0
+    )  # Dodaj do configu, domyślnie 0
     pin_memory = torch.cuda.is_available()  # Użyj pin_memory tylko z GPU
 
     try:
         train_loader = DataLoader(
-            MultiStockDataset(train_sequences, train_targets), batch_size=batch_size, shuffle=True,
-            num_workers=num_workers, pin_memory=pin_memory, drop_last=True  # drop_last często pomaga
+            MultiStockDataset(train_sequences, train_targets),
+            batch_size=batch_size,
+            shuffle=True,
+            num_workers=num_workers,
+            pin_memory=pin_memory,
+            drop_last=True,  # drop_last często pomaga
         )
         val_loader = None
         if val_sequences is not None and len(val_sequences) > 0:
             val_loader = DataLoader(
-                MultiStockDataset(val_sequences, val_targets), batch_size=batch_size, shuffle=False,
-                num_workers=num_workers, pin_memory=pin_memory
+                MultiStockDataset(val_sequences, val_targets),
+                batch_size=batch_size,
+                shuffle=False,
+                num_workers=num_workers,
+                pin_memory=pin_memory,
             )
         test_loader = None
         if test_sequences is not None and len(test_sequences) > 0:
             test_loader = DataLoader(
-                MultiStockDataset(test_sequences, test_targets), batch_size=batch_size, shuffle=False,
-                num_workers=num_workers, pin_memory=pin_memory
+                MultiStockDataset(test_sequences, test_targets),
+                batch_size=batch_size,
+                shuffle=False,
+                num_workers=num_workers,
+                pin_memory=pin_memory,
             )
     except Exception as e:
         logging.error(f"Error creating DataLoaders: {e}", exc_info=True)
@@ -242,52 +270,54 @@ def main(args):
 
     # --- Build Model (Dynamic) ---
     logging.info("--- Building Model ---")
-    model_type = config['model'].get('name', 'TransformerCA')
+    model_type = config["model"].get("name", "TransformerCA")
     model = None
     try:
         if model_type == "TransformerCA":
             logging.info("Building Portfolio TransformerCA...")
-            # model = build_TransformerCA(
-            #     stock_amount=stock_amount,
-            #     financial_features_amount=financial_features,
-            #     lookback=config["training"]["lookback"],
-            #     d_model=config['model']['d_model'],
-            #     n_heads=config['model']['n_heads'],
-            #     d_ff=config['model']['d_ff'],
-            #     dropout=config['model']['dropout'],
-            #     num_encoder_layers=config['model']['num_encoder_layers'],
-            #     device=device,
-            # )
-            model = build_SimplePortfolioTransformer(
+            model = build_TransformerCA(
                 stock_amount=stock_amount,
                 financial_features_amount=financial_features,
                 lookback=config["training"]["lookback"],
-                d_model=32,
-                n_heads=4,
-                d_ff=64,
-                dropout=0.1,
-                num_encoder_layers=1,
-                device=device
+                d_model=config["model"]["d_model"],
+                n_heads=config["model"]["n_heads"],
+                d_ff=config["model"]["d_ff"],
+                dropout=config["model"]["dropout"],
+                num_encoder_layers=config["model"]["num_encoder_layers"],
+                device=device,
             )
+            # model = build_SimplePortfolioTransformer(
+            #     stock_amount=stock_amount,
+            #     financial_features_amount=financial_features,
+            #     lookback=config["training"]["lookback"],
+            #     d_model=32,
+            #     n_heads=4,
+            #     d_ff=64,
+            #     dropout=0.1,
+            #     num_encoder_layers=1,
+            #     device=device
+            # )
         elif model_type == "Crossformer":
             logging.info("Building Portfolio Crossformer...")
             # Sprawdź czy specyficzne parametry istnieją
-            if not all(k in config['model'] for k in ('seg_len', 'win_size', 'factor')):
-                logging.error("Missing required parameters (seg_len, win_size, factor) for PortfolioCrossformer.")
+            if not all(k in config["model"] for k in ("seg_len", "win_size", "factor")):
+                logging.error(
+                    "Missing required parameters (seg_len, win_size, factor) for PortfolioCrossformer."
+                )
                 return
             model = build_CrossFormer(
                 stock_amount=stock_amount,
                 financial_features=financial_features,
-                in_len=config['training']['lookback'],
-                seg_len=config['model']['seg_len'],
-                win_size=config['model']['win_size'],
-                factor=config['model']['factor'],
-                d_model=config['model']['d_model'],
-                d_ff=config['model']['d_ff'],
-                n_heads=config['model']['n_heads'],
+                in_len=config["training"]["lookback"],
+                seg_len=config["model"]["seg_len"],
+                win_size=config["model"]["win_size"],
+                factor=config["model"]["factor"],
+                d_model=config["model"]["d_model"],
+                d_ff=config["model"]["d_ff"],
+                n_heads=config["model"]["n_heads"],
                 # Użyj num_encoder_layers jako e_layers dla spójności
-                e_layers=config['model']['num_encoder_layers'],
-                dropout=config['model']['dropout'],
+                e_layers=config["model"]["num_encoder_layers"],
+                dropout=config["model"]["dropout"],
                 device=device,
             )
         elif model_type == "MASTER":
@@ -296,13 +326,13 @@ def main(args):
                 stock_amount=stock_amount,
                 financial_features_amount=financial_features,
                 lookback=config["training"]["lookback"],
-                d_model=config['model']['d_model'],
+                d_model=config["model"]["d_model"],
                 # Użyj n_heads dla obu t i s dla uproszczenia, można to zmienić w configu
-                t_n_heads=config['model'].get('t_n_heads', config['model']['n_heads']),
-                s_n_heads=config['model'].get('s_n_heads', config['model']['n_heads']),
-                t_dropout=config['model'].get('t_dropout', config['model']['dropout']),
-                s_dropout=config['model'].get('s_dropout', config['model']['dropout']),
-                d_ff=config['model']['d_ff'],
+                t_n_heads=config["model"].get("t_n_heads", config["model"]["n_heads"]),
+                s_n_heads=config["model"].get("s_n_heads", config["model"]["n_heads"]),
+                t_dropout=config["model"].get("t_dropout", config["model"]["dropout"]),
+                s_dropout=config["model"].get("s_dropout", config["model"]["dropout"]),
+                d_ff=config["model"]["d_ff"],
                 # num_encoder_layers=config['model']['num_encoder_layers'], # TODO dodac to do modelu wczesniej to robilem z gemini
                 device=device,
             )
@@ -315,7 +345,9 @@ def main(args):
         logging.info(f"Built {model_type} with {total_params:,} trainable parameters.")
 
     except KeyError as e:
-        logging.error(f"Missing key in model configuration: {e}. Please check config.yaml.")
+        logging.error(
+            f"Missing key in model configuration: {e}. Please check config.yaml."
+        )
         return
     except Exception as e:
         logging.error(f"Error building model {model_type}: {e}", exc_info=True)
@@ -325,10 +357,12 @@ def main(args):
     logging.info("--- Setting up Training ---")
     try:
         # Wybór funkcji straty - dostosuj do zadania (predykcja zwrotów)
-        loss_type = config['training'].get('loss_function', 'RankLoss')  # Domyślnie RankLoss
-        if loss_type == 'RankLoss':
-            criterion = RankLoss(lambda_rank=config['training'].get('lambda_rank', 0.5))
-        elif loss_type == 'MSE':
+        loss_type = config["training"].get(
+            "loss_function", "RankLoss"
+        )  # Domyślnie RankLoss
+        if loss_type == "RankLoss":
+            criterion = RankLoss(lambda_rank=config["training"].get("lambda_rank", 0.5))
+        elif loss_type == "MSE":
             criterion = torch.nn.MSELoss()
         # Dodaj inne opcje np. 'MAE'
         # elif loss_type == 'MAE':
@@ -341,28 +375,35 @@ def main(args):
         optimizer = torch.optim.AdamW(  # Użyj AdamW dla lepszego weight decay
             model.parameters(),
             lr=config["training"]["learning_rate"],
-            weight_decay=config["training"].get("weight_decay", 0.01)  # Dodaj weight_decay do configu
+            weight_decay=config["training"].get(
+                "weight_decay", 0.01
+            ),  # Dodaj weight_decay do configu
         )
         logging.info(
-            f"Using optimizer: AdamW with lr={config['training']['learning_rate']} and weight_decay={config['training'].get('weight_decay', 0.01)}")
+            f"Using optimizer: AdamW with lr={config['training']['learning_rate']} and weight_decay={config['training'].get('weight_decay', 0.01)}"
+        )
 
         # Konfiguracja schedulera
-        scheduler_config = config['training'].get('lr_scheduler', {})
-        scheduler_type = scheduler_config.get('type', None)
+        scheduler_config = config["training"].get("lr_scheduler", {})
+        scheduler_type = scheduler_config.get("type", None)
         scheduler = None
         if scheduler_type == "ReduceLROnPlateau":
-            scheduler = ReduceLROnPlateau(optimizer, **scheduler_config.get('params', {}))
+            scheduler = ReduceLROnPlateau(
+                optimizer, **scheduler_config.get("params", {})
+            )
         elif scheduler_type == "StepLR":
-            scheduler = StepLR(optimizer, **scheduler_config.get('params', {}))
+            scheduler = StepLR(optimizer, **scheduler_config.get("params", {}))
         elif scheduler_type == "ExponentialLR":
-            scheduler = ExponentialLR(optimizer, **scheduler_config.get('params', {}))
+            scheduler = ExponentialLR(optimizer, **scheduler_config.get("params", {}))
 
         if scheduler:
-            logging.info(f"Using LR scheduler: {scheduler_type} with params {scheduler_config.get('params', {})}")
+            logging.info(
+                f"Using LR scheduler: {scheduler_type} with params {scheduler_config.get('params', {})}"
+            )
         else:
             logging.info("No LR scheduler used.")
 
-        use_amp = config['training'].get('use_amp', True) and torch.cuda.is_available()
+        use_amp = config["training"].get("use_amp", True) and torch.cuda.is_available()
         scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
         logging.info(f"Using Automatic Mixed Precision (AMP): {use_amp}")
 
@@ -386,7 +427,7 @@ def main(args):
             patience=config["training"]["patience"],
             scaler=scaler,
             scheduler=scheduler,
-            model_name=model_type  # Przekaż nazwę modelu do zapisania
+            model_name=model_type,  # Przekaż nazwę modelu do zapisania
         )
         logging.info(f"Training finished. Best model saved to: {best_model_path}")
         # Możesz zapisać historię treningu/walidacji (history)
@@ -403,7 +444,7 @@ def main(args):
         try:
             # Załaduj stan na CPU, a następnie przenieś na właściwe urządzenie
             # To bezpieczniejsze, jeśli model był trenowany na GPU, a ewaluacja jest na CPU
-            model.load_state_dict(torch.load(best_model_path, map_location='cpu'))
+            model.load_state_dict(torch.load(best_model_path, map_location="cpu"))
             model.to(device)  # Upewnij się, że model jest na właściwym urządzeniu
 
             test_predictions, test_targets_eval, test_loss = evaluate_model(
@@ -420,26 +461,39 @@ def main(args):
 
             # Squeeze jeśli model zwraca [B, N, 1], a targets mają [B, N]
             # Sprawdź kształty przed squeeze!
-            logging.info(f"Raw predictions shape: {test_predictions.shape}")  # Powinno być (num_test_samples, N, 1)
-            logging.info(f"Raw targets shape: {test_targets_eval.shape}")  # Powinno być (num_test_samples, N)
+            logging.info(
+                f"Raw predictions shape: {test_predictions.shape}"
+            )  # Powinno być (num_test_samples, N, 1)
+            logging.info(
+                f"Raw targets shape: {test_targets_eval.shape}"
+            )  # Powinno być (num_test_samples, N)
             if test_predictions.shape[-1] == 1:
-                test_predictions = test_predictions.squeeze(-1)  # -> (num_test_samples, N, 1)
+                test_predictions = test_predictions.squeeze(
+                    -1
+                )  # -> (num_test_samples, N, 1)
                 test_targets_eval = test_targets_eval.squeeze(-1)
 
             # Odwróć transformację tylko dla kolumny docelowej
-            target_col_name = config['data'].get('preproc_target_col')
+            target_col_name = config["data"].get("preproc_target_col")
             if not target_col_name:
-                logging.warning("'preproc_target_col' not specified in config.  Skipping inverse transform and using scaled values for plotting.")
+                logging.warning(
+                    "'preproc_target_col' not specified in config.  Skipping inverse transform and using scaled values for plotting."
+                )
                 test_predictions_to_plot = test_predictions
                 test_targets_to_plot = test_targets_eval
 
             else:
                 try:
-                    logging.info(f"Attempting inverse transform for target '{target_col_name}'...")
+                    logging.info(
+                        f"Attempting inverse transform for target '{target_col_name}'..."
+                    )
                     # test_predictions = test_predictions.squeeze(-1)
                     #
 
-                    test_predictions_inv, test_targets_inv = inverse_transform_predictions(
+                    (
+                        test_predictions_inv,
+                        test_targets_inv,
+                    ) = inverse_transform_predictions(
                         test_predictions,
                         test_targets_eval,
                         tickers_to_use,
@@ -451,14 +505,20 @@ def main(args):
                     logging.info("Inverse transform finished.")
 
                 except Exception as e:
-                    logging.error(f"Unexpected error calling inverse_transform_predictions: {e}", exc_info=True)
+                    logging.error(
+                        f"Unexpected error calling inverse_transform_predictions: {e}",
+                        exc_info=True,
+                    )
                     test_predictions_to_plot = test_predictions
                     test_targets_to_plot = test_targets_eval
 
                 # --- Plotting
                 try:
                     first_ticker = tickers_to_use[0]
-                    if first_ticker in data_scaled and len(data_scaled[first_ticker]) >= num_samples:
+                    if (
+                        first_ticker in data_scaled
+                        and len(data_scaled[first_ticker]) >= num_samples
+                    ):
                         test_dates = data_scaled[first_ticker].index[train_size_abs:]
                         if len(test_dates) == len(test_predictions_to_plot):
                             plot_predictions(
@@ -467,30 +527,46 @@ def main(args):
                                 tickers_to_use,
                                 save_path=output_dir,
                                 dates=test_dates,
-                                model_name=model_type
+                                model_name=model_type,
                             )
                         else:
                             logging.warning(
-                                "Length mismatch between test dates and predictions after potential drops.")
-                            plot_predictions(test_predictions_to_plot, test_targets_to_plot, tickers_to_use,
-                                             save_path=output_dir, model_name=model_type)
+                                "Length mismatch between test dates and predictions after potential drops."
+                            )
+                            plot_predictions(
+                                test_predictions_to_plot,
+                                test_targets_to_plot,
+                                tickers_to_use,
+                                save_path=output_dir,
+                                model_name=model_type,
+                            )
                     else:
                         logging.warning("Could not extract test dates for plotting.")
-                        plot_predictions(test_predictions_to_plot, test_targets_to_plot, tickers_to_use,
-                                         save_path=output_dir, model_name=model_type)
-
+                        plot_predictions(
+                            test_predictions_to_plot,
+                            test_targets_to_plot,
+                            tickers_to_use,
+                            save_path=output_dir,
+                            model_name=model_type,
+                        )
 
                 except Exception as e:
                     logging.error(f"Error during plotting: {e}", exc_info=True)
 
         except FileNotFoundError:
-            logging.error(f"Best model file not found at {best_model_path}. Skipping evaluation.")
+            logging.error(
+                f"Best model file not found at {best_model_path}. Skipping evaluation."
+            )
         except Exception as e:
-            logging.error(f"Error during model loading or evaluation: {e}", exc_info=True)
+            logging.error(
+                f"Error during model loading or evaluation: {e}", exc_info=True
+            )
     elif not test_loader:
         logging.warning("Test loader is empty. Skipping evaluation.")
     else:
-        logging.warning("Best model path not found or training failed. Skipping evaluation.")
+        logging.warning(
+            "Best model path not found or training failed. Skipping evaluation."
+        )
 
     logging.info("--- Pipeline Finished ---")
 
@@ -533,7 +609,6 @@ if __name__ == "__main__":
         print("Failed to load configuration. Exiting.")
         exit(1)
 """
-
 
 # if __name__ == "__main__":
 #     model_name = "Transformer"
