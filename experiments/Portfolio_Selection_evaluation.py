@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 
 from experiments.utils.data_loading import load_finance_data_xlsx, prepare_finance_data, fill_missing_days
-from experiments.utils.datasets import MultiStockDataset, prepare_sequential_data, normalize_data_for_quantformer
+from experiments.utils.datasets import MultiStockDataset, prepare_sequential_data, normalize_data
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.metrics import compute_portfolio_metrics, RankLoss
 from experiments.utils.training import build_TransformerCA, evaluate_model, inverse_transform_predictions
@@ -88,7 +88,7 @@ def main(args):
     }
 
     # Normalize and prepare sequences
-    data_scaled, feat_scalers = normalize_data_for_quantformer(
+    data_scaled, feat_scalers = normalize_data(
         data, selected_tickers, config["data"]["preproc_cols_to_use"]
     )
 

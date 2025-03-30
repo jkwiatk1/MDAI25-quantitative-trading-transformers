@@ -18,7 +18,7 @@ from experiments.utils.datasets import (
     prepare_sequential_data,
     prepare_combined_data,
     create_combined_sequences,
-    normalize_data_for_quantformer,
+    normalize_data,
     MultiStockDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
@@ -149,7 +149,7 @@ def main(args):
         )
         data = {key: value[preproc_cols] for key, value in data.items()}
 
-        data_scaled, feat_scalers = normalize_data_for_quantformer(
+        data_scaled, feat_scalers = normalize_data(
             data, tickers_to_use, preproc_cols
         )
 

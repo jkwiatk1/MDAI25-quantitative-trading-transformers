@@ -168,7 +168,7 @@ def create_combined_sequences(
     return np.array(sequences), np.array(targets)
 
 
-def normalize_data_for_quantformer(df, tickers, features_to_normalize):
+def normalize_data(df, tickers, features_to_normalize):
     """
     Normalize features using MinMaxScaler for each ticker.
 
