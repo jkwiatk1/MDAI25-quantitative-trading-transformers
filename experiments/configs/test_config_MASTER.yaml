@@ -1,21 +1,22 @@
+#device: "cuda"
 data:
   path: "../data/finance_TEST_DATA/popular_tickers/historical_data_2022-01-01-2024-12-01-1d.xlsx"
-  output_dir: "../data/exp_result/test/Transformer/test_data"
+  output_dir: "../data/exp_result/test/MASTER/test_data"
   yahoo_data: False
   start_date: "2022-01-03"
   end_date: "2024-01-12"
   tickers: [
-    "USDT-USD",
+        "USDT-USD",
     "BTC-USD",
      "XRP-USD",
-    "ETH-USD",
+      "ETH-USD",
      "BNB-USD",
      "DOGE-USD",
      "SOL-USD",
      "STETH-USD",
      "DOT-USD",
-    "TSLA",
-    "AAPL",
+        "TSLA",
+        "AAPL",
     "NVDA",
      "PLTR",
      "SMCI",
@@ -45,22 +46,25 @@ data:
   ]
   preproc_target_col: "Daily profit"
 model:
-  name: "Transformer"
-  type: "TransformerCA"
+  name: "MASTER"
   d_model: 16
-  n_heads: 1
-  num_encoder_layers: 1
   d_ff: 64
-  dropout: 0.1
-  weights_path: "../data/exp_result/test/Transformer/test_data/best_model.pth"
+  t_n_heads: 2
+  s_n_heads: 2
+  t_dropout: 0.1
+  s_dropout: 0.1
+  num_encoder_layers: 1
+  dropout: 0.05
+  weights_path: "../data/exp_result/test/MASTER/test_data/best_model.pth"
 training:
-  n_epochs: 40
-  lookback: 10
-  batch_size: 4
-  learning_rate: 0.004
+  n_epochs: 200
+  lookback: 20
+  batch_size: 64
+  learning_rate: 0.001
   test_split: 0.2
   val_split: 0.1
-  patience: 4
+  #  use_amp: True # true, if you want to turn on AMP, false to turn off
+  patience: 15
   lr_scheduler:
     type: "ReduceLROnPlateau"  # or StepLR, "ExponentialLR"
     factor: 0.5

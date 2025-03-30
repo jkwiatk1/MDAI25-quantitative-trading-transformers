@@ -24,7 +24,6 @@ from experiments.utils.datasets import (
     MultiTickerDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
-from experiments.utils.quantformer_ import trading_strategy
 from experiments.utils.training import (
     build_Transformer,
     train_model,
@@ -32,7 +31,7 @@ from experiments.utils.training import (
     inverse_transform_predictions,
     plot_predictions,
 )
-from models.WeightedMAELoss import WeightedMAELoss
+from experiments.utils.metrics import WeightedMAELoss
 
 
 def setup_logging(log_file):
