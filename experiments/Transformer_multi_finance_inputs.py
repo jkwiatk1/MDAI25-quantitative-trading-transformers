@@ -247,7 +247,7 @@ model_name = "Transformer"
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 log_file = os.path.join(base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log")
 setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/test_config.yaml")
+args = SimpleNamespace(config="../experiments/configs/test_config_TransformerCA.yaml")
 main(args)
 
 

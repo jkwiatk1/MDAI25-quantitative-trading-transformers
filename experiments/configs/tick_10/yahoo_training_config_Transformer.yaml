@@ -1,11 +1,11 @@
 #device: "cuda"
 data:
-  path: "./data/finance/sp500/preprocess/sp500_stocks_historical_data.xlsx"
+  path: "./data/finance_TEST_DATA/sp500/preprocess/sp500_stocks_historical_data.xlsx"
   output_dir: "./data/exp_result/Transformer/tick_10/lkb10_lr005_dmod16_nh1_ff512_drp1/yahoo_data"
   yahoo_data: True
   start_date: "2018-01-01"
   end_date: "2024-01-01"
-  tickers: "./data/finance/sp500/preprocess/sp500_tickers_10.csv"
+  tickers: "./data/finance_TEST_DATA/sp500/preprocess/sp500_tickers_10.csv"
   init_cols_to_use: [
     "Close",
     "High",
