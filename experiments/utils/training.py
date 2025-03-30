@@ -137,6 +137,7 @@ def build_CrossFormer(
         seg_len: int,
         win_size: int = 2,
         factor: int = 10,
+        aggregation_type: str = 'avg_pool',
         e_layers: int = 2,  # num_encoder_layers
 
         # --- General Transformer Architecture Parameters ---
@@ -189,7 +190,7 @@ def build_CrossFormer(
         PortfolioCrossformer: An initialized instance of the model.
     """
     print("-" * 30)
-    print("Building PortfolioCrossformer with parameters:")
+    print(f"Building PortfolioCrossformer with aggregation: {aggregation_type} with  parameters:")
     print(f"  Data: stock_amount={stock_amount}, financial_features={financial_features}, in_len={in_len}")
     print(f"  Crossformer Arch: seg_len={seg_len}, win_size={win_size}, factor={factor}, e_layers={e_layers}")
     print(f"  Transformer Arch: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}")
@@ -209,6 +210,7 @@ def build_CrossFormer(
         seg_len=seg_len,
         win_size=win_size,
         factor=factor,
+        aggregation_type=aggregation_type,
         d_model=d_model,
         d_ff=d_ff,
         n_heads=n_heads,

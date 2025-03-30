@@ -271,7 +271,6 @@ def main(args):
     # --- Build Model (Dynamic) ---
     logging.info("--- Building Model ---")
     model_type = config["model"].get("name", "TransformerCA")
-    model = None
     try:
         if model_type == "TransformerCA":
             logging.info("Building Portfolio TransformerCA...")
@@ -286,18 +285,7 @@ def main(args):
                 num_encoder_layers=config["model"]["num_encoder_layers"],
                 device=device,
             )
-            # model = build_SimplePortfolioTransformer(
-            #     stock_amount=stock_amount,
-            #     financial_features_amount=financial_features,
-            #     lookback=config["training"]["lookback"],
-            #     d_model=32,
-            #     n_heads=4,
-            #     d_ff=64,
-            #     dropout=0.1,
-            #     num_encoder_layers=1,
-            #     device=device
-            # )
-        elif model_type == "Crossformer":
+        elif model_type == "CrossFormer":
             logging.info("Building Portfolio Crossformer...")
             # Sprawdź czy specyficzne parametry istnieją
             if not all(k in config["model"] for k in ("seg_len", "win_size", "factor")):
@@ -312,6 +300,7 @@ def main(args):
                 seg_len=config["model"]["seg_len"],
                 win_size=config["model"]["win_size"],
                 factor=config["model"]["factor"],
+                aggregation_type='avg_pool',  # TODO add to config
                 d_model=config["model"]["d_model"],
                 d_ff=config["model"]["d_ff"],
                 n_heads=config["model"]["n_heads"],
@@ -340,7 +329,6 @@ def main(args):
             logging.error(f"Unknown model name: {model_type}")
             return
 
-        # Zlicz parametry modelu
         total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
         logging.info(f"Built {model_type} with {total_params:,} trainable parameters.")
 
@@ -356,10 +344,9 @@ def main(args):
     # --- Training Setup ---
     logging.info("--- Setting up Training ---")
     try:
-        # Wybór funkcji straty - dostosuj do zadania (predykcja zwrotów)
         loss_type = config["training"].get(
             "loss_function", "RankLoss"
-        )  # Domyślnie RankLoss
+        )
         if loss_type == "RankLoss":
             criterion = RankLoss(lambda_rank=config["training"].get("lambda_rank", 0.5))
         elif loss_type == "MSE":
@@ -372,12 +359,12 @@ def main(args):
             return
         logging.info(f"Using loss function: {criterion.__class__.__name__}")
 
-        optimizer = torch.optim.AdamW(  # Użyj AdamW dla lepszego weight decay
+        optimizer = torch.optim.AdamW(
             model.parameters(),
             lr=config["training"]["learning_rate"],
             weight_decay=config["training"].get(
                 "weight_decay", 0.01
-            ),  # Dodaj weight_decay do configu
+            ),
         )
         logging.info(
             f"Using optimizer: AdamW with lr={config['training']['learning_rate']} and weight_decay={config['training'].get('weight_decay', 0.01)}"
@@ -572,13 +559,22 @@ def main(args):
 
 
 # local run
-model_name = "TransformerCA"
+# model_name = "TransformerCA"
+# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# log_file = os.path.join(
+#     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
+# )
+# setup_logging(log_file)
+# args = SimpleNamespace(config="../experiments/configs/training_config_TransformerCA.yaml")
+# main(args)
+
+model_name = "CrossFormer"
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 log_file = os.path.join(
     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
 )
 setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/training_config.yaml")
+args = SimpleNamespace(config="../experiments/configs/training_config_CrossFormer.yaml")
 main(args)
 
 """

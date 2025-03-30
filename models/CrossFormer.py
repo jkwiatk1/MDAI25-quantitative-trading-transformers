@@ -262,136 +262,100 @@ class Encoder(nn.Module):
 
 class PortfolioCrossformer(nn.Module):
     def __init__(self, stock_amount, financial_features, in_len, seg_len,
-                 win_size=2, factor=10, d_model=512, d_ff=1024, n_heads=8, e_layers=3,
-                 dropout=0.1, device=torch.device('cuda:0')):
-        super(PortfolioCrossformer, self).__init__()
+                 win_size=2, factor=10, d_model=512, d_ff=1024, n_heads=8, e_layers=2,  # Zmniejszono domyślne e_layers
+                 dropout=0.1, aggregation_type='avg_pool',  # Dodano typ agregacji
+                 device=torch.device('cuda:0')):
+        super().__init__()
         self.stock_amount = stock_amount
         self.financial_features = financial_features
         self.data_dim = stock_amount * financial_features
         self.in_len = in_len
         self.seg_len = seg_len
         self.merge_win = win_size
-        self.d_model = d_model  # Przechowaj d_model
-        self.e_layers = e_layers  # Przechowaj e_layers
+        self.d_model = d_model
+        self.e_layers = e_layers
+        self.aggregation_type = aggregation_type
         self.device = device
 
+        # Padding i obliczenie liczby segmentów
         self.pad_in_len = ceil(1.0 * in_len / seg_len) * seg_len
         self.in_len_add = self.pad_in_len - self.in_len
         self.in_seg_num = self.pad_in_len // seg_len
 
+        # Embedding
         self.enc_value_embedding = DSW_embedding(seg_len, d_model)
         self.enc_pos_embedding = nn.Parameter(torch.randn(1, self.data_dim, self.in_seg_num, d_model))
-        self.pre_norm = nn.LayerNorm(d_model)
+        self.pre_norm = nn.LayerNorm(d_model)  # Norma na wejściu do enkodera
 
-        self.encoder = Encoder(e_layers, win_size, d_model, n_heads, d_ff, block_depth=1, \
+        # Encoder
+        self.encoder = Encoder(e_layers, win_size, d_model, n_heads, d_ff, block_depth=1,
                                dropout=dropout, in_seg_num=self.in_seg_num, factor=factor)
 
-        # Oblicz final_seg_num poprawnie
+        # Obliczanie final_seg_num (bez zmian)
         self.final_seg_num = self.in_seg_num
         if e_layers > 0:
-            for _ in range(e_layers - 1):  # Merging występuje w blokach od 1 do e_layers-1
+            for _ in range(e_layers - 1):
                 if win_size > 1:
                     self.final_seg_num = ceil(self.final_seg_num / win_size)
 
-        self.aggregation = nn.AdaptiveAvgPool1d(1)
+        # Agregacja (warunkowo)
+        if self.aggregation_type == 'avg_pool':
+            self.aggregation = nn.AdaptiveAvgPool1d(1)
+        elif self.aggregation_type == 'last_segment':
+            self.aggregation = None  # Nie potrzebujemy modułu
+        else:
+            raise ValueError(f"Unknown aggregation_type: {self.aggregation_type}")
 
-        self.portfolio_head = nn.Sequential(
-            nn.Linear(self.data_dim * d_model, d_model // 2),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.LayerNorm(d_model // 2),
-            nn.Linear(d_model // 2, self.stock_amount, bias=False)
-        )
-
-        self.softmax = nn.Softmax(dim=-1)
+        self.portfolio_head = nn.Linear(self.data_dim * d_model, self.stock_amount,
+                                        bias=False)
+        # hidden_dim = d_model // 2
+        # self.portfolio_head = nn.Sequential(
+        #     nn.Linear(self.data_dim * d_model, hidden_dim),
+        #     nn.ReLU(),
+        #     nn.Dropout(dropout),
+        #     nn.LayerNorm(hidden_dim),
+        #     nn.Linear(hidden_dim, self.stock_amount, bias=False)
+        # )
 
     def forward(self, x):
-        # x: [batch_size, lookback, stock_amount, financial_features]
-        batch_size = x.shape[0]
-        lookback = x.shape[1]  # Pobierz lookback z danych
+        # x: [batch_size, lookback, stock_amount, financial_features] == [B, T, N, F]
+        B, T, N, F = x.shape
+        assert T == self.in_len and N == self.stock_amount and F == self.financial_features
 
-        # Sprawdź dane wejściowe (upewnienie się)
-        if batch_size > 1:  # Tylko jeśli mamy więcej niż 1 próbkę w batchu
-            print(f"Input x std across batch (sample feature 0, time 0): {x[:, 0, 0, 0].std().item():.4f}")
-
-        # 1. Reshape wejścia
-        # x_seq = rearrange(x, 'b l s f -> b l (s f)') # <--- ZMIANA Z EINOPS
-        # Połącz wymiary s i f
-        x_seq = x.reshape(batch_size, lookback, self.stock_amount * self.financial_features)
-        assert x_seq.shape[2] == self.data_dim
-
-        # 2. Padding
+        # 1. Reshape i Padding
+        x_seq = x.reshape(B, T, N * F)
         if self.in_len_add != 0:
-            padding = x_seq[:, :1, :].expand(-1, self.in_len_add, -1)  # Replikuj pierwszy krok czasowy
-            x_seq = torch.cat((padding, x_seq), dim=1)
-            # Teraz x_seq ma kształt [batch_size, pad_in_len, data_dim]
+            padding = x_seq[:, :1, :].expand(-1, self.in_len_add, -1)
+            x_seq = torch.cat((padding, x_seq), dim=1)  # [B, pad_in_len, data_dim]
 
-        current_ts_len = x_seq.shape[1]
-        assert current_ts_len == self.pad_in_len, f"Padded length mismatch: {current_ts_len} != {self.pad_in_len}"
-
-        # 3. Embedding
-        # x_embed: [batch_size, data_dim, in_seg_num, d_model]
-        x_embed = self.enc_value_embedding(x_seq)
-        x_embed += self.enc_pos_embedding
+        # 2. Embedding + Pos + Norm
+        x_embed = self.enc_value_embedding(x_seq)  # [B, data_dim, in_seg_num, D]
+        x_embed = x_embed + self.enc_pos_embedding  # Broadcasting
         x_embed = self.pre_norm(x_embed)
-        # Sprawdź po embeddingu
-        if batch_size > 1:
-            print(
-                f"After Embedding+Pos+Norm std across batch (sample dim 0, seg 0, feat 0): {x_embed[:, 0, 0, 0].std().item():.4f}")
 
-
-
-        # 4. Encoder
-        # enc_out_list zawiera wyjścia z kolejnych bloków skal
+        # 3. Encoder
         enc_out_list = self.encoder(x_embed)
-        enc_out = enc_out_list[-1]  # Bierzemy wyjście z ostatniej skali
-        # Sprawdź wyjście enkodera
-        if batch_size > 1:
-            print(
-                f"Encoder Output (enc_out) std across batch (sample dim 0, seg 0, feat 0): {enc_out[:, 0, 0, 0].std().item():.4f}")
+        enc_out = enc_out_list[-1]  # [B, data_dim, L_final, D]
 
+        # 4. Aggregation
+        if self.aggregation_type == 'avg_pool':
+            # Reshape for pooling: [B, data_dim, D, L_final] -> [B, D*M, L_final]
+            aggregated_features_prep = enc_out.permute(0, 1, 3, 2).contiguous()
+            aggregated_features_prep = aggregated_features_prep.view(B, self.data_dim * self.d_model,
+                                                                     self.final_seg_num)
+            aggregated_features = self.aggregation(aggregated_features_prep).squeeze(-1)  # [B, data_dim * D]
+        elif self.aggregation_type == 'last_segment':
+            # Take last segment: [B, data_dim, L_final, D] -> [B, data_dim, D]
+            last_segment_features = enc_out[:, :, -1, :]
+            # Reshape: [B, data_dim, D] -> [B, data_dim * D]
+            aggregated_features = last_segment_features.reshape(B, self.data_dim * self.d_model)
+        else:
+            # Już sprawdzono w __init__
+            raise ValueError("Should not happen")
 
-        # Sprawdzenie kształtu wyjścia enkodera
-        B, D, L_final, M = enc_out.shape
-        assert D == self.data_dim
-        assert L_final == self.final_seg_num, f"Encoder output L_final {L_final} != calculated final_seg_num {self.final_seg_num}"
-        assert M == self.d_model
+        predicted_logits = self.portfolio_head(aggregated_features)  # [B, N]
+        predictions = predicted_logits.unsqueeze(-1)  # [B, N, 1]
 
-        # 5. Agregacja cech
-        # ZMIANA TEGO
-        # enc_out: [B, data_dim, L_final, d_model]
-        # aggregated_features = rearrange(enc_out, 'b d l m -> b (d m) l') # <--- ZMIANA Z EINOPS
-        # 1. Zmień kolejność: [B, data_dim, d_model, L_final]
-        aggregated_features_prep = enc_out.permute(0, 1, 3, 2).contiguous()
-        # 2. Połącz wymiary d i m: [B, (data_dim * d_model), L_final]
-        aggregated_features_prep = aggregated_features_prep.view(batch_size, self.data_dim * self.d_model, L_final)
-
-        aggregated_features = self.aggregation(aggregated_features_prep).squeeze(-1)  # [B, data_dim * d_model]
-        # Sprawdź zagregowane cechy (WEJŚCIE DO GŁOWICY)
-        if batch_size > 1:
-            print(
-                f"Aggregated Features std across batch (sample feature 0): {aggregated_features[:, 0].std().item():.4f}")
-
-
-        # # --- ZMIANA NA : Zmiana agregacji ---
-        # # Zamiast uśredniania po L_final, weź cechy z ostatniego segmentu (indeks -1)
-        # last_segment_features = enc_out[:, :, -1, :] # Shape: [B, data_dim, d_model]
-        #
-        # # Spłaszcz wymiary data_dim i d_model, aby pasowały do wejścia głowicy
-        # # aggregated_features = last_segment_features.view(B, D * M) # Przestarzałe view
-        # aggregated_features = last_segment_features.reshape(B, D * M) # Shape: [B, data_dim * d_model]
-
-        # 6. Głowica predykcyjna
-        portfolio_logits = self.portfolio_head(aggregated_features)  # [B, stock_amount]
-        # Sprawdź logity (WYJŚCIE Z GŁOWICY PRZED EW. UNSQUEEZE)
-        if batch_size > 1:
-            print(f"Predicted Logits std across batch (sample stock 0): {portfolio_logits[:, 0].std().item():.4f}")
-
-        # # 7. Softmax if I want to predict weights how many of each stock should be alloceted. (results sum to 1)
-        # portfolio_weights = self.softmax(portfolio_logits)  # [B, stock_amount]
-
-        portfolio_weights = portfolio_logits.unsqueeze(-1)  # [B, stock_amount, 1]
-
-        return portfolio_weights
+        return predictions
 
 

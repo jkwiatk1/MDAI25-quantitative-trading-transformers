@@ -344,7 +344,7 @@ log_file = os.path.join(
     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
 )
 setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/test_config_CrossFormer.yaml")
+args = SimpleNamespace(config="../experiments/configs/training_config_CrossFormer.yaml")
 main(args)
 #
 # # --- Uruchomienie skryptu ---
