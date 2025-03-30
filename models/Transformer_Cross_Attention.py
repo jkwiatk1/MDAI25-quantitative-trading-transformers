@@ -6,29 +6,48 @@ from models.modules import (
     LayerNormalization,
     FeedForwardBlock,
     MultiHeadAttentionBlock,
-    PositionalEncoding
+    # PositionalEncoding
 )
 
+class PositionalEncoding(nn.Module):
+    """Standard Positional Encoding using sin/cos."""
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 1000):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        position = torch.arange(max_len).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        pe = torch.zeros(max_len, 1, d_model)
+        pe[:, 0, 0::2] = torch.sin(position * div_term)
+        pe[:, 0, 1::2] = torch.cos(position * div_term)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        """ x: [seq_len, batch_eff, d_model] """
+        x = x + self.pe[:x.size(0)]
+        return self.dropout(x)
 
 class EncoderLayerCA(nn.Module):
     """
-    Single Encoder Layer performing Temporal Self-Attention, Spatial Cross-Attention,
-    and Feed-Forward processing with Post-LN normalization.
+    Performs Temporal Self-Attention, Spatial Cross-Attention, and Feed-Forward.
+    Uses Post-LN normalization style.
     """
 
     def __init__(self, d_model: int, n_heads: int, d_ff: int, dropout: float):
         super().__init__()
-        self.temporal_attn = MultiHeadAttentionBlock(d_model, n_heads, dropout)
-        self.norm1 = LayerNormalization(d_model)
+        self.temporal_attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=n_heads, dropout=dropout, batch_first=False) # Oczekuje [T, B_eff, D]
+        self.norm1 = nn.LayerNorm(d_model)
         self.dropout1 = nn.Dropout(dropout)
 
-        self.spatial_attn = MultiHeadAttentionBlock(d_model, n_heads, dropout)
-        self.norm2 = LayerNormalization(d_model)
+        self.spatial_attn = nn.MultiheadAttention(embed_dim=d_model, num_heads=n_heads, dropout=dropout, batch_first=False) # Oczekuje [N, B_eff, D]
+        self.norm2 = nn.LayerNorm(d_model)
         self.dropout2 = nn.Dropout(dropout)
 
-        self.ffn = FeedForwardBlock(d_model, d_ff, dropout)
-        self.norm3 = LayerNormalization(d_model)
+        self.linear1 = nn.Linear(d_model, d_ff)
+        self.dropout = nn.Dropout(dropout)
+        self.linear2 = nn.Linear(d_ff, d_model)
+        self.norm3 = nn.LayerNorm(d_model)
         self.dropout3 = nn.Dropout(dropout)
+        self.activation = nn.ReLU()  # nn.GELU()
 
     def forward(self, x):
         """
@@ -41,28 +60,27 @@ class EncoderLayerCA(nn.Module):
 
         # --- 1. Temporal Self-Attention ---
         residual1 = x
-        # Reshape for temporal attention: [B*N, T, D]
-        x_temp = x.permute(0, 2, 1, 3).contiguous().view(B * N, T, D)
-        attn_temp_out = self.temporal_attn(x_temp, x_temp, x_temp, mask=None)  # Q=K=V
-        # Reshape back: [B, T, N, D]
-        attn_temp_out = attn_temp_out.view(B, N, T, D).permute(0, 2, 1, 3).contiguous()
+        # Reshape: [B, T, N, D] -> [T, B*N, D]
+        x_temp = x.permute(1, 0, 2, 3).contiguous().view(T, B * N, D)
+        attn_temp_out, _ = self.temporal_attn(x_temp, x_temp, x_temp, need_weights=False)  # Q=K=V
+        # Reshape back: [T, B*N, D] -> [B, T, N, D]
+        attn_temp_out = attn_temp_out.view(T, B, N, D).permute(1, 0, 2, 3).contiguous()
         # Post-LN Residual Connection 1
         x = self.norm1(residual1 + self.dropout1(attn_temp_out))
 
         # --- 2. Spatial Cross-Attention ---
         residual2 = x
-        # Reshape for spatial attention: [B*T, N, D]
-        x_spat = x.permute(0, 1, 3, 2).contiguous().view(B * T, D, N)  # -> [B*T, D, N]
-        x_spat = x_spat.permute(0, 2, 1).contiguous()  # -> [B*T, N, D]
-        attn_spat_out = self.spatial_attn(x_spat, x_spat, x_spat, mask=None)  # Q=K=V
-        # Reshape back: [B, T, N, D]
-        attn_spat_out = attn_spat_out.view(B, T, N, D)
+        # Reshape: [B, T, N, D] -> [N, B*T, D]
+        x_spat = x.permute(2, 0, 1, 3).contiguous().view(N, B * T, D)
+        attn_spat_out, _ = self.spatial_attn(x_spat, x_spat, x_spat, need_weights=False) # Q=K=V
+        # Reshape back: [N, B*T, D] -> [B, T, N, D]
+        attn_spat_out = attn_spat_out.view(N, B, T, D).permute(1, 2, 0, 3).contiguous()
         # Post-LN Residual Connection 2
         x = self.norm2(residual2 + self.dropout2(attn_spat_out))
 
         # --- 3. Feed Forward Network ---
         residual3 = x
-        ffn_out = self.ffn(x)  # Applied element-wise on the last dimension
+        ffn_out = self.linear2(self.dropout(self.activation(self.linear1(x))))
         # Post-LN Residual Connection 3
         x = self.norm3(residual3 + self.dropout3(ffn_out))
 
@@ -100,14 +118,15 @@ class PortfolioTransformerCA(nn.Module):
             for _ in range(num_encoder_layers)
         ])
 
-        self.projection_head = nn.Sequential(
-            # Optional LayerNorm before final projection
-            # LayerNormalization(d_model),
-            nn.Linear(d_model, d_ff // 2),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_ff // 2, 1)
-        )
+        self.projection_head = nn.Linear(d_model, 1)
+        # self.projection_head = nn.Sequential(
+        #     # Optional LayerNorm before final projection
+        #     # LayerNormalization(d_model),
+        #     nn.Linear(d_model, d_ff // 2),
+        #     nn.ReLU(),
+        #     nn.Dropout(dropout),
+        #     nn.Linear(d_ff // 2, 1)
+        # )
 
     def forward(self, x):
         """
@@ -120,20 +139,23 @@ class PortfolioTransformerCA(nn.Module):
         assert T == self.lookback and N == self.stock_amount and F == self.financial_features_amount
 
         # 1. Project features & Add Positional Encoding + Dropout
-        x = self.feature_proj(x)
-        x = x.permute(0, 2, 1, 3).contiguous().view(B * N, T, self.d_model)
-        x = self.pos_encoder(x)
-        x = self.input_dropout(x)
-        x = x.view(B, N, T, self.d_model).permute(0, 2, 1, 3).contiguous()
+        x = self.feature_proj(x)  # [B, T, N, D]
+        # Reshape: [B, T, N, D] -> [T, B*N, D]
+        x_enc_in = x.permute(1, 0, 2, 3).contiguous().view(T, B * N, self.d_model)
 
-        # 2. Pass through Encoder Layers
+        # 2. Add Positional Encoding + Dropout
+        x_enc_in = self.pos_encoder(x_enc_in)
+
+        # 3. Pass through Encoder Layers
+        current_x_4d = x
         for layer in self.encoder_layers:
-            x = layer(x)  # Każda warstwa przyjmuje i zwraca [B, T, N, D]
+            current_x_4d = layer(current_x_4d)
+        x = current_x_4d  # [B, T, N, D]
 
-        # 3. Temporal Aggregation (Last time step)
+        # 4. Temporal Aggregation (Last time step)
         x_last_t = x[:, -1, :, :]  # Shape: [B, N, D]
 
-        # 4. Final Projection
+        # 5. Final Projection
         predictions = self.projection_head(x_last_t)  # Shape: [B, N, 1]
 
         return predictions
