@@ -15,77 +15,8 @@ from torch.utils.data import DataLoader
 
 from experiments.utils.datasets import MultiTickerDataset
 from experiments.utils.metrics import WeightedMAELoss
-from models.iTransformer import iTransformerModel
-from models.PortfolioTransformerCA import PortfolioTransformerCA
-
-
-def build_iTransformer(
-        input_dim=1,
-        d_model: int = 512,
-        nhead: int = 8,
-        num_encoder_layers: int = 2,
-        dim_feedforward: int = 2048,
-        dropout: float = 0.1,
-        num_features=1,
-        columns_amount=1,
-) -> iTransformerModel:
-    """
-    Args:
-        d_model:
-        num_encoder_layers: num of encoder block
-        nhead: num of heads
-        dropout: droput probability
-        dim_feedforward: hidden layer [FF] size
-        seq_len:
-    Returns:
-
-    """
-    return iTransformerModel(
-        input_dim=input_dim,
-        d_model=d_model,
-        nhead=nhead,
-        num_encoder_layers=num_encoder_layers,
-        dim_feedforward=dim_feedforward,
-        dropout=dropout,
-        num_features=num_features,
-        columns_amount=columns_amount,
-    )
-
-
-def build_TransformerCA(
-        stock_amount: int,
-        financial_features_amount: int,
-        lookback: int,
-        d_model: int = 128,
-        n_heads: int = 4,
-        d_ff: int = 256,
-        dropout: float = 0.1,
-        num_encoder_layers: int = 2,
-        device: torch.device = torch.device("cpu")
-) -> PortfolioTransformerCA:
-    """Factory function to build the PortfolioTransformerCA model."""
-    print("-" * 30)
-    print("Building PortfolioTransformerCA (Modular) with parameters:")
-    print(f"  Data: stocks={stock_amount}, features={financial_features_amount}, lookback={lookback}")
-    print(f"  Arch: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}, layers={num_encoder_layers}")
-    print(f"  Dropout: {dropout}")
-    print(f"  Device: {device}")
-    print("-" * 30)
-
-    if d_model % n_heads != 0:
-        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
-
-    model = PortfolioTransformerCA(
-        stock_amount=stock_amount,
-        financial_features_amount=financial_features_amount,
-        lookback=lookback,
-        d_model=d_model,
-        n_heads=n_heads,
-        d_ff=d_ff,
-        dropout=dropout,
-        num_encoder_layers=num_encoder_layers,
-    )
-    return model.to(device)
+from models.PortfolioiTransformer import build_iTransformer
+from models.PortfolioTransformerCA import build_TransformerCA
 
 
 def train_model(
@@ -276,7 +207,7 @@ def grid_search_train(
                 columns_amount=columns_amount,
             ).to(device)
         elif config['model']['name'] == "Transformer":
-            model = build_Transformer(
+            model = build_TransformerCA(
                 input_dim=input_dim,
                 d_model=param_dict["d_model"],
                 nhead=param_dict["nhead"],

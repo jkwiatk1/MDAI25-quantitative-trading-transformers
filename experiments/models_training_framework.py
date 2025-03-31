@@ -16,23 +16,20 @@ from experiments.utils.data_loading import (
 )
 from experiments.utils.datasets import (
     prepare_sequential_data,
-    prepare_combined_data,
-    create_combined_sequences,
     normalize_data,
     MultiStockDataset,
 )
 from experiments.utils.feature_engineering import calc_input_features
-from experiments.utils.metrics import RankLoss, WeightedMAELoss
+from experiments.utils.metrics import RankLoss
 from experiments.utils.training import (
-    build_TransformerCA,
     train_model,
     evaluate_model,
     inverse_transform_predictions,
     plot_predictions,
 )
+from models.PortfolioTransformerCA import build_TransformerCA
 from models.PortfolioCrossFormer import build_CrossFormer
 from models.PortfolioMASTER import build_MASTER
-from models.SimplePortfolioTransformer import build_SimplePortfolioTransformer
 
 
 def setup_logging(log_file):

@@ -1,5 +1,4 @@
 import logging
-import logging
 import os
 from pathlib import Path
 from types import SimpleNamespace
@@ -24,10 +23,10 @@ from experiments.utils.datasets import (
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.metrics import compute_portfolio_metrics, RankLoss
 from experiments.utils.training import (
-    build_TransformerCA,
     evaluate_model,
     inverse_transform_predictions,
 )
+from models.PortfolioTransformerCA import build_TransformerCA
 
 
 def setup_logging(log_file):

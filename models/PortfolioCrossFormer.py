@@ -1,13 +1,7 @@
-import torch.nn.functional as F
-
 from math import ceil
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
 from math import sqrt
-import math
-
 
 
 class DSW_embedding(nn.Module):
@@ -35,7 +29,9 @@ class DSW_embedding(nn.Module):
 
         # x_embed = rearrange(x_embed, '(b d seg_num) d_model -> b d seg_num d_model', b=batch, d=ts_dim) # <--- ZMIANA Z EINOPS
         # Przywróć oryginalne wymiary: [b, d, seg_num, d_model]
-        x_embed = x_embed.view(batch, ts_dim, seg_num, -1)  # -1 automatycznie dopasuje d_model
+        x_embed = x_embed.view(
+            batch, ts_dim, seg_num, -1
+        )  # -1 automatycznie dopasuje d_model
 
         return x_embed
 
@@ -50,7 +46,7 @@ class FullAttention(nn.Module):
     def forward(self, queries, keys, values):
         B, L, H, E = queries.shape
         _, S, _, D = values.shape
-        scale = self.scale or 1. / sqrt(E)
+        scale = self.scale or 1.0 / sqrt(E)
 
         # Używamy torch.einsum, co jest wydajne i czytelne
         scores = torch.einsum("blhe,bshe->bhls", queries, keys)
@@ -103,14 +99,22 @@ class TwoStageAttentionLayer(nn.Module):
         self.norm2 = nn.LayerNorm(d_model)
         self.norm3 = nn.LayerNorm(d_model)
         self.norm4 = nn.LayerNorm(d_model)
-        self.MLP1 = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model))
-        self.MLP2 = nn.Sequential(nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model))
+        self.MLP1 = nn.Sequential(
+            nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model)
+        )
+        self.MLP2 = nn.Sequential(
+            nn.Linear(d_model, d_ff), nn.GELU(), nn.Linear(d_ff, d_model)
+        )
 
     def forward(self, x):
         # x shape: [batch_size, ts_d, seg_num, d_model]
         batch, ts_d, seg_num, d_model = x.shape
-        assert seg_num == self.seg_num, f"Input seg_num {seg_num} != configured seg_num {self.seg_num}"
-        assert d_model == self.d_model, f"Input d_model {d_model} != configured d_model {self.d_model}"
+        assert (
+            seg_num == self.seg_num
+        ), f"Input seg_num {seg_num} != configured seg_num {self.seg_num}"
+        assert (
+            d_model == self.d_model
+        ), f"Input d_model {d_model} != configured d_model {self.d_model}"
 
         # Cross Time Stage
         # time_in = rearrange(x, 'b ts_d seg_num d_model -> (b ts_d) seg_num d_model') # <--- ZMIANA Z EINOPS
@@ -136,12 +140,18 @@ class TwoStageAttentionLayer(nn.Module):
         # 1. Dodaj wymiar batch: [1, seg_num, factor, d_model]
         router_prep = self.router.unsqueeze(0)
         # 2. Rozszerz wymiar batch: [b, seg_num, factor, d_model]
-        router_prep = router_prep.expand(batch, -1, -1, -1)  # -1 oznacza zachowanie rozmiaru
+        router_prep = router_prep.expand(
+            batch, -1, -1, -1
+        )  # -1 oznacza zachowanie rozmiaru
         # 3. Połącz wymiary b i seg_num: [(b * seg_num), factor, d_model]
         batch_router = router_prep.reshape(batch * seg_num, self.factor, self.d_model)
 
-        dim_buffer = self.dim_sender(batch_router, dim_send, dim_send)  # [(b * seg_num), factor, d_model]
-        dim_receive = self.dim_receiver(dim_send, dim_buffer, dim_buffer)  # [(b * seg_num), ts_d, d_model]
+        dim_buffer = self.dim_sender(
+            batch_router, dim_send, dim_send
+        )  # [(b * seg_num), factor, d_model]
+        dim_receive = self.dim_receiver(
+            dim_send, dim_buffer, dim_buffer
+        )  # [(b * seg_num), ts_d, d_model]
         dim_enc = dim_send + self.dropout(dim_receive)
         dim_enc = self.norm3(dim_enc)
         dim_enc = dim_enc + self.dropout(self.MLP2(dim_enc))
@@ -166,7 +176,7 @@ class SegMerging(nn.Module):
         self.norm = norm_layer(win_size * d_model)
 
     def forward(self, x):
-        """ x: B, ts_d, L, d_model """
+        """x: B, ts_d, L, d_model"""
         batch_size, ts_d, seg_num, d_model = x.shape
         pad_num = seg_num % self.win_size
         if pad_num != 0:
@@ -178,7 +188,9 @@ class SegMerging(nn.Module):
             seg_num = x.shape[2]  # Zaktualizuj seg_num po paddingu
 
         # Upewnij się, że seg_num jest teraz podzielne przez win_size
-        assert seg_num % self.win_size == 0, "Padded seg_num should be divisible by win_size"
+        assert (
+            seg_num % self.win_size == 0
+        ), "Padded seg_num should be divisible by win_size"
         new_seg_num = seg_num // self.win_size
 
         # Zamiast pętli i listy, użyj reshape i permute
@@ -196,10 +208,12 @@ class SegMerging(nn.Module):
 
 class scale_block(nn.Module):
     # Bez zmian, nie używa einops
-    def __init__(self, win_size, d_model, n_heads, d_ff, depth, dropout, seg_num=10, factor=10):
+    def __init__(
+        self, win_size, d_model, n_heads, d_ff, depth, dropout, seg_num=10, factor=10
+    ):
         super(scale_block, self).__init__()
         self.win_size = win_size  # Przechowaj win_size
-        if (win_size > 1):
+        if win_size > 1:
             self.merge_layer = SegMerging(d_model, win_size, nn.LayerNorm)
             # Oblicz seg_num po mergingu dla warstw TSA
             current_seg_num = ceil(seg_num / win_size)
@@ -209,7 +223,11 @@ class scale_block(nn.Module):
 
         self.encode_layers = nn.ModuleList()
         for i in range(depth):
-            self.encode_layers.append(TwoStageAttentionLayer(current_seg_num, factor, d_model, n_heads, d_ff, dropout))
+            self.encode_layers.append(
+                TwoStageAttentionLayer(
+                    current_seg_num, factor, d_model, n_heads, d_ff, dropout
+                )
+            )
 
     def forward(self, x):
         # x: [B, ts_d, L, d_model]
@@ -222,17 +240,42 @@ class scale_block(nn.Module):
 
 class Encoder(nn.Module):
     # Bez zmian, nie używa einops
-    def __init__(self, e_blocks, win_size, d_model, n_heads, d_ff, block_depth, dropout, in_seg_num=10, factor=10):
+    def __init__(
+        self,
+        e_blocks,
+        win_size,
+        d_model,
+        n_heads,
+        d_ff,
+        block_depth,
+        dropout,
+        in_seg_num=10,
+        factor=10,
+    ):
         super(Encoder, self).__init__()
         self.encode_blocks = nn.ModuleList()
         # Pierwszy blok bez mergingu
-        self.encode_blocks.append(scale_block(1, d_model, n_heads, d_ff, block_depth, dropout, in_seg_num, factor))
+        self.encode_blocks.append(
+            scale_block(
+                1, d_model, n_heads, d_ff, block_depth, dropout, in_seg_num, factor
+            )
+        )
         # Kolejne bloki z mergingiem
         current_seg_num = in_seg_num
         for i in range(1, e_blocks):
             # Przekazujemy seg_num *przed* mergingiem do konstruktora scale_block
             self.encode_blocks.append(
-                scale_block(win_size, d_model, n_heads, d_ff, block_depth, dropout, current_seg_num, factor))
+                scale_block(
+                    win_size,
+                    d_model,
+                    n_heads,
+                    d_ff,
+                    block_depth,
+                    dropout,
+                    current_seg_num,
+                    factor,
+                )
+            )
             # Aktualizujemy current_seg_num dla następnego bloku (po potencjalnym mergingu w tym bloku)
             if win_size > 1:
                 current_seg_num = ceil(current_seg_num / win_size)
@@ -244,7 +287,9 @@ class Encoder(nn.Module):
         # Przetwarzanie przez bloki
         current_x = x
         for block in self.encode_blocks:
-            current_x = block(current_x)  # Wyjście z bloku staje się wejściem do następnego
+            current_x = block(
+                current_x
+            )  # Wyjście z bloku staje się wejściem do następnego
             encode_x.append(current_x)
 
         # encode_x to lista tensorów o kształtach:
@@ -255,10 +300,22 @@ class Encoder(nn.Module):
 
 
 class PortfolioCrossformer(nn.Module):
-    def __init__(self, stock_amount, financial_features, in_len, seg_len,
-                 win_size=2, factor=10, d_model=512, d_ff=1024, n_heads=8, e_layers=2,  # Zmniejszono domyślne e_layers
-                 dropout=0.1, aggregation_type='avg_pool',  # Dodano typ agregacji
-                 device=torch.device('cuda:0')):
+    def __init__(
+        self,
+        stock_amount,
+        financial_features,
+        in_len,
+        seg_len,
+        win_size=2,
+        factor=10,
+        d_model=512,
+        d_ff=1024,
+        n_heads=8,
+        e_layers=2,  # Zmniejszono domyślne e_layers
+        dropout=0.1,
+        aggregation_type="avg_pool",  # Dodano typ agregacji
+        device=torch.device("cuda:0"),
+    ):
         super().__init__()
         self.stock_amount = stock_amount
         self.financial_features = financial_features
@@ -278,12 +335,23 @@ class PortfolioCrossformer(nn.Module):
 
         # Embedding
         self.enc_value_embedding = DSW_embedding(seg_len, d_model)
-        self.enc_pos_embedding = nn.Parameter(torch.randn(1, self.data_dim, self.in_seg_num, d_model))
+        self.enc_pos_embedding = nn.Parameter(
+            torch.randn(1, self.data_dim, self.in_seg_num, d_model)
+        )
         self.pre_norm = nn.LayerNorm(d_model)  # Norma na wejściu do enkodera
 
         # Encoder
-        self.encoder = Encoder(e_layers, win_size, d_model, n_heads, d_ff, block_depth=1,
-                               dropout=dropout, in_seg_num=self.in_seg_num, factor=factor)
+        self.encoder = Encoder(
+            e_layers,
+            win_size,
+            d_model,
+            n_heads,
+            d_ff,
+            block_depth=1,
+            dropout=dropout,
+            in_seg_num=self.in_seg_num,
+            factor=factor,
+        )
 
         # Obliczanie final_seg_num (bez zmian)
         self.final_seg_num = self.in_seg_num
@@ -293,15 +361,16 @@ class PortfolioCrossformer(nn.Module):
                     self.final_seg_num = ceil(self.final_seg_num / win_size)
 
         # Agregacja (warunkowo)
-        if self.aggregation_type == 'avg_pool':
+        if self.aggregation_type == "avg_pool":
             self.aggregation = nn.AdaptiveAvgPool1d(1)
-        elif self.aggregation_type == 'last_segment':
+        elif self.aggregation_type == "last_segment":
             self.aggregation = None  # Nie potrzebujemy modułu
         else:
             raise ValueError(f"Unknown aggregation_type: {self.aggregation_type}")
 
-        self.portfolio_head = nn.Linear(self.data_dim * d_model, self.stock_amount,
-                                        bias=False)
+        self.portfolio_head = nn.Linear(
+            self.data_dim * d_model, self.stock_amount, bias=False
+        )
         # hidden_dim = d_model // 2
         # self.portfolio_head = nn.Sequential(
         #     nn.Linear(self.data_dim * d_model, hidden_dim),
@@ -314,7 +383,9 @@ class PortfolioCrossformer(nn.Module):
     def forward(self, x):
         # x: [batch_size, lookback, stock_amount, financial_features] == [B, T, N, F]
         B, T, N, F = x.shape
-        assert T == self.in_len and N == self.stock_amount and F == self.financial_features
+        assert (
+            T == self.in_len and N == self.stock_amount and F == self.financial_features
+        )
 
         # 1. Reshape & Padding
         x_seq = x.reshape(B, T, N * F)
@@ -332,17 +403,22 @@ class PortfolioCrossformer(nn.Module):
         enc_out = enc_out_list[-1]  # [B, data_dim, L_final, D]
 
         # 4. Aggregation
-        if self.aggregation_type == 'avg_pool':
+        if self.aggregation_type == "avg_pool":
             # Reshape for pooling: [B, data_dim, D, L_final] -> [B, D*M, L_final]
             aggregated_features_prep = enc_out.permute(0, 1, 3, 2).contiguous()
-            aggregated_features_prep = aggregated_features_prep.view(B, self.data_dim * self.d_model,
-                                                                     self.final_seg_num)
-            aggregated_features = self.aggregation(aggregated_features_prep).squeeze(-1)  # [B, data_dim * D]
-        elif self.aggregation_type == 'last_segment':
+            aggregated_features_prep = aggregated_features_prep.view(
+                B, self.data_dim * self.d_model, self.final_seg_num
+            )
+            aggregated_features = self.aggregation(aggregated_features_prep).squeeze(
+                -1
+            )  # [B, data_dim * D]
+        elif self.aggregation_type == "last_segment":
             # Take last segment: [B, data_dim, L_final, D] -> [B, data_dim, D]
             last_segment_features = enc_out[:, :, -1, :]
             # Reshape: [B, data_dim, D] -> [B, data_dim * D]
-            aggregated_features = last_segment_features.reshape(B, self.data_dim * self.d_model)
+            aggregated_features = last_segment_features.reshape(
+                B, self.data_dim * self.d_model
+            )
         else:
             raise ValueError("Should not happen for CrossFormer")
 
@@ -353,29 +429,24 @@ class PortfolioCrossformer(nn.Module):
 
 
 def build_CrossFormer(
-        # --- Data Shape Parameters ---
-        stock_amount: int,  # num_tickers_to_use
-        financial_features: int,  # num_tickers_to_use
-        in_len: int,  # lookback
-
-        # --- Crossformer Specific Architecture Parameters ---
-        seg_len: int,
-        win_size: int = 2,
-        factor: int = 10,
-        aggregation_type: str = 'avg_pool',
-        e_layers: int = 2,  # num_encoder_layers
-
-        # --- General Transformer Architecture Parameters ---
-        d_model: int = 128,
-        n_heads: int = 4,  # nhead
-        d_ff: int = 256,  # dim_feedforward
-
-        # --- Regularization ---
-        dropout: float = 0.1,
-
-        # --- Deployment ---
-        device: torch.device = torch.device("cpu")
-
+    # --- Data Shape Parameters ---
+    stock_amount: int,  # num_tickers_to_use
+    financial_features: int,  # num_tickers_to_use
+    in_len: int,  # lookback
+    # --- Crossformer Specific Architecture Parameters ---
+    seg_len: int,
+    win_size: int = 2,
+    factor: int = 10,
+    aggregation_type: str = "avg_pool",
+    e_layers: int = 2,  # num_encoder_layers
+    # --- General Transformer Architecture Parameters ---
+    d_model: int = 128,
+    n_heads: int = 4,  # nhead
+    d_ff: int = 256,  # dim_feedforward
+    # --- Regularization ---
+    dropout: float = 0.1,
+    # --- Deployment ---
+    device: torch.device = torch.device("cpu"),
 ) -> PortfolioCrossformer:
     """
     Builds and initializes the PortfolioCrossformer model.
@@ -415,18 +486,28 @@ def build_CrossFormer(
         PortfolioCrossformer: An initialized instance of the model.
     """
     print("-" * 30)
-    print(f"Building PortfolioCrossformer with aggregation: {aggregation_type} with  parameters:")
-    print(f"  Data: stock_amount={stock_amount}, financial_features={financial_features}, in_len={in_len}")
-    print(f"  Crossformer Arch: seg_len={seg_len}, win_size={win_size}, factor={factor}, e_layers={e_layers}")
+    print(
+        f"Building PortfolioCrossformer with aggregation: {aggregation_type} with  parameters:"
+    )
+    print(
+        f"  Data: stock_amount={stock_amount}, financial_features={financial_features}, in_len={in_len}"
+    )
+    print(
+        f"  Crossformer Arch: seg_len={seg_len}, win_size={win_size}, factor={factor}, e_layers={e_layers}"
+    )
     print(f"  Transformer Arch: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}")
 
     # --- Parameter Validation (Optional but Recommended) ---
     if d_model % n_heads != 0:
-        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
+        raise ValueError(
+            f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
+        )
     if in_len % seg_len != 0:
         padded_in_len = ceil(1.0 * in_len / seg_len) * seg_len
-        print(f"Warning: in_len ({in_len}) is not divisible by seg_len ({seg_len}). "
-              f"Input will be effectively padded to length {padded_in_len}.")
+        print(
+            f"Warning: in_len ({in_len}) is not divisible by seg_len ({seg_len}). "
+            f"Input will be effectively padded to length {padded_in_len}."
+        )
 
     model = PortfolioCrossformer(
         stock_amount=stock_amount,
@@ -447,3 +528,65 @@ def build_CrossFormer(
     )
     # The .to(device) call is crucial to move all parameters and buffers
     return model.to(device)
+
+
+if __name__ == "__main__":
+    batch_size = 32
+    lookback = 96
+    stock_amount = 10
+    financial_features = 5
+    seg_len = 24
+    win_size = 2
+    factor = 10
+    d_model = 128
+    d_ff = 256
+    n_heads = 4
+    e_layers = 2
+    dropout = 0.1
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
+
+    if lookback % seg_len != 0:
+        print(
+            f"Warning: lookback ({lookback}) is not perfectly divisible by seg_len ({seg_len}). Padding will be applied."
+        )
+
+    input_data = torch.randn(batch_size, lookback, stock_amount, financial_features).to(
+        device
+    )
+
+    model = build_CrossFormer(
+        stock_amount=stock_amount,
+        financial_features=financial_features,
+        in_len=lookback,
+        seg_len=seg_len,
+        win_size=win_size,
+        factor=factor,
+        d_model=d_model,
+        d_ff=d_ff,
+        n_heads=n_heads,
+        e_layers=e_layers,
+        dropout=dropout,
+        device=device,
+    ).to(device)
+
+    # Sprawdzenie poprawności obliczenia final_seg_num w modelu
+    calculated_final_seg = ceil(lookback / seg_len)
+    for _ in range(e_layers - 1):
+        if win_size > 1:
+            calculated_final_seg = ceil(calculated_final_seg / win_size)
+    print(f"Calculated final_seg_num outside model: {calculated_final_seg}")
+    print(f"Final_seg_num inside model: {model.final_seg_num}")
+    assert (
+        model.final_seg_num == calculated_final_seg
+    ), "Mismatch in final_seg_num calculation!"
+
+    output_weights = model(input_data)
+
+    print(f"Input shape: {input_data.shape}")
+    print(f"Output shape: {output_weights.shape}")
+    print(f"Output weights (first batch sample): {output_weights[0]}")
+    print(f"Sum of weights (first batch sample): {output_weights[0].sum()}")
+
+    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Total trainable parameters: {total_params:,}")
