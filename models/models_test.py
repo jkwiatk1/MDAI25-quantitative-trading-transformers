@@ -1,7 +1,9 @@
 from math import ceil
 
 import torch
-from experiments.utils.training import build_TransformerCA, build_CrossFormer, build_MASTER
+from experiments.utils.training import build_TransformerCA
+from models.PortfolioCrossFormer import build_CrossFormer
+from models.PortfolioMASTER import build_MASTER
 
 MODEL_NAME = "MASTER"  # TransformerCA/CrossFormer/MASTER
 #

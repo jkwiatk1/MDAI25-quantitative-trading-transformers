@@ -27,12 +27,12 @@ from experiments.utils.datasets import (
 )
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.training import (
-    build_MASTER,
     train_model,
     evaluate_model,
     inverse_transform_predictions,
     plot_predictions,
 )
+from models.PortfolioMASTER import build_MASTER
 from experiments.utils.metrics import RankLoss, WeightedMAELoss
 
 

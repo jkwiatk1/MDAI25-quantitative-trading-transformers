@@ -1,5 +1,4 @@
 import itertools
-from math import ceil
 
 import torch
 import logging
@@ -15,12 +14,9 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, ExponentialLR
 from torch.utils.data import DataLoader
 
 from experiments.utils.datasets import MultiTickerDataset
-from models.MASTER import PortfolioMASTER
 from experiments.utils.metrics import WeightedMAELoss
 from models.iTransformer import iTransformerModel
-from models.Transformer import TransformerModel
-from models.Transformer_Cross_Attention import PortfolioTransformerCA
-from models.CrossFormer import PortfolioCrossformer
+from models.PortfolioTransformerCA import PortfolioTransformerCA
 
 
 def build_iTransformer(
@@ -53,41 +49,6 @@ def build_iTransformer(
         dropout=dropout,
         num_features=num_features,
         columns_amount=columns_amount,
-    )
-
-
-def build_Transformer(
-        input_dim=1,
-        d_model: int = 512,
-        nhead: int = 8,
-        num_encoder_layers: int = 2,
-        dim_feedforward: int = 2048,
-        dropout: float = 0.1,
-        num_features=1,
-        columns_amount=1,
-        max_seq_len=1000
-) -> TransformerModel:
-    """
-    Args:
-        d_model:
-        num_encoder_layers: num of encoder block
-        nhead: num of heads
-        dropout: droput probability
-        dim_feedforward: hidden layer [FF] size
-        seq_len:
-    Returns:
-
-    """
-    return TransformerModel(
-        input_dim=input_dim,
-        d_model=d_model,
-        nhead=nhead,
-        num_encoder_layers=num_encoder_layers,
-        dim_feedforward=dim_feedforward,
-        dropout=dropout,
-        num_features=num_features,
-        columns_amount=columns_amount,
-        max_seq_len=max_seq_len,
     )
 
 
@@ -124,167 +85,6 @@ def build_TransformerCA(
         dropout=dropout,
         num_encoder_layers=num_encoder_layers,
     )
-    return model.to(device)
-
-
-def build_CrossFormer(
-        # --- Data Shape Parameters ---
-        stock_amount: int,  # num_tickers_to_use
-        financial_features: int,  # num_tickers_to_use
-        in_len: int,  # lookback
-
-        # --- Crossformer Specific Architecture Parameters ---
-        seg_len: int,
-        win_size: int = 2,
-        factor: int = 10,
-        aggregation_type: str = 'avg_pool',
-        e_layers: int = 2,  # num_encoder_layers
-
-        # --- General Transformer Architecture Parameters ---
-        d_model: int = 128,
-        n_heads: int = 4,  # nhead
-        d_ff: int = 256,  # dim_feedforward
-
-        # --- Regularization ---
-        dropout: float = 0.1,
-
-        # --- Deployment ---
-        device: torch.device = torch.device("cpu")
-
-) -> PortfolioCrossformer:
-    """
-    Builds and initializes the PortfolioCrossformer model.
-
-    Args:
-        stock_amount (int): Number of different assets/stocks in the portfolio.
-                            Determines the output size and part of the internal data_dim.
-        financial_features (int): Number of features used to describe each stock
-                                  (e.g., close price, volume, RSI). Part of the internal data_dim.
-        in_len (int): The lookback period, i.e., the length of the input time series sequence.
-
-        seg_len (int): The length of each segment the input sequence is divided into
-                       by the DSW embedding. `in_len` should ideally be divisible by `seg_len`,
-                       though the model handles padding if needed. Controls the granularity
-                       of the initial time series representation.
-        win_size (int): The number of adjacent segments merged in the SegMerging layer
-                        at each scale (except the first). Typically 2. Controls the rate
-                        of temporal aggregation across encoder layers.
-        factor (int): The dimension factor for the router mechanism in the
-                      TwoStageAttentionLayer, controlling the bottleneck size for
-                      cross-dimension attention.
-        e_layers (int): The number of hierarchical encoder blocks (scales). Each block
-                        (except the first) includes segment merging and TSA layers.
-
-        d_model (int): The main dimensionality of the embeddings and hidden states
-                       throughout the model. Must be divisible by `n_heads`.
-        n_heads (int): The number of parallel attention heads in the multi-head
-                       attention mechanisms (both time and dimension attention).
-        d_ff (int): The dimensionality of the inner hidden layer in the feed-forward
-                    networks within the TSA layers. Often 2x or 4x `d_model`.
-
-        dropout (float): Dropout probability applied in various layers for regularization.
-
-        device (torch.device): The device (e.g., 'cuda', 'cpu') to create the model on.
-
-    Returns:
-        PortfolioCrossformer: An initialized instance of the model.
-    """
-    print("-" * 30)
-    print(f"Building PortfolioCrossformer with aggregation: {aggregation_type} with  parameters:")
-    print(f"  Data: stock_amount={stock_amount}, financial_features={financial_features}, in_len={in_len}")
-    print(f"  Crossformer Arch: seg_len={seg_len}, win_size={win_size}, factor={factor}, e_layers={e_layers}")
-    print(f"  Transformer Arch: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}")
-
-    # --- Parameter Validation (Optional but Recommended) ---
-    if d_model % n_heads != 0:
-        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
-    if in_len % seg_len != 0:
-        padded_in_len = ceil(1.0 * in_len / seg_len) * seg_len
-        print(f"Warning: in_len ({in_len}) is not divisible by seg_len ({seg_len}). "
-              f"Input will be effectively padded to length {padded_in_len}.")
-
-    model = PortfolioCrossformer(
-        stock_amount=stock_amount,
-        financial_features=financial_features,
-        in_len=in_len,  # Passed directly, model handles padding internally if needed
-        seg_len=seg_len,
-        win_size=win_size,
-        factor=factor,
-        aggregation_type=aggregation_type,
-        d_model=d_model,
-        d_ff=d_ff,
-        n_heads=n_heads,
-        e_layers=e_layers,
-        dropout=dropout,
-        device=device  # Pass the device to the model constructor if it uses it internally
-        # (e.g., for creating certain tensors directly on the target device, though
-        # often just calling .to(device) after creation is sufficient)
-    )
-    # The .to(device) call is crucial to move all parameters and buffers
-    return model.to(device)
-
-
-def build_MASTER(
-        # --- Data Shape Parameters ---
-        stock_amount: int,
-        financial_features_amount: int,
-        lookback: int,
-
-        # --- MASTER Architecture Parameters ---
-        d_model: int = 64,
-        d_ff: int = 128,
-        n_heads: int = 4,
-        dropout: float = 0.1,
-        num_encoder_layers: int = 1,
-
-        # --- Deployment ---
-        device: torch.device = torch.device("cpu")
-
-) -> PortfolioMASTER:
-    """
-    Builds and initializes the PortfolioMASTER model.
-
-    Args:
-        stock_amount (int): Number of different assets/stocks in the portfolio.
-        financial_features_amount (int): Number of features used to describe each stock.
-        lookback (int): The lookback period (input sequence length).
-
-        d_model (int): The main dimensionality of embeddings and hidden states.
-                       Must be divisible by both t_n_heads and s_n_heads.
-        d_ff (int): The dimensionality of the inner hidden layer in the FFNs.
-        t_n_heads (int): Number of attention heads for Temporal Attention (TAttention).
-        s_n_heads (int): Number of attention heads for Spatial Attention (SAttention).
-        t_dropout (float): Dropout probability for Temporal Attention layers.
-        s_dropout (float): Dropout probability for Spatial Attention layers.
-
-        device (torch.device): The device (e.g., 'cuda', 'cpu') to create the model on.
-
-    Returns:
-        PortfolioMASTER: An initialized instance of the model.
-    """
-    print("-" * 30)
-    print("Building PortfolioMASTER with parameters:")
-    print(f"  Data: stocks={stock_amount}, features={financial_features_amount}, lookback={lookback}")
-    print(f"  Arch: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}, layers={num_encoder_layers}")
-    print(f"  Dropout: {dropout}")
-    print(f"  Device: {device}")
-    print("-" * 30)
-
-    # --- Parameter Validation ---
-    if d_model % n_heads != 0:
-        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
-
-    model = PortfolioMASTER(
-        stock_amount=stock_amount,
-        finance_features_amount=financial_features_amount,
-        lookback=lookback,
-        d_model=d_model,
-        n_heads=n_heads,
-        d_ff=d_ff,
-        dropout=dropout,
-        num_encoder_layers=num_encoder_layers,
-    )
-    # Move model to the target device
     return model.to(device)
 
 

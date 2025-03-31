@@ -24,10 +24,10 @@ from experiments.utils.datasets import (
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.metrics import compute_portfolio_metrics, RankLoss
 from experiments.utils.training import (
-    build_CrossFormer,
     evaluate_model,
     inverse_transform_predictions,
 )
+from models.PortfolioCrossFormer import build_CrossFormer
 
 
 def setup_logging(log_file):
