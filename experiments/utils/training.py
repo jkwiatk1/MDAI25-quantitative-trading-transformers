@@ -15,8 +15,6 @@ from torch.utils.data import DataLoader
 
 from experiments.utils.datasets import MultiTickerDataset
 from experiments.utils.metrics import WeightedMAELoss
-from models.PortfolioiTransformer import build_iTransformer
-from models.PortfolioTransformerCA import build_TransformerCA
 
 
 def train_model(
@@ -122,173 +120,322 @@ def train_model(
     return best_model_path, best_val_loss
 
 
-def grid_search_train(
-        config,
-        train_sequences,
-        train_targets,
-        val_sequences,
-        val_targets,
-        device,
-        save_dir,
-        input_dim,
-        num_features,
-        columns_amount,
-        max_seq_len,
-):
-    """
-    Perform grid search for the best hyperparameters.
-    Args:
-        config: Experiment configuration (YAML format).
-        train_loader: DataLoader for training data.
-        val_loader: DataLoader for validation data.
-        device: Device to use ('cpu' or 'cuda').
-        save_dir: Directory to save the best model and hyperparameter configuration.
-    Returns:
-        None
-    """
-    global model
-    save_dir = Path(save_dir)
-    save_dir.mkdir(parents=True, exist_ok=True)
+# def grid_search_train(
+#         config,
+#         train_sequences,
+#         train_targets,
+#         val_sequences,
+#         val_targets,
+#         device,
+#         save_dir,
+#         input_dim,
+#         num_features,
+#         columns_amount,
+#         max_seq_len,
+# ):
+#     """
+#     Perform grid search for the best hyperparameters.
+#     Args:
+#         config: Experiment configuration (YAML format).
+#         train_loader: DataLoader for training data.
+#         val_loader: DataLoader for validation data.
+#         device: Device to use ('cpu' or 'cuda').
+#         save_dir: Directory to save the best model and hyperparameter configuration.
+#     Returns:
+#         None
+#     """
+#     global model
+#     save_dir = Path(save_dir)
+#     save_dir.mkdir(parents=True, exist_ok=True)
+#
+#     # Unpack hyperparameters
+#     param_grid = {
+#         "d_model": config["model"]["d_model"],
+#         "nhead": config["model"]["nhead"],
+#         "num_encoder_layers": config["model"]["num_encoder_layers"],
+#         "dim_feedforward": config["model"]["dim_feedforward"],
+#         "dropout": config["model"]["dropout"],
+#         "batch_size": config["training"]["batch_size"],
+#         "learning_rate": config["training"]["learning_rate"],
+#     }
+#
+#     best_val_loss = float("inf")
+#     best_params = None
+#     best_global_model_path = None
+#
+#     # criterion = nn.MSELoss()
+#     criterion = WeightedMAELoss(num_outputs=num_features)
+#     logging.info(f"loss function: {criterion.__class__}")
+#     scaler = torch.cuda.amp.GradScaler()
+#
+#     # # Generate all combinations of parameters
+#     # for params in itertools.product(*param_grid.values()):
+#
+#     # Generate all combinations of parameters
+#     all_combinations = list(itertools.product(*param_grid.values()))
+#     # Use tqdm for progress tracking
+#     for params in tqdm(all_combinations, desc="Grid Search Progress", unit="experiment"):
+#
+#         # Map parameters to dict
+#         param_dict = dict(zip(param_grid.keys(), params))
+#         logging.info(f"Testing parameters: {param_dict}")
+#
+#         # Create DataLoader with current batch_size
+#         train_loader = DataLoader(
+#             MultiTickerDataset(train_sequences, train_targets),
+#             batch_size=param_dict["batch_size"],
+#             shuffle=True,
+#         )
+#         val_loader = DataLoader(
+#             MultiTickerDataset(val_sequences, val_targets),
+#             batch_size=param_dict["batch_size"],
+#             shuffle=False,
+#         )
+#
+#         # Build model with current parameters
+#         if config['model']['name'] == "iTransformer":
+#             model = build_iTransformer(
+#                 input_dim=input_dim,
+#                 d_model=param_dict["d_model"],
+#                 nhead=param_dict["nhead"],
+#                 num_encoder_layers=param_dict["num_encoder_layers"],
+#                 dim_feedforward=param_dict["dim_feedforward"],
+#                 dropout=param_dict["dropout"],
+#                 num_features=num_features,
+#                 columns_amount=columns_amount,
+#             ).to(device)
+#         elif config['model']['name'] == "Transformer":
+#             model = build_TransformerCA(
+#                 input_dim=input_dim,
+#                 d_model=param_dict["d_model"],
+#                 nhead=param_dict["nhead"],
+#                 num_encoder_layers=param_dict["num_encoder_layers"],
+#                 dim_feedforward=param_dict["dim_feedforward"],
+#                 dropout=param_dict["dropout"],
+#                 num_features=num_features,
+#                 columns_amount=columns_amount,
+#                 max_seq_len=max_seq_len,
+#             ).to(device)
+#
+#         # Optimizer and scheduler
+#         optimizer = torch.optim.Adam(model.parameters(), lr=param_dict["learning_rate"])
+#
+#         if config["training"]["lr_scheduler"]["type"] == "ReduceLROnPlateau":
+#             scheduler = ReduceLROnPlateau(
+#                 optimizer,
+#                 mode=config["training"]["lr_scheduler"]["mode"],
+#                 factor=config["training"]["lr_scheduler"]["factor"],
+#                 patience=config["training"]["lr_scheduler"]["patience"],
+#             )
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#         elif config["training"]["lr_scheduler"]["type"] == "StepLR":
+#             scheduler = StepLR(
+#                 optimizer,
+#                 step_size=config["training"]["lr_scheduler"]["step_size"],
+#                 gamma=config["training"]["lr_scheduler"]["gamma"],
+#             )
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#         elif config["training"]["lr_scheduler"]["type"] == "ExponentialLR":
+#             scheduler = ExponentialLR(
+#                 optimizer,
+#                 gamma=config["training"]["lr_scheduler"]["gamma"],
+#             )
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#         else:
+#             scheduler = None
+#             logging.info("No scheduler!")
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#
+#         tmp_model_path = save_dir / "tmp_model"
+#
+#         # Train and validate model
+#         best_local_model_path, val_loss = train_model(
+#             model=model,
+#             train_loader=train_loader,
+#             val_loader=val_loader,
+#             criterion=criterion,
+#             optimizer=optimizer,
+#             device=device,
+#             n_epochs=config["training"]["n_epochs"],
+#             save_path=tmp_model_path,
+#             patience=config["training"]["patience"],
+#             scaler=scaler,
+#             scheduler=scheduler,
+#         )
+#
+#         # Update best model if needed
+#         if val_loss < best_val_loss:
+#             best_val_loss = val_loss
+#             best_params = param_dict
+#             best_global_model_path = save_dir / "best_grid_search_model.pth"
+#             torch.save(model.state_dict(), best_global_model_path)
+#
+#     # Save the best parameters and results
+#     best_params_path = save_dir / "best_params.yaml"
+#     with open(best_params_path, "w") as f:
+#         yaml.dump(
+#             {
+#                 "best_val_loss": best_val_loss,
+#                 "best_params": best_params,
+#             },
+#             f,
+#         )
+#     logging.info(f"Best model saved at: {best_global_model_path}")
+#     logging.info(f"Best parameters saved at: {best_params_path}")
+#
+#     # Load best model and evaluate
+#     model.load_state_dict(torch.load(best_global_model_path))
+#
+#     return model, criterion, scaler, best_params["batch_size"]
 
-    # Unpack hyperparameters
-    param_grid = {
-        "d_model": config["model"]["d_model"],
-        "nhead": config["model"]["nhead"],
-        "num_encoder_layers": config["model"]["num_encoder_layers"],
-        "dim_feedforward": config["model"]["dim_feedforward"],
-        "dropout": config["model"]["dropout"],
-        "batch_size": config["training"]["batch_size"],
-        "learning_rate": config["training"]["learning_rate"],
-    }
+# def grid_search_train_Transformer_only(
+#         config,
+#         train_sequences,
+#         train_targets,
+#         val_sequences,
+#         val_targets,
+#         device,
+#         save_dir,
+#         input_dim,
+#         num_features,
+#         columns_amount,
+#         max_seq_len,
+# ):
+#     """
+#     Perform grid search for the best hyperparameters.
+#     Args:
+#         config: Experiment configuration (YAML format).
+#         train_loader: DataLoader for training data.
+#         val_loader: DataLoader for validation data.
+#         device: Device to use ('cpu' or 'cuda').
+#         save_dir: Directory to save the best model and hyperparameter configuration.
+#     Returns:
+#         None
+#     """
+#     global model
+#     save_dir = Path(save_dir)
+#     save_dir.mkdir(parents=True, exist_ok=True)
+#
+#     # Unpack hyperparameters
+#     param_grid = {
+#         "d_model": config["model"]["d_model"],
+#         "nhead": config["model"]["nhead"],
+#         "num_encoder_layers": config["model"]["num_encoder_layers"],
+#         "dim_feedforward": config["model"]["dim_feedforward"],
+#         "dropout": config["model"]["dropout"],
+#         "batch_size": config["training"]["batch_size"],
+#         "learning_rate": config["training"]["learning_rate"],
+#     }
+#
+#     best_val_loss = float("inf")
+#     best_params = None
+#     best_global_model_path = None
+#
+#     criterion = nn.MSELoss()
+#     scaler = torch.cuda.amp.GradScaler()
+#
+#     # Generate all combinations of parameters
+#     for params in itertools.product(*param_grid.values()):
+#         # Map parameters to dict
+#         param_dict = dict(zip(param_grid.keys(), params))
+#         logging.info(f"Testing parameters: {param_dict}")
+#
+#         # Create DataLoader with current batch_size
+#         train_loader = DataLoader(
+#             MultiTickerDataset(train_sequences, train_targets),
+#             batch_size=param_dict["batch_size"],
+#             shuffle=True,
+#         )
+#         val_loader = DataLoader(
+#             MultiTickerDataset(val_sequences, val_targets),
+#             batch_size=param_dict["batch_size"],
+#             shuffle=False,
+#         )
+#
+#         # Build model with current parameters
+#         model = build_Transformer(
+#             input_dim=input_dim,
+#             d_model=param_dict["d_model"],
+#             nhead=param_dict["nhead"],
+#             num_encoder_layers=param_dict["num_encoder_layers"],
+#             dim_feedforward=param_dict["dim_feedforward"],
+#             dropout=param_dict["dropout"],
+#             num_features=num_features,
+#             columns_amount=columns_amount,
+#             max_seq_len=max_seq_len,
+#         ).to(device)
+#
+#         # Optimizer and scheduler
+#         optimizer = torch.optim.Adam(model.parameters(), lr=param_dict["learning_rate"])
+#
+#         if config["training"]["lr_scheduler"]["type"] == "ReduceLROnPlateau":
+#             scheduler = ReduceLROnPlateau(
+#                 optimizer,
+#                 mode=config["training"]["lr_scheduler"]["mode"],
+#                 factor=config["training"]["lr_scheduler"]["factor"],
+#                 patience=config["training"]["lr_scheduler"]["patience"],
+#             )
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#         elif config["training"]["lr_scheduler"]["type"] == "StepLR":
+#             scheduler = StepLR(
+#                 optimizer,
+#                 step_size=config["training"]["lr_scheduler"]["step_size"],
+#                 gamma=config["training"]["lr_scheduler"]["gamma"],
+#             )
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#         elif config["training"]["lr_scheduler"]["type"] == "ExponentialLR":
+#             scheduler = ExponentialLR(
+#                 optimizer,
+#                 gamma=config["training"]["lr_scheduler"]["gamma"],
+#             )
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#         else:
+#             scheduler = None
+#             logging.info("No scheduler!")
+#             logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
+#
+#         tmp_model_path = save_dir / "tmp_model"
+#
+#         # Train and validate model
+#         best_local_model_path, val_loss = train_model(
+#             model=model,
+#             train_loader=train_loader,
+#             val_loader=val_loader,
+#             criterion=criterion,
+#             optimizer=optimizer,
+#             device=device,
+#             n_epochs=config["training"]["n_epochs"],
+#             save_path=tmp_model_path,
+#             patience=config["training"]["patience"],
+#             scaler=scaler,
+#             scheduler=scheduler,
+#         )
+#
+#         # Update best model if needed
+#         if val_loss < best_val_loss:
+#             best_val_loss = val_loss
+#             best_params = param_dict
+#             best_global_model_path = save_dir / "best_grid_search_model.pth"
+#             torch.save(model.state_dict(), best_global_model_path)
+#
+#     # Save the best parameters and results
+#     best_params_path = save_dir / "best_params.yaml"
+#     with open(best_params_path, "w") as f:
+#         yaml.dump(
+#             {
+#                 "best_val_loss": best_val_loss,
+#                 "best_params": best_params,
+#             },
+#             f,
+#         )
+#     logging.info(f"Best model saved at: {best_global_model_path}")
+#     logging.info(f"Best parameters saved at: {best_params_path}")
+#
+#     # Load best model and evaluate
+#     model.load_state_dict(torch.load(best_global_model_path))
+#
+#     return model, criterion, scaler, best_params["batch_size"]
 
-    best_val_loss = float("inf")
-    best_params = None
-    best_global_model_path = None
-
-    # criterion = nn.MSELoss()
-    criterion = WeightedMAELoss(num_outputs=num_features)
-    logging.info(f"loss function: {criterion.__class__}")
-    scaler = torch.cuda.amp.GradScaler()
-
-    # # Generate all combinations of parameters
-    # for params in itertools.product(*param_grid.values()):
-
-    # Generate all combinations of parameters
-    all_combinations = list(itertools.product(*param_grid.values()))
-    # Use tqdm for progress tracking
-    for params in tqdm(all_combinations, desc="Grid Search Progress", unit="experiment"):
-
-        # Map parameters to dict
-        param_dict = dict(zip(param_grid.keys(), params))
-        logging.info(f"Testing parameters: {param_dict}")
-
-        # Create DataLoader with current batch_size
-        train_loader = DataLoader(
-            MultiTickerDataset(train_sequences, train_targets),
-            batch_size=param_dict["batch_size"],
-            shuffle=True,
-        )
-        val_loader = DataLoader(
-            MultiTickerDataset(val_sequences, val_targets),
-            batch_size=param_dict["batch_size"],
-            shuffle=False,
-        )
-
-        # Build model with current parameters
-        if config['model']['name'] == "iTransformer":
-            model = build_iTransformer(
-                input_dim=input_dim,
-                d_model=param_dict["d_model"],
-                nhead=param_dict["nhead"],
-                num_encoder_layers=param_dict["num_encoder_layers"],
-                dim_feedforward=param_dict["dim_feedforward"],
-                dropout=param_dict["dropout"],
-                num_features=num_features,
-                columns_amount=columns_amount,
-            ).to(device)
-        elif config['model']['name'] == "Transformer":
-            model = build_TransformerCA(
-                input_dim=input_dim,
-                d_model=param_dict["d_model"],
-                nhead=param_dict["nhead"],
-                num_encoder_layers=param_dict["num_encoder_layers"],
-                dim_feedforward=param_dict["dim_feedforward"],
-                dropout=param_dict["dropout"],
-                num_features=num_features,
-                columns_amount=columns_amount,
-                max_seq_len=max_seq_len,
-            ).to(device)
-
-        # Optimizer and scheduler
-        optimizer = torch.optim.Adam(model.parameters(), lr=param_dict["learning_rate"])
-
-        if config["training"]["lr_scheduler"]["type"] == "ReduceLROnPlateau":
-            scheduler = ReduceLROnPlateau(
-                optimizer,
-                mode=config["training"]["lr_scheduler"]["mode"],
-                factor=config["training"]["lr_scheduler"]["factor"],
-                patience=config["training"]["lr_scheduler"]["patience"],
-            )
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-        elif config["training"]["lr_scheduler"]["type"] == "StepLR":
-            scheduler = StepLR(
-                optimizer,
-                step_size=config["training"]["lr_scheduler"]["step_size"],
-                gamma=config["training"]["lr_scheduler"]["gamma"],
-            )
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-        elif config["training"]["lr_scheduler"]["type"] == "ExponentialLR":
-            scheduler = ExponentialLR(
-                optimizer,
-                gamma=config["training"]["lr_scheduler"]["gamma"],
-            )
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-        else:
-            scheduler = None
-            logging.info("No scheduler!")
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-
-        tmp_model_path = save_dir / "tmp_model"
-
-        # Train and validate model
-        best_local_model_path, val_loss = train_model(
-            model=model,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            criterion=criterion,
-            optimizer=optimizer,
-            device=device,
-            n_epochs=config["training"]["n_epochs"],
-            save_path=tmp_model_path,
-            patience=config["training"]["patience"],
-            scaler=scaler,
-            scheduler=scheduler,
-        )
-
-        # Update best model if needed
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            best_params = param_dict
-            best_global_model_path = save_dir / "best_grid_search_model.pth"
-            torch.save(model.state_dict(), best_global_model_path)
-
-    # Save the best parameters and results
-    best_params_path = save_dir / "best_params.yaml"
-    with open(best_params_path, "w") as f:
-        yaml.dump(
-            {
-                "best_val_loss": best_val_loss,
-                "best_params": best_params,
-            },
-            f,
-        )
-    logging.info(f"Best model saved at: {best_global_model_path}")
-    logging.info(f"Best parameters saved at: {best_params_path}")
-
-    # Load best model and evaluate
-    model.load_state_dict(torch.load(best_global_model_path))
-
-    return model, criterion, scaler, best_params["batch_size"]
 
 
 def run_epoch(model: nn.Module,
@@ -426,64 +573,6 @@ def plot_losses(train_losses, val_losses, save_path: Path, model_name: str):
     except Exception as e:
         logging.error(f"Failed to save loss curve plot: {e}")
     plt.close()
-# def plot_losses(train_losses, val_losses, save_path, model_name):
-#     """
-#     Plot and save training and validation loss curves.
-#     """
-#     if len(train_losses) > 2:
-#         max_loss = max(max(train_losses[2:]), max(val_losses[2:]))
-#     else:
-#         max_loss = max(max(train_losses), max(val_losses))
-#
-#     if max_loss <= 0:
-#         max_loss = 0.1
-#
-#     plt.figure(figsize=(10, 6))
-#     plt.plot(train_losses, label="Training Loss")
-#     plt.plot(val_losses, label="Validation Loss")
-#     # plt.ylim(0, int(1 * max_loss + 0.51))
-#     plt.ylim(0, max_loss * 1.1)
-#     plt.xlabel("Epoch")
-#     plt.ylabel("Loss")
-#     plt.title(f"{model_name}: Training and Validation Loss")
-#     plt.legend()
-#     plt.grid(True)
-#     plt.savefig(save_path / "training_validation_loss")
-#     # uncomment below to print training & val loss
-#     # plt.show()
-
-
-# def inverse_transform_predictions(
-#     predictions, targets, tickers, feat_scalers, preproc_target_col
-# ):
-#     """
-#     Apply inverse transform for each ticker's predictions.
-#     Use the scalers dictionary to inverse transform the target feature for each ticker.
-#     """
-#     for i, ticker in enumerate(tickers):
-#         if len(tickers) == 1:
-#             predictions = (
-#                 feat_scalers[ticker][preproc_target_col]
-#                 .inverse_transform(predictions.reshape(-1, 1))
-#                 .flatten()
-#             )
-#             targets = (
-#                 feat_scalers[ticker][preproc_target_col]
-#                 .inverse_transform(targets.reshape(-1, 1))
-#                 .flatten()
-#             )
-#         else:
-#             predictions[:, i] = (
-#                 feat_scalers[ticker][preproc_target_col]
-#                 .inverse_transform(predictions[:, i].reshape(-1, 1))
-#                 .flatten()
-#             )
-#             targets[:, i] = (
-#                 feat_scalers[ticker][preproc_target_col]
-#                 .inverse_transform(targets[:, i].reshape(-1, 1))
-#                 .flatten()
-#             )
-#     return predictions, targets
 
 
 def inverse_transform_predictions(predictions_scaled, targets_scaled, tickers, all_scalers, target_col_name):
@@ -628,152 +717,3 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None, da
             plt.close()
     if save_path is not None:
         print(f"Plots saved for each ticker! {save_path}")
-
-
-def grid_search_train_Transformer_only(
-        config,
-        train_sequences,
-        train_targets,
-        val_sequences,
-        val_targets,
-        device,
-        save_dir,
-        input_dim,
-        num_features,
-        columns_amount,
-        max_seq_len,
-):
-    """
-    Perform grid search for the best hyperparameters.
-    Args:
-        config: Experiment configuration (YAML format).
-        train_loader: DataLoader for training data.
-        val_loader: DataLoader for validation data.
-        device: Device to use ('cpu' or 'cuda').
-        save_dir: Directory to save the best model and hyperparameter configuration.
-    Returns:
-        None
-    """
-    global model
-    save_dir = Path(save_dir)
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    # Unpack hyperparameters
-    param_grid = {
-        "d_model": config["model"]["d_model"],
-        "nhead": config["model"]["nhead"],
-        "num_encoder_layers": config["model"]["num_encoder_layers"],
-        "dim_feedforward": config["model"]["dim_feedforward"],
-        "dropout": config["model"]["dropout"],
-        "batch_size": config["training"]["batch_size"],
-        "learning_rate": config["training"]["learning_rate"],
-    }
-
-    best_val_loss = float("inf")
-    best_params = None
-    best_global_model_path = None
-
-    criterion = nn.MSELoss()
-    scaler = torch.cuda.amp.GradScaler()
-
-    # Generate all combinations of parameters
-    for params in itertools.product(*param_grid.values()):
-        # Map parameters to dict
-        param_dict = dict(zip(param_grid.keys(), params))
-        logging.info(f"Testing parameters: {param_dict}")
-
-        # Create DataLoader with current batch_size
-        train_loader = DataLoader(
-            MultiTickerDataset(train_sequences, train_targets),
-            batch_size=param_dict["batch_size"],
-            shuffle=True,
-        )
-        val_loader = DataLoader(
-            MultiTickerDataset(val_sequences, val_targets),
-            batch_size=param_dict["batch_size"],
-            shuffle=False,
-        )
-
-        # Build model with current parameters
-        model = build_Transformer(
-            input_dim=input_dim,
-            d_model=param_dict["d_model"],
-            nhead=param_dict["nhead"],
-            num_encoder_layers=param_dict["num_encoder_layers"],
-            dim_feedforward=param_dict["dim_feedforward"],
-            dropout=param_dict["dropout"],
-            num_features=num_features,
-            columns_amount=columns_amount,
-            max_seq_len=max_seq_len,
-        ).to(device)
-
-        # Optimizer and scheduler
-        optimizer = torch.optim.Adam(model.parameters(), lr=param_dict["learning_rate"])
-
-        if config["training"]["lr_scheduler"]["type"] == "ReduceLROnPlateau":
-            scheduler = ReduceLROnPlateau(
-                optimizer,
-                mode=config["training"]["lr_scheduler"]["mode"],
-                factor=config["training"]["lr_scheduler"]["factor"],
-                patience=config["training"]["lr_scheduler"]["patience"],
-            )
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-        elif config["training"]["lr_scheduler"]["type"] == "StepLR":
-            scheduler = StepLR(
-                optimizer,
-                step_size=config["training"]["lr_scheduler"]["step_size"],
-                gamma=config["training"]["lr_scheduler"]["gamma"],
-            )
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-        elif config["training"]["lr_scheduler"]["type"] == "ExponentialLR":
-            scheduler = ExponentialLR(
-                optimizer,
-                gamma=config["training"]["lr_scheduler"]["gamma"],
-            )
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-        else:
-            scheduler = None
-            logging.info("No scheduler!")
-            logging.info(f"lr_scheduler: {config['training']['lr_scheduler']['type']}")
-
-        tmp_model_path = save_dir / "tmp_model"
-
-        # Train and validate model
-        best_local_model_path, val_loss = train_model(
-            model=model,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            criterion=criterion,
-            optimizer=optimizer,
-            device=device,
-            n_epochs=config["training"]["n_epochs"],
-            save_path=tmp_model_path,
-            patience=config["training"]["patience"],
-            scaler=scaler,
-            scheduler=scheduler,
-        )
-
-        # Update best model if needed
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            best_params = param_dict
-            best_global_model_path = save_dir / "best_grid_search_model.pth"
-            torch.save(model.state_dict(), best_global_model_path)
-
-    # Save the best parameters and results
-    best_params_path = save_dir / "best_params.yaml"
-    with open(best_params_path, "w") as f:
-        yaml.dump(
-            {
-                "best_val_loss": best_val_loss,
-                "best_params": best_params,
-            },
-            f,
-        )
-    logging.info(f"Best model saved at: {best_global_model_path}")
-    logging.info(f"Best parameters saved at: {best_params_path}")
-
-    # Load best model and evaluate
-    model.load_state_dict(torch.load(best_global_model_path))
-
-    return model, criterion, scaler, best_params["batch_size"]

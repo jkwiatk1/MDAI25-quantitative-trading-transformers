@@ -30,6 +30,8 @@ from experiments.utils.training import (
 from models.PortfolioTransformerCA import build_TransformerCA
 from models.PortfolioCrossFormer import build_CrossFormer
 from models.PortfolioMASTER import build_MASTER
+from models.PortfolioiTransformer import build_PortfolioITransformer
+from models.PortfolioVanillaTransformer import build_PortfolioVanillaTransformer
 
 
 def setup_logging(log_file):
@@ -146,14 +148,8 @@ def main(args):
         )
         data = {key: value[preproc_cols] for key, value in data.items()}
 
-        data_scaled, feat_scalers = normalize_data(
-            data, tickers_to_use, preproc_cols
-        )
+        data_scaled, feat_scalers = normalize_data(data, tickers_to_use, preproc_cols)
 
-        # TODO to uwaga do iTransformera!
-        # Przygotowanie sekwencji - ZAKŁADAMY, ŻE ZWRACA [samples, T, N, F] lub Dataset to obsłuży
-        # Jeśli zwraca [samples, T, N*F], trzeba będzie dodać reshape w Dataset.__getitem__
-        # Lub zmodyfikować prepare_sequential_data
         target_col = config["data"].get("preproc_target_col", "Daily profit")
         logging.info(
             f"Using '{target_col}' for target variable extraction (index 0 assumed)."
@@ -195,9 +191,7 @@ def main(args):
 
     if val_split_ratio > 0:
         val_size_abs = int(val_split_ratio * train_size_abs)
-        if (
-            val_size_abs == 0 and train_size_abs > 0
-        ):  # Zapewnij co najmniej 1 próbkę walidacyjną jeśli to możliwe
+        if val_size_abs == 0 and train_size_abs > 0:
             val_size_abs = 1
         train_sequences = sequences[: train_size_abs - val_size_abs]
         train_targets = targets[: train_size_abs - val_size_abs]
@@ -211,7 +205,7 @@ def main(args):
     else:
         train_sequences = sequences[:train_size_abs]
         train_targets = targets[:train_size_abs]
-        val_sequences, val_targets = None, None  # Brak walidacji
+        val_sequences, val_targets = None, None
         logging.info(
             f"Train size: {len(train_sequences)}, Test size: {len(test_sequences)} (No validation set)"
         )
@@ -226,7 +220,7 @@ def main(args):
     batch_size = config["training"]["batch_size"]
     num_workers = config["training"].get(
         "num_workers", 0
-    )  # Dodaj do configu, domyślnie 0
+    )  # TODO Dodaj do configu, domyślnie 0
     pin_memory = torch.cuda.is_available()  # Użyj pin_memory tylko z GPU
 
     try:
@@ -236,7 +230,7 @@ def main(args):
             shuffle=True,
             num_workers=num_workers,
             pin_memory=pin_memory,
-            drop_last=True,  # drop_last często pomaga
+            drop_last=True,
         )
         val_loader = None
         if val_sequences is not None and len(val_sequences) > 0:
@@ -296,7 +290,7 @@ def main(args):
                 seg_len=config["model"]["seg_len"],
                 win_size=config["model"]["win_size"],
                 factor=config["model"]["factor"],
-                aggregation_type='avg_pool',  # TODO add to config
+                aggregation_type="avg_pool",  # TODO add to config
                 d_model=config["model"]["d_model"],
                 d_ff=config["model"]["d_ff"],
                 n_heads=config["model"]["n_heads"],
@@ -315,7 +309,34 @@ def main(args):
                 n_heads=config["model"].get("n_heads", config["model"]["n_heads"]),
                 dropout=config["model"].get("dropout", config["model"]["dropout"]),
                 d_ff=config["model"]["d_ff"],
-                num_encoder_layers=config['model']['num_encoder_layers'],
+                num_encoder_layers=config["model"]["num_encoder_layers"],
+                device=device,
+            )
+        elif model_type == "iTransformer":
+            logging.info("Building Portfolio iTransformer (Original Concept)...")
+            model = build_PortfolioITransformer(
+                stock_amount=stock_amount,
+                financial_features_amount=financial_features,
+                lookback=config["training"]["lookback"],
+                d_model=config["model"]["d_model"],
+                n_heads=config["model"].get("n_heads", config["model"]["n_heads"]),
+                d_ff=config["model"]["d_ff"],
+                dropout=config["model"].get("dropout", config["model"]["dropout"]),
+                num_encoder_layers=config["model"]["num_encoder_layers"],
+                device=device,
+            )
+
+        elif model_type == "VanillaTransformer":
+            logging.info("Building Portfolio Vanilla Transformer...")
+            model = build_PortfolioVanillaTransformer(
+                stock_amount=stock_amount,
+                financial_features_amount=financial_features,
+                lookback=config["training"]["lookback"],
+                d_model=config["model"]["d_model"],
+                n_heads=config["model"].get("n_heads", config["model"]["n_heads"]),
+                d_ff=config["model"]["d_ff"],
+                dropout=config["model"].get("dropout", config["model"]["dropout"]),
+                num_encoder_layers=config["model"]["num_encoder_layers"],
                 device=device,
             )
         else:
@@ -337,9 +358,7 @@ def main(args):
     # --- Training Setup ---
     logging.info("--- Setting up Training ---")
     try:
-        loss_type = config["training"].get(
-            "loss_function", "RankLoss"
-        )
+        loss_type = config["training"].get("loss_function", "RankLoss")
         if loss_type == "RankLoss":
             criterion = RankLoss(lambda_rank=config["training"].get("lambda_rank", 0.5))
         elif loss_type == "MSE":
@@ -355,15 +374,12 @@ def main(args):
         optimizer = torch.optim.AdamW(
             model.parameters(),
             lr=config["training"]["learning_rate"],
-            weight_decay=config["training"].get(
-                "weight_decay", 0.01
-            ),
+            weight_decay=config["training"].get("weight_decay", 0.01),
         )
         logging.info(
             f"Using optimizer: AdamW with lr={config['training']['learning_rate']} and weight_decay={config['training'].get('weight_decay', 0.01)}"
         )
 
-        # Konfiguracja schedulera
         scheduler_config = config["training"].get("lr_scheduler", {})
         scheduler_type = scheduler_config.get("type", None)
         scheduler = None
@@ -395,10 +411,10 @@ def main(args):
     logging.info("--- Starting Training ---")
     best_model_path = None
     try:
-        best_model_path, history = train_model(  # Zwraca też historię
+        best_model_path, history = train_model(
             model=model,
             train_loader=train_loader,
-            val_loader=val_loader,  # Może być None
+            val_loader=val_loader,
             criterion=criterion,
             optimizer=optimizer,
             device=device,
@@ -407,7 +423,7 @@ def main(args):
             patience=config["training"]["patience"],
             scaler=scaler,
             scheduler=scheduler,
-            model_name=model_type,  # Przekaż nazwę modelu do zapisania
+            model_name=model_type,
         )
         logging.info(f"Training finished. Best model saved to: {best_model_path}")
         # Możesz zapisać historię treningu/walidacji (history)
@@ -570,13 +586,33 @@ def main(args):
 # args = SimpleNamespace(config="../experiments/configs/training_config_CrossFormer.yaml")
 # main(args)
 
-model_name = "MASTER"
+# model_name = "MASTER"
+# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# log_file = os.path.join(
+#     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
+# )
+# setup_logging(log_file)
+# args = SimpleNamespace(config="../experiments/configs/training_config_MASTER.yaml")
+# main(args)
+
+# model_name = "iTransformer"
+# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# log_file = os.path.join(
+#     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
+# )
+# setup_logging(log_file)
+# args = SimpleNamespace(
+#     config="../experiments/configs/training_config_iTransformer.yaml"
+# )
+# main(args)
+
+model_name = "VanillaTransformer"
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 log_file = os.path.join(
     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
 )
 setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/training_config_MASTER.yaml")
+args = SimpleNamespace(config="../experiments/configs/training_config_VanillaTransformer.yaml")
 main(args)
 
 """
