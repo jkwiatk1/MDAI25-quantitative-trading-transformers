@@ -12,7 +12,7 @@ from types import SimpleNamespace
 from experiments.utils.data_loading import (
     fill_missing_days,
     load_finance_data_xlsx,
-    prepare_finance_data,
+    prepare_finance_data, get_tickers,
 )
 from experiments.utils.datasets import (
     prepare_sequential_data,
@@ -56,42 +56,6 @@ def load_config(config_path):
         exit(1)
     except yaml.YAMLError as e:
         logging.error(f"Error parsing configuration file {config_path}: {e}")
-        exit(1)
-
-
-def get_tickers(config):
-    if config["data"].get("yahoo_data", False):
-        try:
-            ticker_file = config["data"]["tickers"]
-            tickers_df = pd.read_csv(ticker_file)
-            if "Ticker" not in tickers_df.columns:
-                logging.error(
-                    f"Ticker file {ticker_file} must contain a 'Ticker' column."
-                )
-                exit(1)
-            return tickers_df["Ticker"].tolist()
-        except FileNotFoundError:
-            logging.error(f"Ticker file not found at {ticker_file}")
-            exit(1)
-        except Exception as e:
-            logging.error(f"Error reading ticker file {ticker_file}: {e}")
-            exit(1)
-    elif isinstance(config["data"]["tickers"], list):
-        return config["data"]["tickers"]
-    elif isinstance(config["data"]["tickers"], str):
-        try:
-            with open(config["data"]["tickers"], "r") as f:
-                return [line.strip() for line in f if line.strip()]
-        except FileNotFoundError:
-            logging.error(f"Ticker file not found at {config['data']['tickers']}")
-            exit(1)
-        except Exception as e:
-            logging.error(f"Error reading ticker file {config['data']['tickers']}: {e}")
-            exit(1)
-    else:
-        logging.error(
-            "Invalid format for config['data']['tickers']. Expected list or file path."
-        )
         exit(1)
 
 
@@ -568,6 +532,15 @@ def main(args):
 
 
 # local run
+# model_name = "VanillaTransformer"
+# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# log_file = os.path.join(
+#     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
+# )
+# setup_logging(log_file)
+# args = SimpleNamespace(config="../experiments/configs/training_config_VanillaTransformer.yaml")
+# main(args)
+
 # model_name = "TransformerCA"
 # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # log_file = os.path.join(
@@ -595,24 +568,15 @@ def main(args):
 # args = SimpleNamespace(config="../experiments/configs/training_config_MASTER.yaml")
 # main(args)
 
-# model_name = "iTransformer"
-# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# log_file = os.path.join(
-#     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
-# )
-# setup_logging(log_file)
-# args = SimpleNamespace(
-#     config="../experiments/configs/training_config_iTransformer.yaml"
-# )
-# main(args)
-
-model_name = "VanillaTransformer"
+model_name = "iTransformer"
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 log_file = os.path.join(
     base_dir, "data", "exp_result", "test", model_name, "logs", "pipeline.log"
 )
 setup_logging(log_file)
-args = SimpleNamespace(config="../experiments/configs/training_config_VanillaTransformer.yaml")
+args = SimpleNamespace(
+    config="../experiments/configs/training_config_iTransformer.yaml"
+)
 main(args)
 
 """
