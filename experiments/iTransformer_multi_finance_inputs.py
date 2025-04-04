@@ -25,12 +25,12 @@ from experiments.utils.datasets import (
 )
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.training import (
-    build_iTransformer,
     train_model,
     evaluate_model,
     inverse_transform_predictions,
     plot_predictions,
 )
+from models.PortfolioiTransformer import build_iTransformer
 
 
 def setup_logging(log_file):

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torch import nn
 from sklearn.preprocessing import MinMaxScaler
 from torch.utils.data import TensorDataset, DataLoader
-from models.iTransformer import iTransformerModel
+from models.PortfolioiTransformer import iTransformerModel
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")

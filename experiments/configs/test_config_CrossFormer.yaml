@@ -4,7 +4,7 @@ data:
   yahoo_data: True
   start_date: "2024-01-03"
   end_date: "2024-12-01"
-  tickers: "../data/data_download/kaggle_data/preprocess/sp500_tickers_50.csv"
+  tickers: "../data/data_download/kaggle_data/preprocess/sp500_tickers.csv"
   init_cols_to_use: [
     "Close",
     "High",
@@ -33,6 +33,9 @@ model:
   factor: 1 # Wymiar routera w TwoStageAttentionLayer.
   e_layers: 1
   weights_path: "../data/exp_result/test/CrossFormer/CrossFormer_best_val.pth"
+portfolio:
+  top_k: 5
+  risk_free_rate: 0.043
 training:
   n_epochs: 40
   lookback: 20

@@ -4,7 +4,7 @@ data:
   yahoo_data: True
   start_date: "2024-01-03"
   end_date: "2024-12-01"
-  tickers: "../data/data_download/kaggle_data/preprocess/sp500_tickers_50.csv"
+  tickers: "../data/data_download/kaggle_data/preprocess/sp500_tickers.csv"
   init_cols_to_use: [
     "Close",
     "High",
@@ -29,6 +29,9 @@ model:
   dropout: 0.1
   num_encoder_layers: 1
   weights_path: "../data/exp_result/test/MASTER/MASTER_best_val.pth"
+portfolio:
+  top_k: 5
+  risk_free_rate: 0.043
 training:
   n_epochs: 40
   lookback: 20
@@ -36,7 +39,8 @@ training:
   learning_rate: 0.004
   test_split: 0.2
   val_split: 0.1
-  patience: 4
+  #  use_amp: True # true, if you want to turn on AMP, false to turn off
+  patience: 5
   lr_scheduler:
     type: "ReduceLROnPlateau"  # or StepLR, "ExponentialLR"
     factor: 0.5

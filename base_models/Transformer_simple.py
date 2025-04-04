@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 from torch import nn
-from models.Transformer import TransformerModel
+from models.PortfolioVanillaTransformer import TransformerModel
 from sklearn.preprocessing import MinMaxScaler
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

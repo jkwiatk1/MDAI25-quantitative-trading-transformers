@@ -6,7 +6,7 @@ import pandas as pd
 def calc_input_features(
     df,
     tickers,
-    cols=["Daily profit", "Turnover", "Cumulative profit", "Cumulative turnover"],
+    cols=["Daily profit", "Turnover"],
     time_step=20,
 ):
     """
