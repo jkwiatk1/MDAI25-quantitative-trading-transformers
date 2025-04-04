@@ -287,7 +287,7 @@ def train_model(
 #     model.load_state_dict(torch.load(best_global_model_path))
 #
 #     return model, criterion, scaler, best_params["batch_size"]
-
+#
 # def grid_search_train_Transformer_only(
 #         config,
 #         train_sequences,
