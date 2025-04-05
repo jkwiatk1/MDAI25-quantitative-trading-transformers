@@ -95,7 +95,6 @@ def build_model_dynamically(model_name, config, common_params):
             device=common_params['device'],
         ).to(common_params['device'])
     elif model_name == "CrossFormer":
-        # Dostosuj nazwy parametrów, jeśli są inne w build_CrossFormer
         model = build_CrossFormer(
             stock_amount=common_params["stock_amount"],
             financial_features=common_params["financial_features_amount"],
@@ -165,8 +164,8 @@ def run_grid_search(config_path: str):
 
     model_base_name = config["model"]["name"]
     output_base_dir = (
-        Path(config["data"].get("output_dir", "results"))
-        / f"{model_base_name}_GridSearch"
+            Path(config["data"].get("output_dir", "results"))
+            / f"{model_base_name}_GridSearch"
     )
     output_base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -238,8 +237,8 @@ def run_grid_search(config_path: str):
             val_size_abs = 1  # Ensure at least one validation sample
         train_sequences = sequences[: train_size_abs - val_size_abs]
         train_targets = targets[: train_size_abs - val_size_abs]
-        val_sequences = sequences[train_size_abs - val_size_abs : train_size_abs]
-        val_targets = targets[train_size_abs - val_size_abs : train_size_abs]
+        val_sequences = sequences[train_size_abs - val_size_abs: train_size_abs]
+        val_targets = targets[train_size_abs - val_size_abs: train_size_abs]
 
         if len(train_sequences) == 0 or len(val_sequences) == 0:
             raise ValueError("Train or Validation set is empty after splitting!")
@@ -368,7 +367,7 @@ def run_grid_search(config_path: str):
                 logging.info("No LR scheduler used.")
 
             use_amp = (
-                current_training_config.get("use_amp", True) and device.type == "cuda"
+                    current_training_config.get("use_amp", True) and device.type == "cuda"
             )
             scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
             logging.info(f"Using Automatic Mixed Precision (AMP): {use_amp}")
@@ -398,8 +397,8 @@ def run_grid_search(config_path: str):
                 best_val_loss = current_best_val_loss
                 best_params_combination = current_params
                 best_local_model_path = (
-                    temp_save_dir
-                    / f"{model_base_name}_comb_{combination_counter}_best_val.pth"
+                        temp_save_dir
+                        / f"{model_base_name}_comb_{combination_counter}_best_val.pth"
                 )
                 if best_local_model_path.exists():
                     torch.save(
@@ -495,13 +494,27 @@ def run_grid_search(config_path: str):
 
     logging.info("--- Grid Search Script Finished ---")
 
+
 # local run
-config="../experiments/configs/training_config_VanillaTransformer.yaml"
+# config="../experiments/configs/training_config_VanillaTransformer.yaml"
+# run_grid_search(config)
+
+# config = "../experiments/configs/training_config_TransformerCA.yaml"
+# run_grid_search(config)
+
+# config = "../experiments/configs/training_config_CrossFormer.yaml"
+# run_grid_search(config)
+
+# config = "../experiments/configs/training_config_MASTER.yaml"
+# run_grid_search(config)
+
+config = "../experiments/configs/training_config_iTransformer.yaml"
 run_grid_search(config)
 
 # if __name__ == "__main__":
 #     parser = argparse.ArgumentParser(
-#         description="Run Hyperparameter Grid Search for Portfolio Models"
+#         description="Run Hyperparameter Grid Search for Port
+#         folio Models"
 #     )
 #     parser.add_argument(
 #         "--config",

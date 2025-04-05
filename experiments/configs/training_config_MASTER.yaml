@@ -26,6 +26,7 @@ data:
 model:
   name: "MASTER"
   d_model: 16
+  lookback: 20
   d_ff: 64
   n_heads: 1
   dropout: 0.1
@@ -48,3 +49,11 @@ training:
     mode: "min"
     step_size: 10
     gamma: 0.1
+
+grid_search:
+  learning_rate: [0.001, 0.0005] # , 0.0001
+  batch_size: [64]
+  dropout: [0.1, 0.2]
+  d_model: [64, 128]
+  num_encoder_layers: [1, 2]
+  # lambda_rank: [0.3, 0.5, 0.7]
