@@ -34,7 +34,7 @@ model:
   e_layers: 1
   weights_path: "../data/exp_result/test/CrossFormer_GridSearch/CrossFormer_best_grid_model.pth"
 portfolio:
-  top_k: 5
+  top_k: 10
   risk_free_rate: 0.043
 training:
   n_epochs: 40

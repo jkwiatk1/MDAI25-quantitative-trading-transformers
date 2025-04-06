@@ -117,44 +117,84 @@ def main(config_path: str):
             config["data"]["path"], config["data"].get("yahoo_data", False)
         )
         data_filled_dict = fill_missing_days(data_raw_dict, selected_tickers, start_date, end_date)
-        data = prepare_finance_data(data_filled_dict, selected_tickers, config["data"]["init_cols_to_use"])
+        original_data_with_dates = prepare_finance_data(data_filled_dict, selected_tickers, config["data"]["init_cols_to_use"]+ ["Date"])
 
+        first_ticker = selected_tickers[0]
+        if first_ticker not in original_data_with_dates:
+            raise ValueError(f"Data for first ticker '{first_ticker}' not found after preparation.")
+        all_original_dates = original_data_with_dates[first_ticker].Date.copy()
+
+        data_processed = calc_input_features(original_data_with_dates, selected_tickers,
+                                             config["data"]["preproc_cols_to_use"], lookback)
         preproc_cols = config["data"].get("preproc_cols_to_use", [])
-        if not isinstance(preproc_cols, list):
-            logging.error("`preproc_cols_to_use` must be a list in config.")
-            return
+        if not preproc_cols: raise ValueError("`preproc_cols_to_use` cannot be empty.")
         financial_features_amount = len(preproc_cols)
-        if financial_features_amount == 0:
-            logging.error("`preproc_cols_to_use` cannot be empty.")
-            return
+        data_final_features = {key: value[preproc_cols] for key, value in data_processed.items() if key in data_processed}
 
-        data = calc_input_features(data, selected_tickers, preproc_cols, lookback)
-        data = {key: value[preproc_cols] for key, value in data.items() if key in data}
-
-        data_scaled, feat_scalers = normalize_data(data, selected_tickers, preproc_cols)
+        data_scaled, feat_scalers = normalize_data(data_final_features, selected_tickers, preproc_cols)
         target_col_name = config["data"].get("preproc_target_col", preproc_cols[0])
-        if target_col_name not in preproc_cols:
-            logging.error(f"Target column '{target_col_name}' not found in preprocessed columns: {preproc_cols}")
-            return
         target_col_index = preproc_cols.index(target_col_name)
         logging.info(f"Using '{target_col_name}' (index {target_col_index}) as target variable.")
 
-        sequences, targets, _ = prepare_sequential_data(
-            data_scaled, selected_tickers, lookback, target_col_index
-        )
-        logging.info(f"Data sequences prepared. Shape: {sequences.shape}, Targets shape: {targets.shape}")
+        sequences, targets, _ = prepare_sequential_data(data_scaled, selected_tickers, lookback, target_col_index)
+        logging.info(f"Data sequences prepared. Seq shape: {sequences.shape}, Tgt shape: {targets.shape}")
 
         # --- Prepare evaluation data ---
-        test_split_ratio = config["training"]["test_split"]
-        num_samples = len(sequences)
-        train_size_abs = int((1 - test_split_ratio) * num_samples)
-        test_sequences = sequences[train_size_abs:]
-        test_targets = targets[train_size_abs:]
+        num_sequences_total = len(sequences)
+        eval_start_index = int((1.0 - test_split_ratio) * num_sequences_total)
+
+        test_sequences = sequences[eval_start_index:]
+        test_targets = targets[eval_start_index:]
 
         if len(test_sequences) == 0:
-            logging.error("Test set is empty after splitting. Check data length and split ratios.")
-            return
-        logging.info(f"Test set size: {len(test_sequences)}")
+            raise ValueError("Test set is empty after splitting.")
+        logging.info(f"Evaluation set size (sequences): {len(test_sequences)}")
+
+        first_test_target_original_idx_pos = eval_start_index + lookback
+        last_test_target_original_idx_pos = num_sequences_total - 1 + lookback
+
+        if last_test_target_original_idx_pos >= len(all_original_dates):
+            logging.warning(f"Calculated last test date index ({last_test_target_original_idx_pos}) exceeds "
+                            f"original data length ({len(all_original_dates)}). Adjusting.")
+            last_test_target_original_idx_pos = len(all_original_dates) - 1
+
+        if first_test_target_original_idx_pos > last_test_target_original_idx_pos:
+            raise ValueError("Cannot determine test date range due to index mismatch.")
+
+        logging.info(
+            f"Calculated indices for slicing: start={first_test_target_original_idx_pos}, stop={last_test_target_original_idx_pos + 1}")
+        logging.info(f"Length of all_original_dates: {len(all_original_dates)}")
+        # Sprawdź, czy indeksy są w granicach
+        if first_test_target_original_idx_pos < 0 or last_test_target_original_idx_pos >= len(
+                all_original_dates) or first_test_target_original_idx_pos > last_test_target_original_idx_pos:
+            logging.error("Invalid date index range calculated!")
+
+        actual_test_dates = all_original_dates[
+                            first_test_target_original_idx_pos: last_test_target_original_idx_pos + 1]
+        logging.info(f"Type of all_original_dates: {type(all_original_dates)}")
+        if isinstance(all_original_dates, pd.DatetimeIndex):
+            logging.info(
+                f"Sample dates from all_original_dates: {all_original_dates[:5].tolist()}")  # Pokaż pierwsze 5 dat
+        else:
+            logging.error("all_original_dates is NOT a DatetimeIndex!")
+
+        logging.info(f"Length of actual_test_dates: {len(actual_test_dates)}")
+        logging.info(f"Type of actual_test_dates: {type(actual_test_dates)}")
+        if len(actual_test_dates) > 0 and isinstance(actual_test_dates, pd.DatetimeIndex):
+            logging.info(f"Min test date: {actual_test_dates.min()}, Max test date: {actual_test_dates.max()}")
+            # Spróbuj wywołać .date() tutaj, aby zobaczyć, czy działa
+            try:
+                logging.info(
+                    f"Min test date object: {actual_test_dates.min()} with date attribute: {actual_test_dates.min().date()}")
+            except AttributeError as e:
+                logging.error(f"AttributeError on min date: {e}")
+        elif len(actual_test_dates) == 0:
+            logging.error("actual_test_dates is empty!")
+        else:
+            logging.error(f"actual_test_dates is not a DatetimeIndex, type is {type(actual_test_dates)}")
+
+        logging.info(
+            f"Test period dates range from {actual_test_dates.min().date()} to {actual_test_dates.max().date()}")
 
         test_loader = DataLoader(
             MultiStockDataset(test_sequences, test_targets),
@@ -163,14 +203,13 @@ def main(config_path: str):
             num_workers=config["training"].get("num_workers", 0),
             pin_memory=device.type == 'cuda'  # Pin memory tylko dla GPU
         )
-
-        first_ticker = selected_tickers[0]
-        all_dates = data[first_ticker].index if first_ticker in data else None
-        test_dates = all_dates if all_dates is not None else None
-        if test_dates is not None and len(test_dates) != len(test_sequences):
-            logging.warning(
-                f"Length mismatch between expected test dates ({len(test_dates)}) and actual test sequences ({len(test_sequences)}). Plotting without dates.")
-            test_dates = None
+        # first_ticker = selected_tickers[0]
+        # all_dates = data[first_ticker].index if first_ticker in data else None
+        # test_dates = all_dates if all_dates is not None else None
+        # if test_dates is not None and len(test_dates) != len(test_sequences):
+        #     logging.warning(
+        #         f"Length mismatch between expected test dates ({len(test_dates)}) and actual test sequences ({len(test_sequences)}). Plotting without dates.")
+        #     test_dates = None
 
     except Exception as e:
         logging.error(f"Error during data loading/preparation: {e}", exc_info=True)
@@ -363,46 +402,102 @@ def main(config_path: str):
         logging.info(f"Saved evaluation metrics to CSV: {csv_results_path}")
 
         curve_df = pd.DataFrame({'PortfolioValue': portfolio_value_curve})
-        if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:  # Curve ma +1 element (start)
-            curve_df.index = pd.to_datetime(['start'] + list(test_dates))
+        start_curve_original_idx_pos = first_test_target_original_idx_pos - 1
+        if start_curve_original_idx_pos >= 0:
+            curve_dates = all_original_dates[start_curve_original_idx_pos: last_test_target_original_idx_pos + 1]
+            if len(curve_dates) == len(portfolio_value_curve):
+                curve_df.index = pd.to_datetime(curve_dates)
+                logging.info(f"Portfolio curve dates set from {curve_dates.min().date()} to {curve_dates.max().date()}")
+            else:
+                logging.warning(
+                    f"Length mismatch for curve dates ({len(curve_dates)}) vs curve values ({len(portfolio_value_curve)}). Saving without date index.")
+        else:
+            logging.warning("Cannot determine start date for curve index. Saving without date index.")
+
         curve_path = output_dir / f"{model_name}_portfolio_value_curve.csv"
-        curve_path_for_models_comparison = output_base_dir / f"evaluation_final_{config['portfolio']['top_k']}_best_assets"
-        curve_path_for_models_comparison.mkdir(parents=True, exist_ok=True)
-        curve_df.to_csv(curve_path)
-        curve_df.to_csv(curve_path_for_models_comparison/f"{model_name}_portfolio_value_curve.csv")
-        logging.info(f"Saved portfolio value curve data to {curve_path} & {curve_path_for_models_comparison}")
+        curve_df.to_csv(curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
+        logging.info(f"Saved portfolio value curve data to {curve_path}")
+
+        comp_output_dir = output_base_dir / f"evaluation_final_Top{portfolio_top_k}" / model_name
+        comp_output_dir.mkdir(parents=True, exist_ok=True)
+        comp_curve_path = comp_output_dir / f"{model_name}_portfolio_value_curve.csv"
+        curve_df.to_csv(comp_curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
+        logging.info(f"Saved portfolio value curve data to comparison dir: {comp_curve_path}")
+
+
+        # if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:  # Curve ma +1 element (start)
+        #     curve_df.index = pd.to_datetime(['start'] + list(test_dates))
+        # curve_path = output_dir / f"{model_name}_portfolio_value_curve.csv"
+        # curve_path_for_models_comparison = output_base_dir / f"evaluation_final_{config['portfolio']['top_k']}_best_assets"
+        # curve_path_for_models_comparison.mkdir(parents=True, exist_ok=True)
+        # curve_df.to_csv(curve_path)
+        # curve_df.to_csv(curve_path_for_models_comparison/f"{model_name}_portfolio_value_curve.csv")
+        # logging.info(f"Saved portfolio value curve data to {curve_path} & {curve_path_for_models_comparison}")
 
     except Exception as e:
         logging.error(f"Error saving results: {e}", exc_info=True)
 
     try:
         plt.figure(figsize=(12, 6))
-        if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:
-            plot_dates = pd.to_datetime(list(test_dates))
-            plt.plot(plot_dates, portfolio_value_curve[1:], linestyle="-",
-                     label=f"{model_name} Portfolio Value")
+        # --- **Poprawione Rysowanie z DATAMI** ---
+        if isinstance(curve_df.index, pd.DatetimeIndex):
+            plt.plot(curve_df.index, curve_df['PortfolioValue'], linestyle="-", label=f"{model_name} Portfolio Value")
             plt.xlabel("Date")
-            plt.xticks(rotation=45)
+            # Lepsze formatowanie osi X
+            plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+            plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator(minticks=5, maxticks=10))
+            plt.gcf().autofmt_xdate()  # Automatyczne obracanie etykiet
         else:
-            plt.plot(portfolio_value_curve[1:], linestyle="-",
+            # Fallback, jeśli nie ma dat
+            plt.plot(np.arange(len(portfolio_value_curve)), portfolio_value_curve, linestyle="-",
                      label=f"{model_name} Portfolio Value")
-            plt.xlabel(f"Trading Days (Test Period, {len(portfolio_value_curve) - 1} days)")
+            plt.xlabel(f"Time Points (Test Period + Start, {len(portfolio_value_curve)} points)")
 
         plt.ylabel("Portfolio Value (Starts at 1.0)")
         plt.title(f"Portfolio Value Over Time ({model_name}, Top-{portfolio_top_k} Strategy)")
+        plt.yscale('log')  # Dodana skala logarytmiczna dla lepszej wizualizacji wzrostu
         plt.legend()
-        plt.grid(True)
+        plt.grid(True, which='both', linestyle=':')  # Poprawiony grid
         plt.tight_layout()
         plot_path = output_dir / f"{model_name}_portfolio_value_curve.png"
         plt.savefig(plot_path, dpi=300)
         logging.info(f"Saved portfolio value plot to {plot_path}")
-        # plt.show() # Odkomentuj, jeśli chcesz pokazywać wykresy interaktywnie
-        plt.close()  # Zamknij figurę po zapisaniu
+        plt.close()
 
     except Exception as e:
         logging.error(f"Error during plotting: {e}", exc_info=True)
 
     logging.info(f"--- Evaluation script finished for {model_name} ---")
+
+
+    # try:
+    #     plt.figure(figsize=(12, 6))
+    #     if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:
+    #         plot_dates = pd.to_datetime(list(test_dates))
+    #         plt.plot(plot_dates, portfolio_value_curve[1:], linestyle="-",
+    #                  label=f"{model_name} Portfolio Value")
+    #         plt.xlabel("Date")
+    #         plt.xticks(rotation=45)
+    #     else:
+    #         plt.plot(portfolio_value_curve[1:], linestyle="-",
+    #                  label=f"{model_name} Portfolio Value")
+    #         plt.xlabel(f"Trading Days (Test Period, {len(portfolio_value_curve) - 1} days)")
+    #
+    #     plt.ylabel("Portfolio Value (Starts at 1.0)")
+    #     plt.title(f"Portfolio Value Over Time ({model_name}, Top-{portfolio_top_k} Strategy)")
+    #     plt.legend()
+    #     plt.grid(True)
+    #     plt.tight_layout()
+    #     plot_path = output_dir / f"{model_name}_portfolio_value_curve.png"
+    #     plt.savefig(plot_path, dpi=300)
+    #     logging.info(f"Saved portfolio value plot to {plot_path}")
+    #     # plt.show() # Odkomentuj, jeśli chcesz pokazywać wykresy interaktywnie
+    #     plt.close()  # Zamknij figurę po zapisaniu
+    #
+    # except Exception as e:
+    #     logging.error(f"Error during plotting: {e}", exc_info=True)
+    #
+    # logging.info(f"--- Evaluation script finished for {model_name} ---")
 
 
 if __name__ == "__main__":
