@@ -2,7 +2,7 @@ data:
   path: "../data/data_download/kaggle_data/preprocess/sp500_stocks_historical_data.xlsx"
   output_dir: "../data/exp_result/test"
   yahoo_data: True
-  start_date: "2024-01-03"
+  start_date: "2015-01-03"
   end_date: "2024-12-01"
   tickers: "../data/data_download/kaggle_data/preprocess/sp500_tickers.csv"
   init_cols_to_use: [
@@ -23,7 +23,7 @@ data:
   preproc_target_col: "Daily profit"
 model:
   name: "CrossFormer"
-  d_model: 16
+  d_model: 128
   n_heads: 1
   num_encoder_layers: 1  # == e_layers
   d_ff: 64
@@ -32,7 +32,7 @@ model:
   win_size: 10 # Rozmiar okna dla SegMerging.
   factor: 1 # Wymiar routera w TwoStageAttentionLayer.
   e_layers: 1
-  weights_path: "../data/exp_result/test/CrossFormer/CrossFormer_best_val.pth"
+  weights_path: "../data/exp_result/test/CrossFormer_GridSearch/CrossFormer_best_grid_model.pth"
 portfolio:
   top_k: 5
   risk_free_rate: 0.043
@@ -40,9 +40,9 @@ training:
   n_epochs: 40
   lookback: 20
   batch_size: 4
-  learning_rate: 0.004
-  test_split: 0.2
-  val_split: 0.1
+  learning_rate: 0.001
+  test_split: 0.3
+#  val_split: 0.1
   #  use_amp: True # true, if you want to turn on AMP, false to turn off
   patience: 5
   lr_scheduler:

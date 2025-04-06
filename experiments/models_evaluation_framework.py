@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 import torch
 import yaml
+import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
 from torch.utils.data import DataLoader
 
-# --- Importy funkcji pomocniczych (załóżmy, że są w odpowiednich ścieżkach) ---
 from experiments.utils.data_loading import (
     load_finance_data_xlsx,
     prepare_finance_data,
@@ -35,25 +35,24 @@ from experiments.utils.training import (
     inverse_transform_predictions,
 )
 
-# --- Importy funkcji budujących modele ---
 from models.PortfolioVanillaTransformer import build_PortfolioVanillaTransformer
-from models.PortfolioCrossFormer import build_CrossFormer # Zmieniono nazwę pliku dla spójności
-from models.PortfolioMASTER import build_MASTER # Zmieniono nazwę pliku dla spójności
-from models.PortfolioiTransformer import build_PortfolioITransformer # Zmieniono nazwę pliku dla spójności
-from models.PortfolioTransformerCA import build_TransformerCA # Zmieniono nazwę pliku dla spójności
+from models.PortfolioCrossFormer import build_CrossFormer
+from models.PortfolioMASTER import build_MASTER
+from models.PortfolioiTransformer import build_PortfolioITransformer
+from models.PortfolioTransformerCA import build_TransformerCA
 
 
 def setup_logging(log_file):
     """Konfiguruje logowanie do pliku i konsoli."""
     log_dir = Path(log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
-    # Usuń poprzednie handlery, jeśli istnieją (przydatne przy wielokrotnym wywoływaniu)
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.FileHandler(log_file, mode='w'), logging.StreamHandler()], # mode='w' nadpisuje log przy każdym uruchomieniu
+        handlers=[logging.FileHandler(log_file, mode='w'), logging.StreamHandler()],
+        # mode='w' nadpisuje log przy każdym uruchomieniu
         datefmt="%Y-%m-%d %H:%M:%S"
     )
     logging.info("Logging setup complete.")
@@ -78,19 +77,17 @@ def load_config(config_path):
 
 
 def main(config_path: str):
-    """Główna funkcja przeprowadzająca ewaluację modelu."""
     try:
         config = load_config(config_path)
     except Exception:
-        return # Zakończ, jeśli nie udało się wczytać configu
+        return
 
     # --- Setup ---
     model_name = config["model"]["name"]
-    output_base_dir = Path(config["data"].get("output_dir", "results")) # Użyj domyślnej nazwy, jeśli brak
-    output_dir = output_base_dir / model_name
+    output_base_dir = Path(config["data"].get("output_dir", "results"))
+    output_dir = output_base_dir / f"{model_name}_GridSearch" / f"Evaluation_{config['portfolio']['top_k']}_best_assets"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Konfiguracja logowania specyficzna dla uruchomienia
     log_file = output_dir / "evaluation.log"
     setup_logging(log_file)
     logging.info(f"Starting evaluation for model: {model_name}")
@@ -103,22 +100,17 @@ def main(config_path: str):
     start_date = pd.to_datetime(config["data"]["start_date"])
     end_date = pd.to_datetime(config["data"]["end_date"])
     lookback = config["training"]["lookback"]
+    test_split_ratio = config["training"]["test_split"]
 
-    # --- Wczytywanie Tickerów ---
     try:
-        selected_tickers = get_tickers(config) # Użyj funkcji pomocniczej, jeśli istnieje
+        selected_tickers = get_tickers(config)
         stock_amount = len(selected_tickers)
-        if stock_amount == 0:
-            logging.error("No tickers specified or loaded.")
-            return
+        if stock_amount == 0: raise ValueError("No tickers specified or loaded.")
         logging.info(f"Processing {stock_amount} tickers.")
     except Exception as e:
         logging.error(f"Error getting tickers: {e}", exc_info=True)
         return
 
-    # --- Ładowanie i Przygotowanie Danych ---
-    # Ten blok jest kosztowny, idealnie dane testowe i scalery powinny być zapisane
-    # podczas treningu i tutaj tylko wczytane. Na razie zostawiamy jak jest.
     logging.info("--- Loading and Preparing Data ---")
     try:
         data_raw_dict, _ = load_finance_data_xlsx(
@@ -127,22 +119,20 @@ def main(config_path: str):
         data_filled_dict = fill_missing_days(data_raw_dict, selected_tickers, start_date, end_date)
         data = prepare_finance_data(data_filled_dict, selected_tickers, config["data"]["init_cols_to_use"])
 
-        # Upewnij się, że `preproc_cols_to_use` jest listą
         preproc_cols = config["data"].get("preproc_cols_to_use", [])
         if not isinstance(preproc_cols, list):
-             logging.error("`preproc_cols_to_use` must be a list in config.")
-             return
+            logging.error("`preproc_cols_to_use` must be a list in config.")
+            return
         financial_features_amount = len(preproc_cols)
         if financial_features_amount == 0:
             logging.error("`preproc_cols_to_use` cannot be empty.")
             return
 
         data = calc_input_features(data, selected_tickers, preproc_cols, lookback)
-        data = {key: value[preproc_cols] for key, value in data.items() if key in data} # Bezpieczniejsze pobieranie
+        data = {key: value[preproc_cols] for key, value in data.items() if key in data}
 
-        # --- Normalizacja i Sekwencjonowanie ---
         data_scaled, feat_scalers = normalize_data(data, selected_tickers, preproc_cols)
-        target_col_name = config["data"].get("preproc_target_col", preproc_cols[0]) # Domyślnie pierwsza kolumna
+        target_col_name = config["data"].get("preproc_target_col", preproc_cols[0])
         if target_col_name not in preproc_cols:
             logging.error(f"Target column '{target_col_name}' not found in preprocessed columns: {preproc_cols}")
             return
@@ -154,8 +144,7 @@ def main(config_path: str):
         )
         logging.info(f"Data sequences prepared. Shape: {sequences.shape}, Targets shape: {targets.shape}")
 
-        # --- Podział na Zbiór Testowy ---
-        # Zakładamy, że podział jest taki sam jak podczas treningu
+        # --- Prepare evaluation data ---
         test_split_ratio = config["training"]["test_split"]
         num_samples = len(sequences)
         train_size_abs = int((1 - test_split_ratio) * num_samples)
@@ -172,39 +161,35 @@ def main(config_path: str):
             batch_size=config["training"]["batch_size"],
             shuffle=False,
             num_workers=config["training"].get("num_workers", 0),
-            pin_memory=device.type == 'cuda' # Pin memory tylko dla GPU
+            pin_memory=device.type == 'cuda'  # Pin memory tylko dla GPU
         )
 
-        # Przygotuj zakres dat dla wykresów (jeśli możliwe)
         first_ticker = selected_tickers[0]
         all_dates = data[first_ticker].index if first_ticker in data else None
-        test_dates = all_dates[train_size_abs:] if all_dates is not None else None
+        test_dates = all_dates if all_dates is not None else None
         if test_dates is not None and len(test_dates) != len(test_sequences):
-             logging.warning(f"Length mismatch between expected test dates ({len(test_dates)}) and actual test sequences ({len(test_sequences)}). Plotting without dates.")
-             test_dates = None
+            logging.warning(
+                f"Length mismatch between expected test dates ({len(test_dates)}) and actual test sequences ({len(test_sequences)}). Plotting without dates.")
+            test_dates = None
 
     except Exception as e:
         logging.error(f"Error during data loading/preparation: {e}", exc_info=True)
         return
 
-    # --- Dynamiczne Budowanie Modelu ---
     logging.info(f"--- Building Model: {model_name} ---")
     model_params = config["model"]
     try:
-        # Przygotuj wspólne parametry
         common_params_build = {
             "stock_amount": stock_amount,
             "financial_features_amount": financial_features_amount,
             "lookback": lookback,
             "device": device,
         }
-        # Połącz wspólne i specyficzne parametry, usuń 'name'
         builder_args = {**common_params_build, **model_params}
-        builder_args.pop('name', None) # Usuń 'name', bo nie jest argumentem buildera
+        builder_args.pop('name', None)
 
-        # Wywołaj odpowiednią funkcję build
         if model_name == "VanillaTransformer":
-            build_PortfolioVanillaTransformer(
+            model = build_PortfolioVanillaTransformer(
                 stock_amount=stock_amount,
                 financial_features_amount=len(config["data"]["preproc_cols_to_use"]),
                 lookback=config["training"]["lookback"],
@@ -216,7 +201,6 @@ def main(config_path: str):
                 device=device,
             ).to(device)
         elif model_name == "CrossFormer":
-            # Dostosuj nazwy parametrów, jeśli są inne w build_CrossFormer
             model = build_CrossFormer(
                 stock_amount=stock_amount,
                 financial_features=len(config["data"]["preproc_cols_to_use"]),
@@ -224,7 +208,7 @@ def main(config_path: str):
                 seg_len=config["model"]["seg_len"],
                 win_size=config["model"]["win_size"],
                 factor=config["model"]["factor"],
-                aggregation_type="avg_pool",  # TODO add to config
+                aggregation_type="avg_pool",
                 d_model=config["model"]["d_model"],
                 d_ff=config["model"]["d_ff"],
                 n_heads=config["model"]["n_heads"],
@@ -283,13 +267,11 @@ def main(config_path: str):
         logging.error(f"Error building model {model_name}: {e}", exc_info=True)
         return
 
-    # --- Ładowanie Wag ---
     weights_path = config["model"].get("weights_path")
     if not weights_path or not Path(weights_path).exists():
         logging.error(f"Model weights path '{weights_path}' not found or not specified in config.")
         return
     try:
-        # Załaduj stan na CPU, a następnie przenieś na właściwe urządzenie
         model.load_state_dict(torch.load(weights_path, map_location="cpu"))
         model.to(device)
         logging.info(f"Successfully loaded model weights from {weights_path}")
@@ -297,10 +279,8 @@ def main(config_path: str):
         logging.error(f"Error loading model weights from {weights_path}: {e}", exc_info=True)
         return
 
-    # --- Ewaluacja Modelu ---
     logging.info("--- Evaluating Model ---")
     try:
-        # Użyj tej samej funkcji straty co podczas treningu (lub MSE do prostej ewaluacji)
         eval_loss_type = config["training"].get("loss_function", "RankLoss")
         if eval_loss_type == "RankLoss":
             criterion = RankLoss(lambda_rank=config["training"].get("lambda_rank", 0.5))
@@ -311,7 +291,6 @@ def main(config_path: str):
             criterion = torch.nn.MSELoss()
 
         use_amp_eval = config["training"].get("use_amp", True) and device.type == 'cuda'
-        # Scaler jest potrzebny tylko do autocast w evaluate_model
         scaler_eval = torch.cuda.amp.GradScaler(enabled=use_amp_eval)
 
         predictions_scaled, targets_scaled, test_loss = evaluate_model(
@@ -319,11 +298,10 @@ def main(config_path: str):
             test_loader=test_loader,
             criterion=criterion,
             device=device,
-            scaler=scaler_eval # Przekaż scaler
+            scaler=scaler_eval
         )
         logging.info(f"Evaluation finished. Test Loss ({criterion.__class__.__name__}): {test_loss:.6f}")
 
-        # Squeeze ostatniego wymiaru, jeśli jest 1
         if predictions_scaled.shape[-1] == 1:
             predictions_scaled = predictions_scaled.squeeze(-1)
         if targets_scaled.shape[-1] == 1:
@@ -333,7 +311,6 @@ def main(config_path: str):
         logging.error(f"Error during model evaluation: {e}", exc_info=True)
         return
 
-    # --- Obliczanie Metryk ---
     logging.info("--- Calculating Metrics ---")
     try:
         # Metryki predykcyjne (na danych przeskalowanych)
@@ -349,17 +326,16 @@ def main(config_path: str):
         )
 
         # Precision@k (używa odwróconych targetów)
-        portfolio_top_k = config["portfolio"].get("top_k", 5) # Pobierz k z sekcji portfolio configu
+        portfolio_top_k = config["portfolio"].get("top_k", 5)  # Pobierz k z sekcji portfolio configu
         precision_at_k_value = calculate_precision_at_k(predictions_scaled, targets_inv, top_k=portfolio_top_k)
         predictive_metrics[f'Precision@{portfolio_top_k}'] = precision_at_k_value
 
         # Metryki portfelowe (używają oryginalnych predykcji i odwróconych targetów)
-        portfolio_risk_free_rate = config["portfolio"].get("risk_free_rate", 0.0) # Pobierz Rf z sekcji portfolio
+        portfolio_risk_free_rate = config["portfolio"].get("risk_free_rate", 0.0)  # Pobierz Rf z sekcji portfolio
         portfolio_metrics, portfolio_value_curve = calculate_portfolio_performance(
             predictions_scaled, targets_inv, top_k=portfolio_top_k, risk_free_rate=portfolio_risk_free_rate
         )
 
-        # Połącz wszystkie metryki
         all_metrics = {**portfolio_metrics, **predictive_metrics, f"Test Loss ({eval_loss_type})": test_loss}
         logging.info(f"Final Combined Metrics: {all_metrics}")
 
@@ -367,7 +343,6 @@ def main(config_path: str):
         logging.error(f"Error calculating metrics: {e}", exc_info=True)
         return
 
-    # --- Zapisywanie Wyników ---
     try:
         results_file = output_dir / "evaluation_results.txt"
         with open(results_file, "w") as f:
@@ -383,33 +358,35 @@ def main(config_path: str):
                 f.write(f"{key}: {value:.4f}\n")
         logging.info(f"Saved evaluation results to {results_file}")
 
-        # Zapisz też w formacie CSV dla łatwiejszej agregacji
         csv_results_path = output_dir / "evaluation_results.csv"
         pd.DataFrame([all_metrics]).to_csv(csv_results_path, index=False)
         logging.info(f"Saved evaluation metrics to CSV: {csv_results_path}")
 
-        # Zapisz krzywą wartości portfela
         curve_df = pd.DataFrame({'PortfolioValue': portfolio_value_curve})
-        if test_dates is not None and len(test_dates) == len(portfolio_value_curve) -1 : # Curve ma +1 element (start)
-             curve_df.index = pd.to_datetime(['start'] + list(test_dates)) # Dodaj placeholder dla startu
+        if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:  # Curve ma +1 element (start)
+            curve_df.index = pd.to_datetime(['start'] + list(test_dates))
         curve_path = output_dir / f"{model_name}_portfolio_value_curve.csv"
+        curve_path_for_models_comparison = output_base_dir / f"evaluation_final_{config['portfolio']['top_k']}_best_assets"
+        curve_path_for_models_comparison.mkdir(parents=True, exist_ok=True)
         curve_df.to_csv(curve_path)
-        logging.info(f"Saved portfolio value curve data to {curve_path}")
+        curve_df.to_csv(curve_path_for_models_comparison/f"{model_name}_portfolio_value_curve.csv")
+        logging.info(f"Saved portfolio value curve data to {curve_path} & {curve_path_for_models_comparison}")
 
     except Exception as e:
         logging.error(f"Error saving results: {e}", exc_info=True)
 
-    # --- Wizualizacja ---
     try:
         plt.figure(figsize=(12, 6))
         if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:
-             plot_dates = pd.to_datetime(list(test_dates)) # Użyj tylko dat testowych
-             plt.plot(plot_dates, portfolio_value_curve[1:], linestyle="-", label=f"{model_name} Portfolio Value") # Pomiń punkt startowy dla osi X
-             plt.xlabel("Date")
-             plt.xticks(rotation=45)
+            plot_dates = pd.to_datetime(list(test_dates))
+            plt.plot(plot_dates, portfolio_value_curve[1:], linestyle="-",
+                     label=f"{model_name} Portfolio Value")
+            plt.xlabel("Date")
+            plt.xticks(rotation=45)
         else:
-             plt.plot(portfolio_value_curve[1:], linestyle="-", label=f"{model_name} Portfolio Value") # Pomiń punkt startowy dla osi X
-             plt.xlabel(f"Trading Days (Test Period, {len(portfolio_value_curve)-1} days)")
+            plt.plot(portfolio_value_curve[1:], linestyle="-",
+                     label=f"{model_name} Portfolio Value")
+            plt.xlabel(f"Trading Days (Test Period, {len(portfolio_value_curve) - 1} days)")
 
         plt.ylabel("Portfolio Value (Starts at 1.0)")
         plt.title(f"Portfolio Value Over Time ({model_name}, Top-{portfolio_top_k} Strategy)")
@@ -420,7 +397,7 @@ def main(config_path: str):
         plt.savefig(plot_path, dpi=300)
         logging.info(f"Saved portfolio value plot to {plot_path}")
         # plt.show() # Odkomentuj, jeśli chcesz pokazywać wykresy interaktywnie
-        plt.close() # Zamknij figurę po zapisaniu
+        plt.close()  # Zamknij figurę po zapisaniu
 
     except Exception as e:
         logging.error(f"Error during plotting: {e}", exc_info=True)
@@ -428,86 +405,49 @@ def main(config_path: str):
     logging.info(f"--- Evaluation script finished for {model_name} ---")
 
 
-# # local run
-# model_name = "VanillaTransformer"
-# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# log_file = os.path.join(
-#     base_dir, "data", "exp_result", "test", model_name, "logs", "evaluation.log"
-# )
-# setup_logging(log_file)
-# args = SimpleNamespace(config="../experiments/configs/test_config_VanillaTransformer.yaml")
-# main(args)
+if __name__ == "__main__":
 
-# # local run
-# model_name = "TransformerCA"
-# base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# log_file = os.path.join(
-#     base_dir, "data", "exp_result", "test", model_name, "logs", "evaluation.log"
-# )
-# setup_logging(log_file)
-# args = SimpleNamespace(config="../experiments/configs/test_config_TransformerCA.yaml")
-# main(config_path="../experiments/configs/test_config_TransformerCA.yaml")
+    models_to_run = [
+        {
+            "model_name": "VanillaTransformer",
+            "config_file_path": "../experiments/configs/test_config_VanillaTransformer.yaml"
+        },
+        {
+            "model_name": "TransformerCA",
+            "config_file_path": "../experiments/configs/test_config_TransformerCA.yaml"
+        },
+        {
+            "model_name": "iTransformer",
+            "config_file_path": "../experiments/configs/test_config_iTransformer.yaml"
+        },
+        {
+            "model_name": "CrossFormer",
+            "config_file_path": "../experiments/configs/test_config_CrossFormer.yaml"
+        },
+        {
+            "model_name": "MASTER",
+            "config_file_path": "../experiments/configs/test_config_MASTER.yaml"
+        }
+    ]
 
-if __name__ == "__main__": # Dobrą praktyką jest nadal umieszczać kod wykonawczy w tym bloku
+    # Iteracja po liście modeli
+    for model in models_to_run:
+        model_name_to_run = model["model_name"]
+        config_file_path = model["config_file_path"]
 
-    # === Konfiguracja dla
-    # model_name_to_run = "VanillaTransformer"  # Używaj spójnych nazw z config['model']['name']
-    # config_file_path = "../experiments/configs/test_config_VanillaTransformer.yaml"  # Ścieżka do pliku konfiguracyjnego
+        print(f"\n--- Running Evaluation for: {model_name_to_run} ---")
+        print(f"--- Using Config: {config_file_path} ---\n")
 
-    # Modelu 1: TransformerCA ===
-    # model_name_to_run = "TransformerCA" # Używaj spójnych nazw z config['model']['name']
-    # config_file_path = "../experiments/configs/test_config_TransformerCA.yaml" # Ścieżka do pliku konfiguracyjnego
+        if not Path(config_file_path).exists():
+            print(f"ERROR: Configuration file not found at {config_file_path}")
+        else:
+            try:
+                main(config_path=config_file_path)
+            except Exception as e:
+                logging.error(f"Critical error during main execution for {model_name_to_run}: {e}", exc_info=True)
+                print(f"CRITICAL ERROR running {model_name_to_run}. Check logs for details.")
 
-    # model_name_to_run = "iTransformer"  # Używaj spójnych nazw z config['model']['name']
-    # config_file_path = "../experiments/configs/test_config_iTransformer.yaml"  # Ścieżka do pliku konfiguracyjnego
-
-    # model_name_to_run = "CrossFormer"  # Używaj spójnych nazw z config['model']['name']
-    # config_file_path = "../experiments/configs/test_config_CrossFormer.yaml"  # Ścieżka do pliku konfiguracyjnego
-    #
-    model_name_to_run = "MASTER"  # Używaj spójnych nazw z config['model']['name']
-    config_file_path = "../experiments/configs/test_config_MASTER.yaml"  # Ścieżka do pliku konfiguracyjnego
-    #
-
-    # -- Konfiguracja logowania (opcjonalna, main() zrobi to ponownie) --
-    # base_dir = Path(__file__).resolve().parent.parent # Bardziej niezawodne określenie base_dir
-    # log_dir_local = base_dir / "data" / "exp_result" / "test_local" / model_name_to_run / "logs"
-    # log_file_local = log_dir_local / "evaluation_local.log"
-    # setup_logging(log_file_local) # Można skonfigurować logowanie tutaj LUB polegać na tym w main()
-    # print(f"Local run configured for {model_name_to_run}. Log file (tentative): {log_file_local}")
-
-    print(f"\n--- Running Evaluation for: {model_name_to_run} ---")
-    print(f"--- Using Config: {config_file_path} ---\n")
-
-    # Sprawdź, czy plik konfiguracyjny istnieje
-    if not Path(config_file_path).exists():
-        print(f"ERROR: Configuration file not found at {config_file_path}")
-    else:
-        # Wywołaj funkcję main, przekazując ścieżkę do configu
-        try:
-             main(config_path=config_file_path)
-        except Exception as e:
-             # Logowanie błędu krytycznego, jeśli main() rzuci wyjątek, którego nie złapał wewnętrznie
-             logging.error(f"Critical error during main execution for {model_name_to_run}: {e}", exc_info=True)
-             print(f"CRITICAL ERROR running {model_name_to_run}. Check logs for details.")
-
-    print(f"\n--- Finished Evaluation for: {model_name_to_run} ---")
-
-    # === Możesz dodać bloki dla innych modeli ===
-    # model_name_to_run = "PortfolioVanillaTransformer"
-    # config_file_path = "../experiments/configs/test_config_VanillaTransformer.yaml"
-    # print(f"\n--- Running Evaluation for: {model_name_to_run} ---")
-    # print(f"--- Using Config: {config_file_path} ---\n")
-    # if not Path(config_file_path).exists():
-    #     print(f"ERROR: Configuration file not found at {config_file_path}")
-    # else:
-    #     try:
-    #         main(config_path=config_file_path)
-    #     except Exception as e:
-    #         logging.error(f"Critical error during main execution for {model_name_to_run}: {e}", exc_info=True)
-    #         print(f"CRITICAL ERROR running {model_name_to_run}. Check logs for details.")
-    # print(f"\n--- Finished Evaluation for: {model_name_to_run} ---")
-
-    # ... i tak dalej dla pozostałych modeli ...
+        print(f"\n--- Finished Evaluation for: {model_name_to_run} ---")
 
 # if __name__ == "__main__":
 #     # Użyj argparse do przekazywania ścieżki do configu
