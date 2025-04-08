@@ -1,0 +1,9 @@
+benchmark_data:
+  path: '../data/data_download/kaggle_data/preprocess/sp500_index_historical_data.xlsx'
+  column_name: 'S&P500'
+portfolio:
+  risk_free_rate: 0.043 # Roczna stopa wolna od ryzyka
+test_period:
+  start_date: '2022-01-01' # Początek okresu testowego (musi pasować do ewaluacji modeli)
+  end_date: '2024-12-03'   # Koniec okresu testowego (musi pasować do ewaluacji modeli)
+benchmark_output_dir: '../data/exp_result/models/benchmarks_results' # Gdzie zapisać wyniki benchmarków

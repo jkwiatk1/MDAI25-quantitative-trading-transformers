@@ -146,62 +146,144 @@ def main_comparison(config):
 
     # --- Przytnij Benchmark do Wspólnego Okresu ---
     # Dodaj jeden dzień przed min_date, aby uzyskać wartość początkową 1.0 dla benchmarku
-    start_date_bm = df_benchmark_curve.index[df_benchmark_curve.index < min_date].max()
-    if pd.isna(start_date_bm):
-        start_date_bm = min_date # Jeśli nie ma wcześniejszej daty
-    df_benchmark_curve_aligned = df_benchmark_curve.loc[start_date_bm:max_date].copy()
-    # Znormalizuj benchmark, aby zaczynał się od 1.0 na początku okresu modeli
-    df_benchmark_curve_aligned['ValueCurve'] = df_benchmark_curve_aligned['ValueCurve'] / df_benchmark_curve_aligned['ValueCurve'].iloc[0]
-    # Usuń datę przed startem modeli, jeśli została dodana
-    df_benchmark_curve_aligned = df_benchmark_curve_aligned[df_benchmark_curve_aligned.index >= min_date]
+    # start_date_bm = df_benchmark_curve.index[df_benchmark_curve.index < min_date].max()
+    # if pd.isna(start_date_bm):
+    #     start_date_bm = min_date # Jeśli nie ma wcześniejszej daty
+    # df_benchmark_curve_aligned = df_benchmark_curve.loc[start_date_bm:max_date].copy()
+    # # Znormalizuj benchmark, aby zaczynał się od 1.0 na początku okresu modeli
+    # df_benchmark_curve_aligned['ValueCurve'] = df_benchmark_curve_aligned['ValueCurve'] / df_benchmark_curve_aligned['ValueCurve'].iloc[0]
+    # # Usuń datę przed startem modeli, jeśli została dodana
+    # df_benchmark_curve_aligned = df_benchmark_curve_aligned[df_benchmark_curve_aligned.index >= min_date]
+    df_benchmark_test_period = df_benchmark_curve[
+        (df_benchmark_curve.index >= min_date) & (df_benchmark_curve.index <= max_date)]
+    if df_benchmark_test_period.empty: logging.error("No benchmark data for common period."); return
+    # Znormalizuj benchmark, aby zaczynał się od 1.0 w dniu `min_date`
+    benchmark_start_value = df_benchmark_test_period.iloc[0]['ValueCurve']  # Wartość na początku okresu
+    df_benchmark_curve_aligned = df_benchmark_test_period['ValueCurve'] / benchmark_start_value
 
 
     # --- Generuj Wykres Porównawczy ---
-    plt.style.use('seaborn-v0_8-darkgrid') # Użyj stylu dla lepszego wyglądu
+    # plt.style.use('seaborn-v0_8-darkgrid') # Użyj stylu dla lepszego wyglądu
+    # plt.style.use('seaborn-v0_8-paper') # Styl bardziej 'papierowy', mniej siatki
+    # plt.style.use('seaborn-v0_8-ticks') # Inny styl
+    plt.style.use('seaborn-v0_8-darkgrid')  # Możesz zostawić darkgrid lub wybrać inny
     plt.figure(figsize=(14, 8))
 
-    # Wykres Benchmarku
-    plt.plot(df_benchmark_curve_aligned.index, df_benchmark_curve_aligned['ValueCurve'],
-             label=f"{benchmark_col} (Buy & Hold)", linewidth=2, linestyle='--', color='black')
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-    # Wykresy Modeli
-    colors = plt.cm.viridis(np.linspace(0, 1, len(model_curves))) # Paleta kolorów
-    for i, (model_name, curve) in enumerate(model_curves.items()):
-        # Przytnij krzywą modelu do wspólnego okresu
+    # 1. Definicja stylów (więcej niż tylko kolory)
+    # Możesz dostosować markery, style linii, kolory
+    model_styles = [
+        {'color': 'tab:blue', 'linestyle': '-', 'marker': 'o', 'markersize': 3, 'markevery': 50},
+        # Np. co 50 punktów marker
+        {'color': 'tab:orange', 'linestyle': '--', 'marker': 's', 'markersize': 3, 'markevery': 55},
+        {'color': 'tab:green', 'linestyle': ':', 'marker': '^', 'markersize': 3, 'markevery': 60},
+        {'color': 'tab:red', 'linestyle': '-.', 'marker': 'd', 'markersize': 3, 'markevery': 65},
+        {'color': 'tab:purple', 'linestyle': (0, (3, 1, 1, 1)), 'marker': 'x', 'markersize': 4, 'markevery': 70},
+        # Bardziej złożony styl linii
+        # Dodaj więcej stylów, jeśli masz więcej modeli
+    ]
+    benchmark_style = {'color': 'black', 'linestyle': '--', 'linewidth': 2}
+    ewp_style = {'color': 'grey', 'linestyle': ':', 'linewidth': 2}  # Styl dla EWP, jeśli go dodasz
+
+    # 2. Wykres Benchmarku S&P 500
+    ax.plot(df_benchmark_curve_aligned.index, df_benchmark_curve_aligned,
+            label=f"{benchmark_col} (Buy & Hold)", **benchmark_style)
+
+    # 3. Wykresy Modeli (Iteruj po modelach i stylach)
+    style_idx = 0
+    sorted_model_names = sorted(model_curves.keys())  # Sortuj nazwy dla spójnej kolejności/kolorów
+    for model_name in sorted_model_names:
+        if model_name == f"{benchmark_col} (B&H)" or model_name == "Equal-Weighted Portfolio": continue  # Pomiń benchmarki tutaj
+
+        curve = model_curves[model_name]
         curve_aligned = curve.loc[min_date:max_date]
-        # Znormalizuj, aby zaczynała się od 1.0 na początku okresu
-        curve_aligned = curve_aligned / curve_aligned.iloc[0]
-        plt.plot(curve_aligned.index, curve_aligned, label=model_name, linewidth=1.5, color=colors[i])
+        curve_normalized = curve_aligned / curve_aligned.iloc[0]  # Normalizuj do 1.0
 
-    # Ustawienia Wykresu
-    plt.title(f"Portfolio Value Comparison ({min_date.date()} to {max_date.date()})", fontsize=16)
-    plt.ylabel("Portfolio Value (Normalized to 1.0 at Start)", fontsize=12)
-    plt.xlabel("Date", fontsize=12)
-    plt.yscale('log') # Skala logarytmiczna często jest lepsza dla zwrotów skumulowanych
-    plt.legend(fontsize=10)
-    plt.grid(True, which='both', linestyle='-', linewidth=0.5)
-    plt.tight_layout()
+        style = model_styles[style_idx % len(model_styles)]  # Pobierz styl cyklicznie
+        ax.plot(curve_normalized.index, curve_normalized,
+                label=model_name,
+                linewidth=1.5,
+                **style)
+        style_idx += 1
 
-    # Formatowanie osi X dla dat
-    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-    plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=max(1, len(df_benchmark_curve_aligned)//12//6))) # Około 6-12 etykiet
-    plt.gcf().autofmt_xdate() # Automatyczne formatowanie etykiet dat
+    # 4. Ustawienia Wykresu
+    ax.set_title(f"Portfolio Value Comparison ({min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')})",
+                 fontsize=14)
+    ax.set_ylabel("Portfolio Value (Normalized to 1.0 at Start)", fontsize=11)
+    ax.set_xlabel("Date", fontsize=11)
+    # ax.set_yscale('log')  # Skala logarytmiczna
 
-    # Zapisz wykres
+    # Lepsze formatowanie osi X
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=5, maxticks=10))
+    fig.autofmt_xdate()
+
+    # Siatka
+    ax.grid(True, which='major', linestyle='--', linewidth=0.5, color='grey')
+    # ax.grid(True, which='minor', linestyle=':', linewidth=0.3, color='lightgrey')  # Siatka pomocnicza dla skali log
+
+    # Legenda (można dostosować położenie)
+    ax.legend(fontsize=9, loc='upper left')  # np. w lewym górnym rogu
+
+    # Usunięcie niepotrzebnych "ramek" wykresu
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+    plt.tight_layout()  # Dopasuj układ
+
+    # 5. Zapisz Wykres z Przezroczystym Tłem
     comparison_plot_path = output_dir_comp / "model_vs_benchmark_comparison.png"
-    plt.savefig(comparison_plot_path, dpi=300)
+    # Dodaj transparent=True
+    plt.savefig(comparison_plot_path, dpi=300, bbox_inches='tight', transparent=True)
     logging.info(f"Comparison plot saved to {comparison_plot_path}")
-    # plt.show() # Odkomentuj, jeśli chcesz wyświetlić
-    plt.close()
-
-    # --- (Opcjonalnie) Generuj Tabelę Porównawczą Metryk ---
-    # Możesz wczytać pliki evaluation_results.csv/.txt dla każdego modelu
-    # i stworzyć zbiorczą tabelę porównawczą metryk.
-    # ... (kod do wczytania i agregacji metryk) ...
+    plt.close(fig)  # Zamknij figurę
 
     logging.info("--- Comparison Script Finished ---")
 
 
+    # # Wykres Benchmarku
+    # plt.plot(df_benchmark_curve_aligned.index, df_benchmark_curve_aligned['ValueCurve'],
+    #          label=f"{benchmark_col} (Buy & Hold)", linewidth=2, linestyle='--', color='black')
+    #
+    # # Wykresy Modeli
+    # colors = plt.cm.viridis(np.linspace(0, 1, len(model_curves))) # Paleta kolorów
+    # for i, (model_name, curve) in enumerate(model_curves.items()):
+    #     # Przytnij krzywą modelu do wspólnego okresu
+    #     curve_aligned = curve.loc[min_date:max_date]
+    #     # Znormalizuj, aby zaczynała się od 1.0 na początku okresu
+    #     curve_aligned = curve_aligned / curve_aligned.iloc[0]
+    #     plt.plot(curve_aligned.index, curve_aligned, label=model_name, linewidth=1.5, color=colors[i])
+    #
+    # # Ustawienia Wykresu
+    # plt.title(f"Portfolio Value Comparison ({min_date.date()} to {max_date.date()})", fontsize=16)
+    # plt.ylabel("Portfolio Value (Normalized to 1.0 at Start)", fontsize=12)
+    # plt.xlabel("Date", fontsize=12)
+    # plt.yscale('log') # Skala logarytmiczna często jest lepsza dla zwrotów skumulowanych
+    # plt.legend(fontsize=10)
+    # plt.grid(True, which='both', linestyle='-', linewidth=0.5)
+    # plt.tight_layout()
+    #
+    # # Formatowanie osi X dla dat
+    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
+    # plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=max(1, len(df_benchmark_curve_aligned)//12//6))) # Około 6-12 etykiet
+    # plt.gcf().autofmt_xdate() # Automatyczne formatowanie etykiet dat
+    #
+    # # Zapisz wykres
+    # comparison_plot_path = output_dir_comp / "model_vs_benchmark_comparison.png"
+    # plt.savefig(comparison_plot_path, dpi=300)
+    # logging.info(f"Comparison plot saved to {comparison_plot_path}")
+    # # plt.show() # Odkomentuj, jeśli chcesz wyświetlić
+    # plt.close()
+    #
+    # # --- (Opcjonalnie) Generuj Tabelę Porównawczą Metryk ---
+    # # Możesz wczytać pliki evaluation_results.csv/.txt dla każdego modelu
+    # # i stworzyć zbiorczą tabelę porównawczą metryk.
+    # # ... (kod do wczytania i agregacji metryk) ...
+    #
+    # logging.info("--- Comparison Script Finished ---")
+
+# python .\models_comparison_script.py --config .\configs\comparison_config.yaml
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Compare portfolio performance results against benchmarks.")
     parser.add_argument("--config", type=str, required=True,

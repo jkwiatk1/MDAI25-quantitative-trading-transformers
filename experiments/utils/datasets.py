@@ -1,9 +1,39 @@
+import logging
+
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 from torch.utils.data import Dataset
 
+
+
+def split_data_chronologically(data_dict, tickers, train_ratio, val_ratio):
+    """Dzieli słownik DataFrame'ów chronologicznie na train, val, test."""
+    if not (0 < train_ratio < 1) or not (0 < val_ratio < 1) or not (train_ratio + val_ratio < 1):
+         raise ValueError("Invalid split ratios. Must be > 0 and < 1, and train+val < 1.")
+
+    train_data_dict = {}
+    val_data_dict = {}
+    test_data_dict = {} # Mimo że nie używamy w grid search, funkcja może zwracać
+
+    for ticker in tickers:
+        if ticker not in data_dict: continue
+        df = data_dict[ticker]
+        n_samples = len(df)
+        if n_samples == 0: continue
+
+        train_end_idx = int(train_ratio * n_samples)
+        val_end_idx = train_end_idx + int(val_ratio * n_samples)
+
+        train_data_dict[ticker] = df.iloc[:train_end_idx]
+        val_data_dict[ticker] = df.iloc[train_end_idx:val_end_idx]
+        test_data_dict[ticker] = df.iloc[val_end_idx:] # Reszta to test
+
+        if len(train_data_dict[ticker]) == 0 or len(val_data_dict[ticker]) == 0:
+             logging.warning(f"Train or Val split resulted in empty DataFrame for ticker {ticker}. Check ratios/data length.")
+
+    return train_data_dict, val_data_dict, test_data_dict
 
 def prepare_sequential_data_CrossFormer(data_scaled, tickers_to_use, lookback, patch_size, target_col_index=0):
     """
@@ -189,6 +219,45 @@ def normalize_data(df, tickers, features_to_normalize):
             df[ticker][feature] = scaler.fit_transform(df[ticker][[feature]])
             scalers[ticker][feature] = scaler
     return df, scalers
+
+def fit_and_transform_data(train_data_dict, val_data_dict, tickers, features_to_normalize):
+    """Dopasowuje scalery na danych treningowych i transformuje zbiory train/val."""
+    scalers = {ticker: {} for ticker in tickers}
+    train_scaled_dict = {}
+    val_scaled_dict = {}
+
+    for ticker in tickers:
+        if ticker not in train_data_dict or ticker not in val_data_dict: continue
+
+        train_df = train_data_dict[ticker].copy()
+        val_df = val_data_dict[ticker].copy()
+        train_scaled_dict[ticker] = pd.DataFrame(index=train_df.index) # Zachowaj indeks
+        val_scaled_dict[ticker] = pd.DataFrame(index=val_df.index)
+
+        for feature in features_to_normalize:
+            if feature not in train_df.columns or feature not in val_df.columns:
+                 logging.warning(f"Feature '{feature}' not found for ticker '{ticker}' during scaling. Skipping.")
+                 continue
+
+            scaler = StandardScaler()
+            # --- Kluczowe: Fit tylko na danych treningowych ---
+            try:
+                 scaler.fit(train_df[[feature]])
+                 # --- Transformuj oba zbiory TYM SAMYM scalerem ---
+                 train_scaled_values = scaler.transform(train_df[[feature]])
+                 val_scaled_values = scaler.transform(val_df[[feature]])
+
+                 train_scaled_dict[ticker][feature] = train_scaled_values.flatten()
+                 val_scaled_dict[ticker][feature] = val_scaled_values.flatten()
+                 scalers[ticker][feature] = scaler # Zapisz dopasowany scaler
+            except Exception as e:
+                 logging.error(f"Error scaling feature '{feature}' for ticker '{ticker}': {e}. Leaving unscaled.")
+                 # W razie błędu, użyj oryginalnych danych (lub wypełnij NaN/0)
+                 train_scaled_dict[ticker][feature] = train_df[feature].values
+                 val_scaled_dict[ticker][feature] = val_df[feature].values
+
+
+    return train_scaled_dict, val_scaled_dict, scalers
 
 
 # Datasets for multi-ticker

@@ -45,27 +45,57 @@ class PositionalEncoding(nn.Module):
 
 # --- MLP Embedding dla całej serii czasowej ---
 class SeriesEmbeddingMLP(nn.Module):
-    """Embeds the entire time series [T, F] into a single token [d_model] using MLP."""
-
+    """
+    Embeds the entire time series [T, F] into a single token [d_model] using MLP.
+    Includes options for Layer Normalization and multiple hidden layers.
+    """
     def __init__(
-        self, lookback: int, num_features: int, d_model: int, dropout: float = 0.1
+        self,
+        lookback: int,
+        num_features: int,
+        d_model: int,
+        dropout: float = 0.1,
+        num_hidden_layers: int = 2, # Nowy parametr: liczba warstw ukrytych
+        add_output_norm: bool = True # Nowy parametr: czy dodać LayerNorm na wyjściu
     ):
         super().__init__()
         self.lookback = lookback
         self.num_features = num_features
         self.d_model = d_model
-        input_dim = lookback * num_features  # Flatten T and F
+        input_dim = lookback * num_features
 
-        # Define the MLP structure (example: one hidden layer)
-        # Adjust hidden_dim, number of layers, activations as needed
-        hidden_dim = (input_dim + d_model) // 2
-        self.mlp = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(),  # Or nn.GELU()
-            nn.Dropout(dropout),
-            nn.Linear(hidden_dim, d_model),
-        )
-        # Consider adding LayerNorm before or after the MLP output
+        layers = []
+        current_dim = input_dim
+
+        # --- Warstwy Ukryte ---
+        for i in range(num_hidden_layers):
+            # Oblicz rozmiar warstwy ukrytej (można użyć innej strategii)
+            # Tutaj prosty przykład: malejący rozmiar w kierunku d_model
+            hidden_dim = current_dim // 2 if current_dim // 2 > d_model else (current_dim + d_model) // 2
+            # Upewnij się, że hidden_dim nie jest zbyt mały
+            hidden_dim = max(hidden_dim, d_model, 16) # Minimalny rozmiar np. 16 lub d_model
+
+            layers.append(nn.Linear(current_dim, hidden_dim))
+            # Można dodać LayerNorm PO aktywacji w warstwach ukrytych dla stabilności
+            # layers.append(nn.LayerNorm(hidden_dim))
+            layers.append(nn.ReLU()) # Lub nn.GELU()
+            layers.append(nn.Dropout(dropout))
+            current_dim = hidden_dim # Aktualizuj wymiar wejściowy dla następnej warstwy
+
+        # --- Warstwa Wyjściowa ---
+        layers.append(nn.Linear(current_dim, d_model))
+
+        # --- Opcjonalna Normalizacja na Wyjściu ---
+        if add_output_norm:
+            layers.append(nn.LayerNorm(d_model))
+            logging.debug("Added LayerNorm to the output of SeriesEmbeddingMLP.")
+
+        # Stwórz sekwencję warstw
+        self.mlp = nn.Sequential(*layers)
+
+        logging.debug(f"Initialized SeriesEmbeddingMLP with {num_hidden_layers} hidden layers. Output norm: {add_output_norm}")
+        logging.debug(f"MLP structure: {self.mlp}")
+
 
     def forward(self, x_series_batch):
         """
@@ -75,90 +105,68 @@ class SeriesEmbeddingMLP(nn.Module):
             torch.Tensor: Embedded tokens, shape [B_eff, d_model].
         """
         B_eff, T, F = x_series_batch.shape
-        assert (
-            T == self.lookback
-        ), f"Series length mismatch: expected {self.lookback}, got {T}"
-        assert (
-            F == self.num_features
-        ), f"Feature mismatch: expected {self.num_features}, got {F}"
+        # Asserty przeniesione do wewnątrz forward dla pewności
+        if T != self.lookback:
+            raise ValueError(f"Series length mismatch: expected {self.lookback}, got {T}")
+        if F != self.num_features:
+            raise ValueError(f"Feature mismatch: expected {self.num_features}, got {F}")
 
         # Flatten Time and Feature dimensions
         x_flat = x_series_batch.view(B_eff, T * F)
         # Pass through MLP
-        embedding = self.mlp(x_flat)  # Output shape [B_eff, d_model]
+        embedding = self.mlp(x_flat)
         return embedding
 
 
 # --- Portfolio iTransformer (Wersja bliższa oryginałowi) ---
 class PortfolioITransformerOriginalConcept(nn.Module):
-    """
-    iTransformer more faithfully adapted for portfolio prediction ([B, T, N, F] input).
-    1. Embeds each stock's full time series (T*F) into a variate token (D) using MLP.
-    2. Applies attention across these N variate tokens (stocks).
-    3. FFN in encoder operates on the d_model representation of the whole series.
-    Outputs predicted return for the next step [B, N, 1].
-    """
-
     def __init__(
         self,
-        stock_amount: int,  # N
-        financial_features_amount: int,  # F
-        lookback: int,  # T
-        d_model: int,  # Internal dimension
-        n_heads: int,  # Attention heads
-        d_ff: int,  # FeedForward dim in encoder layer
+        stock_amount: int,
+        financial_features_amount: int,
+        lookback: int,
+        d_model: int,
+        n_heads: int,
+        d_ff: int,
         dropout: float,
         num_encoder_layers: int,
-        activation: str = "gelu",  # Activation for encoder FFN
-        norm_first: bool = True,  # Use Pre-LN (True) in encoder
-        use_embedding_dropout: bool = True,  # Apply dropout after series embedding
+        activation: str = "gelu",
+        norm_first: bool = True,
+        use_embedding_dropout: bool = True,
+        # --- Dodane argumenty ---
+        mlp_hidden_layers: int = 2,
+        mlp_add_output_norm: bool = True
     ):
         super().__init__()
-        # Validate inputs
-        if d_model % n_heads != 0:
-            raise ValueError(
-                f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
-            )
+        if d_model % n_heads != 0: raise ValueError(...)
+        self.stock_amount = stock_amount; self.d_model = d_model
 
-        self.stock_amount = stock_amount
-        self.d_model = d_model
-
-        # 1. Series Embedding Layer: Maps [T, F] -> d_model for each stock
+        # --- Użyj nowych argumentów przy tworzeniu SeriesEmbeddingMLP ---
         self.series_embedding = SeriesEmbeddingMLP(
-            lookback, financial_features_amount, d_model, dropout
+            lookback, financial_features_amount, d_model, dropout,
+            num_hidden_layers=mlp_hidden_layers, # Przekaż liczbę warstw
+            add_output_norm=mlp_add_output_norm  # Przekaż flagę normy
         )
-        # Optional dropout after the embedding MLP
-        self.embedding_dropout = (
-            nn.Dropout(dropout) if use_embedding_dropout else nn.Identity()
-        )
+        self.embedding_dropout = nn.Dropout(dropout) if use_embedding_dropout else nn.Identity()
+        self.stock_pos_encoder = PositionalEncoding(d_model, dropout, max_len=stock_amount)
 
-        # 2. Positional Encoding for Stocks (applied to dimension N)
-        # Use max_len=stock_amount as N is the sequence length for the encoder
-        self.stock_pos_encoder = PositionalEncoding(
-            d_model, dropout, max_len=stock_amount
-        )
-
-        # 3. Transformer Encoder Stack (operates on N variate tokens)
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model,
-            nhead=n_heads,
-            dim_feedforward=d_ff,
-            dropout=dropout,
-            activation=activation,
-            batch_first=False,  # Expects [SeqLen(N), Batch(B), Dim(D)]
-            norm_first=norm_first,  # Pre-LN (True) is generally recommended
+            d_model=d_model, nhead=n_heads, dim_feedforward=d_ff, dropout=dropout,
+            activation=activation, batch_first=False, norm_first=norm_first
         )
-        # Final normalization is typically only needed for Post-LN (norm_first=False)
         encoder_norm = nn.LayerNorm(d_model) if not norm_first else None
-        self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer=encoder_layer,
-            num_layers=num_encoder_layers,
-            norm=encoder_norm,
-        )
-
-        # 4. Prediction Head (Decoder in iTransformer paper is just MLP/Linear)
-        # Maps the final d_model representation of each stock token to the prediction (S=1)
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
         self.projection_head = nn.Linear(d_model, 1)
+
+    def forward(self, x):
+        # ... (forward bez zmian) ...
+        B, T, N, F = x.shape
+        x_permuted = x.permute(0, 2, 1, 3).contiguous(); x_for_embedding = x_permuted.view(B * N, T, F)
+        variate_tokens = self.series_embedding(x_for_embedding); variate_tokens = self.embedding_dropout(variate_tokens)
+        encoder_input = variate_tokens.view(B, N, self.d_model); encoder_input = encoder_input.permute(1, 0, 2).contiguous()
+        encoder_input = self.stock_pos_encoder(encoder_input); encoded_variates = self.transformer_encoder(encoder_input)
+        predictions = self.projection_head(encoded_variates); predictions = predictions.permute(1, 0, 2).contiguous()
+        return predictions
 
     def forward(self, x):
         """
@@ -216,29 +224,23 @@ def build_PortfolioITransformer(
     activation: str = "gelu",
     norm_first: bool = True,
     use_embedding_dropout: bool = True,
+    # --- Nowe argumenty dla SeriesEmbeddingMLP ---
+    mlp_hidden_layers: int = 2,  # Domyślnie 2 warstwy ukryte
+    mlp_add_output_norm: bool = True, # Domyślnie dodaj normę na wyjściu MLP
+    # ---------------------------------------------
     device: torch.device = torch.device("cpu"),
-) -> PortfolioITransformerOriginalConcept:
-    """Factory function for the adapted PortfolioITransformer model (Original Concept)."""
+) -> PortfolioITransformerOriginalConcept: # Zakładając, że klasa się nie zmieniła
+    """Factory function for the adapted PortfolioITransformer model."""
     print("-" * 30)
-    print(f"Building PortfolioITransformerOriginalConcept (Embed T*F -> D)")
-    print(
-        f"  Data Params: Stocks={stock_amount}, Features={financial_features_amount}, Lookback={lookback}"
-    )
-    print(
-        f"  Arch Params: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}, layers={num_encoder_layers}"
-    )
-    print(
-        f"  Other Params: activation={activation}, norm_first={norm_first}, dropout={dropout}, embed_dropout={use_embedding_dropout}"
-    )
-    print(f"  Target Device: {device}")
+    print(f"Building PortfolioITransformerOriginalConcept")
+    # ... (reszta logowania parametrów, dodaj logowanie nowych parametrów MLP) ...
+    print(f"  MLP Params: hidden_layers={mlp_hidden_layers}, output_norm={mlp_add_output_norm}")
     print("-" * 30)
 
     if d_model % n_heads != 0:
-        raise ValueError(
-            f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
-        )
+        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
 
-    model = PortfolioITransformerOriginalConcept(
+    model = PortfolioITransformerOriginalConcept( # Użyj właściwej nazwy klasy
         stock_amount=stock_amount,
         financial_features_amount=financial_features_amount,
         lookback=lookback,
@@ -250,5 +252,8 @@ def build_PortfolioITransformer(
         activation=activation,
         norm_first=norm_first,
         use_embedding_dropout=use_embedding_dropout,
+         # --- Przekaż nowe argumenty ---
+        mlp_hidden_layers=mlp_hidden_layers,
+        mlp_add_output_norm=mlp_add_output_norm
     )
     return model.to(device)

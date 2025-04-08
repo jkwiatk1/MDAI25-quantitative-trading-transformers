@@ -92,8 +92,8 @@ def build_model_dynamically(model_name, config, common_params):
             d_ff=config["d_ff"],
             dropout=config.get("dropout", 0.1),
             num_encoder_layers=config["num_encoder_layers"],
-            device=common_params['device'],
-        ).to(common_params['device'])
+            device=common_params["device"],
+        ).to(common_params["device"])
     elif model_name == "CrossFormer":
         model = build_CrossFormer(
             stock_amount=common_params["stock_amount"],
@@ -110,8 +110,8 @@ def build_model_dynamically(model_name, config, common_params):
             n_heads=config["n_heads"],
             e_layers=config["num_encoder_layers"],
             dropout=config["dropout"],
-            device=common_params['device'],
-        ).to(common_params['device'])
+            device=common_params["device"],
+        ).to(common_params["device"])
     elif model_name == "MASTER":
         model = build_MASTER(
             stock_amount=common_params["stock_amount"],
@@ -122,8 +122,8 @@ def build_model_dynamically(model_name, config, common_params):
             d_ff=config["d_ff"],
             dropout=config["dropout"],
             num_encoder_layers=config["num_encoder_layers"],
-            device=common_params['device'],
-        ).to(common_params['device'])
+            device=common_params["device"],
+        ).to(common_params["device"])
     elif model_name == "iTransformer":
         model = build_PortfolioITransformer(
             stock_amount=common_params["stock_amount"],
@@ -134,8 +134,8 @@ def build_model_dynamically(model_name, config, common_params):
             d_ff=config["d_ff"],
             dropout=config["dropout"],
             num_encoder_layers=config["num_encoder_layers"],
-            device=common_params['device'],
-        ).to(common_params['device'])
+            device=common_params["device"],
+        ).to(common_params["device"])
     elif model_name == "TransformerCA":
         model = build_TransformerCA(
             stock_amount=common_params["stock_amount"],
@@ -146,8 +146,8 @@ def build_model_dynamically(model_name, config, common_params):
             d_ff=config["d_ff"],
             dropout=config["dropout"],
             num_encoder_layers=config["num_encoder_layers"],
-            device=common_params['device']
-        ).to(common_params['device'])
+            device=common_params["device"],
+        ).to(common_params["device"])
     else:
         raise ValueError(f"Unknown model name in config: {model_name}")
 
@@ -164,8 +164,8 @@ def run_grid_search(config_path: str):
 
     model_base_name = config["model"]["name"]
     output_base_dir = (
-            Path(config["data"].get("output_dir", "results"))
-            / f"{model_base_name}_GridSearch"
+        Path(config["data"].get("output_dir", "results"))
+        / f"{model_base_name}_GridSearch"
     )
     output_base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -237,8 +237,8 @@ def run_grid_search(config_path: str):
             val_size_abs = 1  # Ensure at least one validation sample
         train_sequences = sequences[: train_size_abs - val_size_abs]
         train_targets = targets[: train_size_abs - val_size_abs]
-        val_sequences = sequences[train_size_abs - val_size_abs: train_size_abs]
-        val_targets = targets[train_size_abs - val_size_abs: train_size_abs]
+        val_sequences = sequences[train_size_abs - val_size_abs : train_size_abs]
+        val_targets = targets[train_size_abs - val_size_abs : train_size_abs]
 
         if len(train_sequences) == 0 or len(val_sequences) == 0:
             raise ValueError("Train or Validation set is empty after splitting!")
@@ -367,7 +367,7 @@ def run_grid_search(config_path: str):
                 logging.info("No LR scheduler used.")
 
             use_amp = (
-                    current_training_config.get("use_amp", True) and device.type == "cuda"
+                current_training_config.get("use_amp", True) and device.type == "cuda"
             )
             scaler = torch.cuda.amp.GradScaler(enabled=use_amp)
             logging.info(f"Using Automatic Mixed Precision (AMP): {use_amp}")
@@ -397,8 +397,8 @@ def run_grid_search(config_path: str):
                 best_val_loss = current_best_val_loss
                 best_params_combination = current_params
                 best_local_model_path = (
-                        temp_save_dir
-                        / f"{model_base_name}_comb_{combination_counter}_best_val.pth"
+                    temp_save_dir
+                    / f"{model_base_name}_comb_{combination_counter}_best_val.pth"
                 )
                 if best_local_model_path.exists():
                     torch.save(
@@ -484,9 +484,7 @@ def run_grid_search(config_path: str):
         summary_df = pd.DataFrame(results_summary)
         params_df = summary_df["params"].apply(pd.Series)
         summary_df = pd.concat([summary_df.drop("params", axis=1), params_df], axis=1)
-        summary_df = summary_df.sort_values(
-            by="best_val_loss", ascending=True
-        )
+        summary_df = summary_df.sort_values(by="best_val_loss", ascending=True)
         summary_df.to_csv(summary_path, index=False)
         logging.info(f"Grid search summary saved to: {summary_path}")
     except Exception as e:

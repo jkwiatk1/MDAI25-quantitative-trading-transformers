@@ -4,12 +4,14 @@ from pathlib import Path
 from types import SimpleNamespace
 import argparse
 
+import joblib
 import numpy as np
 import pandas as pd
 import torch
 import yaml
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
+from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader
 
 from experiments.utils.data_loading import (
@@ -76,6 +78,54 @@ def load_config(config_path):
         raise
 
 
+def normalize_data_correctly(train_data_dict, test_data_dict, tickers, features_to_normalize):
+    """Fit scaler only on train data, then transform train and test data."""
+    scalers = {ticker: {} for ticker in tickers}
+    train_scaled_dict = {}
+    test_scaled_dict = {}
+
+    for ticker in tickers:
+        if ticker not in train_data_dict or ticker not in test_data_dict: continue
+
+        train_df = train_data_dict[ticker].copy()
+        test_df = test_data_dict[ticker].copy()
+        train_scaled_dict[ticker] = pd.DataFrame(index=train_df.index)
+        test_scaled_dict[ticker] = pd.DataFrame(index=test_df.index)
+
+        for feature in features_to_normalize:
+            if feature not in train_df.columns or feature not in test_df.columns:
+                logging.warning(f"Feature '{feature}' missing for ticker '{ticker}' in train or test set. Skipping.")
+                continue
+
+            scaler = StandardScaler()
+            try:
+                # --- Fit ONLY on training data ---
+                scaler.fit(train_df[[feature]])
+
+                # --- Transform both train and test data ---
+                train_scaled_values = scaler.transform(train_df[[feature]])
+                test_scaled_values = scaler.transform(test_df[[feature]])
+
+                train_scaled_dict[ticker][feature] = train_scaled_values.flatten()
+                test_scaled_dict[ticker][feature] = test_scaled_values.flatten()
+                scalers[ticker][feature] = scaler  # Save the FITTED scaler
+
+            except ValueError as ve:
+                # Handle cases like constant features in training data
+                logging.error(f"ValueError scaling feature '{feature}' for ticker '{ticker}': {ve}. Leaving unscaled.")
+                train_scaled_dict[ticker][feature] = train_df[feature].values
+                test_scaled_dict[ticker][feature] = test_df[feature].values
+                scalers[ticker][feature] = None  # Indicate scaler failed
+            except Exception as e:
+                logging.error(f"Error scaling feature '{feature}' for ticker '{ticker}': {e}. Leaving unscaled.",
+                              exc_info=True)
+                train_scaled_dict[ticker][feature] = train_df[feature].values
+                test_scaled_dict[ticker][feature] = test_df[feature].values
+                scalers[ticker][feature] = None
+
+    return train_scaled_dict, test_scaled_dict, scalers  # Return fitted scalers
+
+
 def main(config_path: str):
     try:
         config = load_config(config_path)
@@ -100,7 +150,12 @@ def main(config_path: str):
     start_date = pd.to_datetime(config["data"]["start_date"])
     end_date = pd.to_datetime(config["data"]["end_date"])
     lookback = config["training"]["lookback"]
-    test_split_ratio = config["training"]["test_split"]
+    train_split_ratio = 1.0 - config["training"]["test_split"]
+    evaluation_split_ratio = config["training"]["test_split"]
+    logging.info(
+        f"Using Train ratio: {train_split_ratio:.2f}, Evaluation (Val+Test) ratio: {evaluation_split_ratio:.2f}")
+    if train_split_ratio <= 0 or train_split_ratio >= 1:
+        raise ValueError("Resulting train_split_ratio must be between 0 and 1.")
 
     try:
         selected_tickers = get_tickers(config)
@@ -117,106 +172,107 @@ def main(config_path: str):
             config["data"]["path"], config["data"].get("yahoo_data", False)
         )
         data_filled_dict = fill_missing_days(data_raw_dict, selected_tickers, start_date, end_date)
-        original_data_with_dates = prepare_finance_data(data_filled_dict, selected_tickers, config["data"]["init_cols_to_use"]+ ["Date"])
-
+        original_data_with_dates = prepare_finance_data(data_filled_dict, selected_tickers,
+                                                        config["data"]["init_cols_to_use"] + ["Date"])
         first_ticker = selected_tickers[0]
         if first_ticker not in original_data_with_dates:
             raise ValueError(f"Data for first ticker '{first_ticker}' not found after preparation.")
         all_original_dates = original_data_with_dates[first_ticker].Date.copy()
 
-        data_processed = calc_input_features(original_data_with_dates, selected_tickers,
-                                             config["data"]["preproc_cols_to_use"], lookback)
+        data_features = calc_input_features(original_data_with_dates, selected_tickers,
+                                            config["data"]["preproc_cols_to_use"], lookback)
         preproc_cols = config["data"].get("preproc_cols_to_use", [])
         if not preproc_cols: raise ValueError("`preproc_cols_to_use` cannot be empty.")
-        financial_features_amount = len(preproc_cols)
-        data_final_features = {key: value[preproc_cols] for key, value in data_processed.items() if key in data_processed}
 
-        data_scaled, feat_scalers = normalize_data(data_final_features, selected_tickers, preproc_cols)
+        financial_features_amount = len(preproc_cols)
+        data_final_features = {key: value[preproc_cols] for key, value in data_features.items() if key in data_features}
+
+        train_data_dict = {}
+        eval_data_dict = {}
+        for ticker in selected_tickers:
+            df_ticker = data_final_features[ticker]
+            n_samples_ticker = len(df_ticker)
+            train_end_idx_ticker = int(train_split_ratio * n_samples_ticker)
+            train_data_dict[ticker] = df_ticker.iloc[:train_end_idx_ticker]
+            eval_data_dict[ticker] = df_ticker.iloc[train_end_idx_ticker:]
+        logging.info(
+            f"Data split: Train size={len(train_data_dict[first_ticker])}, Eval size={len(eval_data_dict[first_ticker])}")
+
+        # --- Normalization - fit on train, transform on train and evaluation ---
+        _, eval_data_scaled_dict, fitted_scalers = normalize_data_correctly(
+            train_data_dict, eval_data_dict, selected_tickers, preproc_cols
+        )
+
+        # Zapisz scalery (bez zmian)
+        scalers_path = output_dir / "fitted_scalers_eval.joblib"
+        joblib.dump(fitted_scalers, scalers_path)
+        logging.info("Saved scalers.")
+
+        # --- Prepare sequence on for evaluation set ---
         target_col_name = config["data"].get("preproc_target_col", preproc_cols[0])
         target_col_index = preproc_cols.index(target_col_name)
-        logging.info(f"Using '{target_col_name}' (index {target_col_index}) as target variable.")
-
-        sequences, targets, _ = prepare_sequential_data(data_scaled, selected_tickers, lookback, target_col_index)
-        logging.info(f"Data sequences prepared. Seq shape: {sequences.shape}, Tgt shape: {targets.shape}")
-
-        # --- Prepare evaluation data ---
-        num_sequences_total = len(sequences)
-        eval_start_index = int((1.0 - test_split_ratio) * num_sequences_total)
-
-        test_sequences = sequences[eval_start_index:]
-        test_targets = targets[eval_start_index:]
-
-        if len(test_sequences) == 0:
-            raise ValueError("Test set is empty after splitting.")
-        logging.info(f"Evaluation set size (sequences): {len(test_sequences)}")
-
-        first_test_target_original_idx_pos = eval_start_index + lookback
-        last_test_target_original_idx_pos = num_sequences_total - 1 + lookback
-
-        if last_test_target_original_idx_pos >= len(all_original_dates):
-            logging.warning(f"Calculated last test date index ({last_test_target_original_idx_pos}) exceeds "
-                            f"original data length ({len(all_original_dates)}). Adjusting.")
-            last_test_target_original_idx_pos = len(all_original_dates) - 1
-
-        if first_test_target_original_idx_pos > last_test_target_original_idx_pos:
-            raise ValueError("Cannot determine test date range due to index mismatch.")
-
+        eval_sequences, eval_targets_scaled, _ = prepare_sequential_data(
+            eval_data_scaled_dict, selected_tickers, lookback, target_col_index
+        )
         logging.info(
-            f"Calculated indices for slicing: start={first_test_target_original_idx_pos}, stop={last_test_target_original_idx_pos + 1}")
-        logging.info(f"Length of all_original_dates: {len(all_original_dates)}")
-        # Sprawdź, czy indeksy są w granicach
-        if first_test_target_original_idx_pos < 0 or last_test_target_original_idx_pos >= len(
-                all_original_dates) or first_test_target_original_idx_pos > last_test_target_original_idx_pos:
-            logging.error("Invalid date index range calculated!")
+            f"Evaluation sequences prepared. Seq shape: {eval_sequences.shape}, Tgt shape: {eval_targets_scaled.shape}")
+        if len(eval_sequences) == 0: raise ValueError("Evaluation sequences are empty.")
 
-        actual_test_dates = all_original_dates[
-                            first_test_target_original_idx_pos: last_test_target_original_idx_pos + 1]
-        logging.info(f"Type of all_original_dates: {type(all_original_dates)}")
-        if isinstance(all_original_dates, pd.DatetimeIndex):
+        # --- Take proper dates for evaluation period --- # TODO inaczej niz bylo
+        num_total_days = len(all_original_dates)
+        eval_start_original_idx_pos = int(train_split_ratio * num_total_days) + lookback
+        last_eval_target_original_idx_pos = len(all_original_dates) - 1
+        if eval_start_original_idx_pos >= len(all_original_dates): raise ValueError("Eval start index out of bounds.")
+
+        actual_eval_dates = all_original_dates[eval_start_original_idx_pos: last_eval_target_original_idx_pos + 1]
+
+        if len(actual_eval_dates) != len(eval_sequences):
+            logging.warning(
+                f"Length mismatch: actual_eval_dates ({len(actual_eval_dates)}) vs eval_sequences ({len(eval_sequences)}). Using sequence length for dates.")
+            # Dostosuj daty do długości sekwencji, jeśli jest rozbieżność (np. z powodu niepełnych sekwencji na końcu)
+            actual_eval_dates = actual_eval_dates[:len(eval_sequences)]
+            if len(actual_eval_dates) != len(eval_sequences):  # Jeśli nadal źle, użyj indeksu liczbowego
+                logging.error("Cannot align dates with evaluation sequences. Plotting without dates.")
+                actual_eval_dates = None
+
+        if actual_eval_dates is not None:
             logging.info(
-                f"Sample dates from all_original_dates: {all_original_dates[:5].tolist()}")  # Pokaż pierwsze 5 dat
-        else:
-            logging.error("all_original_dates is NOT a DatetimeIndex!")
+                f"Evaluation period dates range from {actual_eval_dates.min().date()} to {actual_eval_dates.max().date()}")
 
-        logging.info(f"Length of actual_test_dates: {len(actual_test_dates)}")
-        logging.info(f"Type of actual_test_dates: {type(actual_test_dates)}")
-        if len(actual_test_dates) > 0 and isinstance(actual_test_dates, pd.DatetimeIndex):
-            logging.info(f"Min test date: {actual_test_dates.min()}, Max test date: {actual_test_dates.max()}")
-            # Spróbuj wywołać .date() tutaj, aby zobaczyć, czy działa
-            try:
-                logging.info(
-                    f"Min test date object: {actual_test_dates.min()} with date attribute: {actual_test_dates.min().date()}")
-            except AttributeError as e:
-                logging.error(f"AttributeError on min date: {e}")
-        elif len(actual_test_dates) == 0:
-            logging.error("actual_test_dates is empty!")
-        else:
-            logging.error(f"actual_test_dates is not a DatetimeIndex, type is {type(actual_test_dates)}")
-
-        logging.info(
-            f"Test period dates range from {actual_test_dates.min().date()} to {actual_test_dates.max().date()}")
-
-        test_loader = DataLoader(
-            MultiStockDataset(test_sequences, test_targets),
+        eval_loader = DataLoader(
+            MultiStockDataset(eval_sequences, eval_targets_scaled),
             batch_size=config["training"]["batch_size"],
             shuffle=False,
             num_workers=config["training"].get("num_workers", 0),
-            pin_memory=device.type == 'cuda'  # Pin memory tylko dla GPU
+            pin_memory=device.type == 'cuda'
         )
-        # first_ticker = selected_tickers[0]
-        # all_dates = data[first_ticker].index if first_ticker in data else None
-        # test_dates = all_dates if all_dates is not None else None
-        # if test_dates is not None and len(test_dates) != len(test_sequences):
-        #     logging.warning(
-        #         f"Length mismatch between expected test dates ({len(test_dates)}) and actual test sequences ({len(test_sequences)}). Plotting without dates.")
-        #     test_dates = None
 
     except Exception as e:
-        logging.error(f"Error during data loading/preparation: {e}", exc_info=True)
+        logging.error(f"Error during data loading/preparation for eval: {e}", exc_info=True)
         return
 
     logging.info(f"--- Building Model: {model_name} ---")
     model_params = config["model"]
+    # TODO
+    # # WAŻNE: Tutaj powinieneś wczytać NAJLEPSZE parametry z pliku *_best_grid_params.yaml zapisanego przez skrypt grid search!
+    # best_params_path = output_base_dir.parent / "best_grid_params.yaml"  # Ścieżka do pliku z najlepszymi parametrami
+    # best_weights_path = output_base_dir.parent / f"{model_name}_best_grid_model.pth"  # Ścieżka do najlepszych wag
+    # best_params_path = output_base_dir.parent / "best_grid_params.yaml"  # Ścieżka do pliku z najlepszymi parametrami
+    # best_weights_path = output_base_dir.parent / f"{model_name}_best_grid_model.pth"  # Ścieżka do najlepszych wag
+    # if best_params_path.exists() and best_weights_path.exists():
+    #     logging.info(f"Loading best hyperparameters from {best_params_path}")
+    #     best_config = load_config(best_params_path)
+    #     model_params_final = best_config['model']  # Użyj parametrów modelu z najlepszego configu
+    #     weights_path = str(best_weights_path)  # Użyj ścieżki do najlepszych wag
+    # else:
+    #     logging.warning(
+    #         f"Best grid search results not found at {output_base_dir.parent}. Using parameters from current config.")
+    #     model_params_final = config['model']  # Użyj parametrów z bieżącego configu
+    #     weights_path = config["model"].get("weights_path")  # Użyj wag z bieżącego configu
+    #
+    # if not weights_path or not Path(weights_path).exists(): logging.error(
+    #     f"Weights path not found: {weights_path}"); return
+
     try:
         common_params_build = {
             "stock_amount": stock_amount,
@@ -318,7 +374,7 @@ def main(config_path: str):
         logging.error(f"Error loading model weights from {weights_path}: {e}", exc_info=True)
         return
 
-    logging.info("--- Evaluating Model ---")
+    logging.info("--- Evaluating Model on Combined Val+Test Set ---")
     try:
         eval_loss_type = config["training"].get("loss_function", "RankLoss")
         if eval_loss_type == "RankLoss":
@@ -332,37 +388,31 @@ def main(config_path: str):
         use_amp_eval = config["training"].get("use_amp", True) and device.type == 'cuda'
         scaler_eval = torch.cuda.amp.GradScaler(enabled=use_amp_eval)
 
-        predictions_scaled, targets_scaled, test_loss = evaluate_model(
+        predictions_scaled, targets_scaled_eval, eval_loss = evaluate_model(
             model=model,
-            test_loader=test_loader,
+            test_loader=eval_loader,
             criterion=criterion,
             device=device,
             scaler=scaler_eval
         )
-        logging.info(f"Evaluation finished. Test Loss ({criterion.__class__.__name__}): {test_loss:.6f}")
+        logging.info(f"Evaluation finished. Eval Loss ({criterion.__class__.__name__}): {eval_loss:.6f}")
 
         if predictions_scaled.shape[-1] == 1:
             predictions_scaled = predictions_scaled.squeeze(-1)
-        if targets_scaled.shape[-1] == 1:
-            targets_scaled = targets_scaled.squeeze(-1)
+        if targets_scaled_eval.shape[-1] == 1:
+            targets_scaled_eval = targets_scaled_eval.squeeze(-1)
 
     except Exception as e:
         logging.error(f"Error during model evaluation: {e}", exc_info=True)
         return
 
-    logging.info("--- Calculating Metrics ---")
+    logging.info("--- Calculating Metrics on Combined Val+Test Set ---")
     try:
         # Metryki predykcyjne (na danych przeskalowanych)
-        predictive_metrics = calculate_predictive_quality(predictions_scaled, targets_scaled)
+        predictive_metrics = calculate_predictive_quality(predictions_scaled, targets_scaled_eval)
 
         # Odwrócenie transformacji tylko dla targetów (do metryk portfelowych)
-        _, targets_inv = inverse_transform_predictions(
-            predictions_scaled,
-            targets_scaled,
-            selected_tickers,
-            feat_scalers,
-            target_col_name,
-        )
+        _, targets_inv = inverse_transform_predictions(predictions_scaled, targets_scaled_eval, selected_tickers, fitted_scalers, target_col_name)
 
         # Precision@k (używa odwróconych targetów)
         portfolio_top_k = config["portfolio"].get("top_k", 5)  # Pobierz k z sekcji portfolio configu
@@ -370,12 +420,12 @@ def main(config_path: str):
         predictive_metrics[f'Precision@{portfolio_top_k}'] = precision_at_k_value
 
         # Metryki portfelowe (używają oryginalnych predykcji i odwróconych targetów)
-        portfolio_risk_free_rate = config["portfolio"].get("risk_free_rate", 0.0)  # Pobierz Rf z sekcji portfolio
+        portfolio_risk_free_rate = config["portfolio"].get("risk_free_rate", 0.043)
         portfolio_metrics, portfolio_value_curve = calculate_portfolio_performance(
             predictions_scaled, targets_inv, top_k=portfolio_top_k, risk_free_rate=portfolio_risk_free_rate
         )
 
-        all_metrics = {**portfolio_metrics, **predictive_metrics, f"Test Loss ({eval_loss_type})": test_loss}
+        all_metrics = {**portfolio_metrics, **predictive_metrics, f"Eval Loss ({eval_loss_type})": eval_loss}
         logging.info(f"Final Combined Metrics: {all_metrics}")
 
     except Exception as e:
@@ -384,6 +434,8 @@ def main(config_path: str):
 
     try:
         results_file = output_dir / "evaluation_results.txt"
+        csv_results_path = output_dir / "evaluation_results.csv"
+
         with open(results_file, "w") as f:
             f.write(f"Evaluation Results for Model: {model_name}\n")
             f.write(f"Config Path: {config_path}\n")
@@ -391,20 +443,19 @@ def main(config_path: str):
             f.write(f"Number of Stocks: {stock_amount}\n")
             f.write(f"Features Used: {preproc_cols}\n")
             f.write(f"Lookback: {lookback}\n")
-            f.write(f"Test Set Size: {len(test_sequences)}\n")
+            f.write(f"Evaluation Set Size: {len(eval_sequences)}\n")
             f.write("-" * 30 + "\nMETRICS:\n")
             for key, value in all_metrics.items():
                 f.write(f"{key}: {value:.4f}\n")
         logging.info(f"Saved evaluation results to {results_file}")
 
-        csv_results_path = output_dir / "evaluation_results.csv"
         pd.DataFrame([all_metrics]).to_csv(csv_results_path, index=False)
         logging.info(f"Saved evaluation metrics to CSV: {csv_results_path}")
 
         curve_df = pd.DataFrame({'PortfolioValue': portfolio_value_curve})
-        start_curve_original_idx_pos = first_test_target_original_idx_pos - 1
+        start_curve_original_idx_pos = eval_start_original_idx_pos - 1
         if start_curve_original_idx_pos >= 0:
-            curve_dates = all_original_dates[start_curve_original_idx_pos: last_test_target_original_idx_pos + 1]
+            curve_dates = all_original_dates[start_curve_original_idx_pos: last_eval_target_original_idx_pos + 1]
             if len(curve_dates) == len(portfolio_value_curve):
                 curve_df.index = pd.to_datetime(curve_dates)
                 logging.info(f"Portfolio curve dates set from {curve_dates.min().date()} to {curve_dates.max().date()}")
@@ -413,6 +464,29 @@ def main(config_path: str):
                     f"Length mismatch for curve dates ({len(curve_dates)}) vs curve values ({len(portfolio_value_curve)}). Saving without date index.")
         else:
             logging.warning("Cannot determine start date for curve index. Saving without date index.")
+        # if actual_eval_dates is not None:
+        #     start_curve_date = actual_eval_dates.min() - pd.Timedelta(days=1)
+        #     curve_dates_idx = pd.DatetimeIndex([start_curve_date]).append(actual_eval_dates)
+        #
+        #     if len(curve_dates_idx) == len(curve_df):
+        #         curve_df.index = curve_dates_idx
+        #     else:
+        #         logging.warning("Curve date index length mismatch.")
+        #         curve_df.index = pd.RangeIndex(len(curve_df))
+        # else:
+        #     curve_df.index = pd.RangeIndex(len(curve_df))
+        #
+        #
+        # if eval_start_original_idx_pos >= 0:
+        #     curve_dates = all_original_dates[eval_start_original_idx_pos: last_eval_target_original_idx_pos + 1]
+        #     if len(curve_dates) == len(portfolio_value_curve):
+        #         curve_df.index = pd.to_datetime(curve_dates)
+        #         logging.info(f"Portfolio curve dates set from {curve_dates.min().date()} to {curve_dates.max().date()}")
+        #     else:
+        #         logging.warning(
+        #             f"Length mismatch for curve dates ({len(curve_dates)}) vs curve values ({len(portfolio_value_curve)}). Saving without date index.")
+        # else:
+        #     logging.warning("Cannot determine start date for curve index. Saving without date index.")
 
         curve_path = output_dir / f"{model_name}_portfolio_value_curve.csv"
         curve_df.to_csv(curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
@@ -424,29 +498,17 @@ def main(config_path: str):
         curve_df.to_csv(comp_curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
         logging.info(f"Saved portfolio value curve data to comparison dir: {comp_curve_path}")
 
-
-        # if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:  # Curve ma +1 element (start)
-        #     curve_df.index = pd.to_datetime(['start'] + list(test_dates))
-        # curve_path = output_dir / f"{model_name}_portfolio_value_curve.csv"
-        # curve_path_for_models_comparison = output_base_dir / f"evaluation_final_{config['portfolio']['top_k']}_best_assets"
-        # curve_path_for_models_comparison.mkdir(parents=True, exist_ok=True)
-        # curve_df.to_csv(curve_path)
-        # curve_df.to_csv(curve_path_for_models_comparison/f"{model_name}_portfolio_value_curve.csv")
-        # logging.info(f"Saved portfolio value curve data to {curve_path} & {curve_path_for_models_comparison}")
-
     except Exception as e:
         logging.error(f"Error saving results: {e}", exc_info=True)
 
     try:
         plt.figure(figsize=(12, 6))
-        # --- **Poprawione Rysowanie z DATAMI** ---
         if isinstance(curve_df.index, pd.DatetimeIndex):
             plt.plot(curve_df.index, curve_df['PortfolioValue'], linestyle="-", label=f"{model_name} Portfolio Value")
             plt.xlabel("Date")
-            # Lepsze formatowanie osi X
             plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
             plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator(minticks=5, maxticks=10))
-            plt.gcf().autofmt_xdate()  # Automatyczne obracanie etykiet
+            plt.gcf().autofmt_xdate()
         else:
             # Fallback, jeśli nie ma dat
             plt.plot(np.arange(len(portfolio_value_curve)), portfolio_value_curve, linestyle="-",
@@ -455,9 +517,9 @@ def main(config_path: str):
 
         plt.ylabel("Portfolio Value (Starts at 1.0)")
         plt.title(f"Portfolio Value Over Time ({model_name}, Top-{portfolio_top_k} Strategy)")
-        plt.yscale('log')  # Dodana skala logarytmiczna dla lepszej wizualizacji wzrostu
+        plt.yscale('log')
         plt.legend()
-        plt.grid(True, which='both', linestyle=':')  # Poprawiony grid
+        plt.grid(True, which='both', linestyle=':')
         plt.tight_layout()
         plot_path = output_dir / f"{model_name}_portfolio_value_curve.png"
         plt.savefig(plot_path, dpi=300)
@@ -468,36 +530,6 @@ def main(config_path: str):
         logging.error(f"Error during plotting: {e}", exc_info=True)
 
     logging.info(f"--- Evaluation script finished for {model_name} ---")
-
-
-    # try:
-    #     plt.figure(figsize=(12, 6))
-    #     if test_dates is not None and len(test_dates) == len(portfolio_value_curve) - 1:
-    #         plot_dates = pd.to_datetime(list(test_dates))
-    #         plt.plot(plot_dates, portfolio_value_curve[1:], linestyle="-",
-    #                  label=f"{model_name} Portfolio Value")
-    #         plt.xlabel("Date")
-    #         plt.xticks(rotation=45)
-    #     else:
-    #         plt.plot(portfolio_value_curve[1:], linestyle="-",
-    #                  label=f"{model_name} Portfolio Value")
-    #         plt.xlabel(f"Trading Days (Test Period, {len(portfolio_value_curve) - 1} days)")
-    #
-    #     plt.ylabel("Portfolio Value (Starts at 1.0)")
-    #     plt.title(f"Portfolio Value Over Time ({model_name}, Top-{portfolio_top_k} Strategy)")
-    #     plt.legend()
-    #     plt.grid(True)
-    #     plt.tight_layout()
-    #     plot_path = output_dir / f"{model_name}_portfolio_value_curve.png"
-    #     plt.savefig(plot_path, dpi=300)
-    #     logging.info(f"Saved portfolio value plot to {plot_path}")
-    #     # plt.show() # Odkomentuj, jeśli chcesz pokazywać wykresy interaktywnie
-    #     plt.close()  # Zamknij figurę po zapisaniu
-    #
-    # except Exception as e:
-    #     logging.error(f"Error during plotting: {e}", exc_info=True)
-    #
-    # logging.info(f"--- Evaluation script finished for {model_name} ---")
 
 
 if __name__ == "__main__":
