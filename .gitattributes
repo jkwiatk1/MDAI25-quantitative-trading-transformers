@@ -1,1 +1,2 @@
+*.csv filter=lfs diff=lfs merge=lfs -text
 data/data_download/kaggle_data/raw/sp500_stocks.csv filter=lfs diff=lfs merge=lfs -text
