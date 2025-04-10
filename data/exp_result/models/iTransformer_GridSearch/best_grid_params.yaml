@@ -1,0 +1,79 @@
+data:
+  end_date: '2024-12-03'
+  init_cols_to_use:
+  - Date
+  - Close
+  - High
+  - Low
+  - Open
+  - Volume
+  output_dir: ../data/exp_result/models
+  path: ../data/data_download/kaggle_data/preprocess/sp500_stocks_historical_data.xlsx
+  preproc_cols_to_use:
+  - Daily profit
+  - Turnover
+  preproc_target_col: Daily profit
+  start_date: '2015-01-03'
+  tickers: ../data/data_download/kaggle_data/preprocess/sp500_tickers.csv
+  yahoo_data: true
+grid_search:
+  batch_size:
+  - 64
+  d_ff:
+  - 64
+  - 128
+  d_model:
+  - 64
+  - 128
+  dropout:
+  - 0.1
+  - 0.2
+  learning_rate:
+  - 0.0001
+  - 5.0e-05
+  mlp_add_output_norm:
+  - true
+  - false
+  mlp_hidden_layers:
+  - 1
+  - 2
+  num_encoder_layers:
+  - 1
+  - 2
+  - 3
+grid_search_results:
+  best_params:
+    batch_size: 64
+    d_ff: 64
+    d_model: 64
+    dropout: 0.2
+    learning_rate: 5.0e-05
+    mlp_add_output_norm: false
+    mlp_hidden_layers: 1
+    num_encoder_layers: 1
+  best_val_loss: 1.2169619053602219
+model:
+  d_ff: 64
+  d_model: 64
+  dropout: 0.2
+  mlp_add_output_norm: false
+  mlp_hidden_layers: 1
+  n_heads: 1
+  name: iTransformer
+  num_encoder_layers: 1
+  weights_path: ../data/exp_result/models/iTransformer/iTransformer_best_val.pth
+training:
+  learning_rate: 5.0e-05
+  lookback: 20
+  loss_function: RankLoss
+  lr_scheduler:
+    factor: 0.5
+    gamma: 0.1
+    mode: min
+    patience: 3
+    step_size: 10
+    type: ReduceLROnPlateau
+  n_epochs: 50
+  patience: 8
+  test_split: 0.15
+  val_split: 0.15

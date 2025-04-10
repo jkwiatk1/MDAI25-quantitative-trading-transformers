@@ -1,0 +1,12 @@
+Benchmark Evaluation Results
+Config Path: .\configs\sp500_index_config.yaml
+Benchmark Data Path: ../data/data_download/kaggle_data/preprocess/sp500_index_historical_data.xlsx
+Test Period: 2022-01-01 to 2024-12-03
+Number of Test Days: 734
+------------------------------
+S&P 500 Buy & Hold METRICS:
+Cumulative Return (%): 26.9335
+Annualized Return (%): 8.5326
+Annualized Volatility (%): 17.5542
+Annualized Sharpe Ratio: 0.2411
+Maximum Drawdown (%): -25.4251

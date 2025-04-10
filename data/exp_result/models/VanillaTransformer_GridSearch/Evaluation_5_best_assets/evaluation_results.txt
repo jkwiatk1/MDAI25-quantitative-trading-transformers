@@ -1,0 +1,20 @@
+Evaluation Results for Model: VanillaTransformer
+Config Path: ../experiments/configs/test_config_VanillaTransformer.yaml
+Weights Path: ../data/exp_result/models/VanillaTransformer_GridSearch/VanillaTransformer_best_grid_model.pth
+Number of Stocks: 110
+Features Used: ['Daily profit', 'Turnover']
+Lookback: 20
+Evaluation Set Size: 1067
+------------------------------
+METRICS:
+Cumulative Return (%): 87.3963
+Annualized Return (%): 15.9898
+Annualized Volatility (%): 19.2165
+Annualized Sharpe Ratio: 0.6083
+Maximum Drawdown (%): -22.2481
+IC (Spearman): 0.0178
+ICIR (Spearman): 0.1045
+IC (Pearson): 0.0447
+ICIR (Pearson): 0.3528
+Precision@5: 0.4739
+Eval Loss (RankLoss): nan

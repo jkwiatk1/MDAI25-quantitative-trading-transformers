@@ -1,0 +1,41 @@
+2025-04-08 17:42:43 [INFO] Logging setup complete.
+2025-04-08 17:42:43 [INFO] Starting evaluation for model: TransformerCA
+2025-04-08 17:42:43 [INFO] Configuration loaded from: ../experiments/configs/test_config_TransformerCA.yaml
+2025-04-08 17:42:43 [INFO] Using device: cuda
+2025-04-08 17:42:43 [INFO] Output directory: ..\data\exp_result\models\TransformerCA_GridSearch\Evaluation_5_best_assets
+2025-04-08 17:42:43 [INFO] Using Train ratio: 0.70, Evaluation (Val+Test) ratio: 0.30
+2025-04-08 17:42:43 [INFO] Processing 110 tickers.
+2025-04-08 17:42:43 [INFO] --- Loading and Preparing Data ---
+2025-04-08 17:43:18 [WARNING] NaN values still present in ticker 'TJX' after ffill/bfill. Check data source or filling logic.
+2025-04-08 17:43:18 [INFO] Data split: Train size=2536, Eval size=1087
+2025-04-08 17:43:19 [INFO] Saved scalers.
+2025-04-08 17:43:19 [INFO] Evaluation sequences prepared. Seq shape: torch.Size([1067, 20, 110, 2]), Tgt shape: torch.Size([1067, 110, 1])
+2025-04-08 17:43:19 [INFO] Evaluation period dates range from 2022-01-02 to 2024-12-03
+2025-04-08 17:43:19 [INFO] --- Building Model: TransformerCA ---
+2025-04-08 17:43:19 [INFO] Built TransformerCA with 332,289 trainable parameters.
+2025-04-08 17:43:19 [INFO] Successfully loaded model weights from ../data/exp_result/models/TransformerCA_GridSearch/TransformerCA_best_grid_model.pth
+2025-04-08 17:43:19 [INFO] --- Evaluating Model on Combined Val+Test Set ---
+2025-04-08 17:43:19 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-08 17:43:26 [INFO] Evaluation finished. Eval Loss (RankLoss): nan
+2025-04-08 17:43:26 [INFO] --- Calculating Metrics on Combined Val+Test Set ---
+2025-04-08 17:43:27 [INFO] --- Predictive Quality Metrics ---
+2025-04-08 17:43:27 [INFO] IC (Spearman): 0.0872
+2025-04-08 17:43:27 [INFO] ICIR (Spearman): 0.4140
+2025-04-08 17:43:27 [INFO] IC (Pearson): 0.0883
+2025-04-08 17:43:27 [INFO] ICIR (Pearson): 0.4311
+2025-04-08 17:43:27 [INFO] Predictive Quality: Precision@5: 46.8604%
+2025-04-08 17:43:27 [INFO] --- Portfolio Performance Metrics ---
+2025-04-08 17:43:27 [INFO] Cumulative Return (%): 62.7735
+2025-04-08 17:43:27 [INFO] Annualized Return (%): 12.1944
+2025-04-08 17:43:27 [INFO] Annualized Volatility (%): 21.2731
+2025-04-08 17:43:27 [INFO] Annualized Sharpe Ratio: 0.3711
+2025-04-08 17:43:27 [INFO] Maximum Drawdown (%): -33.9246
+2025-04-08 17:43:27 [INFO] Final Combined Metrics: {'Cumulative Return (%)': 62.77350187301636, 'Annualized Return (%)': 12.194362397517011, 'Annualized Volatility (%)': 21.27310542309833, 'Annualized Sharpe Ratio': 0.37109589170979357, 'Maximum Drawdown (%)': -33.92456108655353, 'IC (Spearman)': 0.08723915418277206, 'ICIR (Spearman)': 0.41404818554748896, 'IC (Pearson)': 0.08834707224969293, 'ICIR (Pearson)': 0.4311264661715932, 'Precision@5': 0.46860356138706655, 'Eval Loss (RankLoss)': nan}
+2025-04-08 17:43:27 [INFO] Saved evaluation results to ..\data\exp_result\models\TransformerCA_GridSearch\Evaluation_5_best_assets\evaluation_results.txt
+2025-04-08 17:43:27 [INFO] Saved evaluation metrics to CSV: ..\data\exp_result\models\TransformerCA_GridSearch\Evaluation_5_best_assets\evaluation_results.csv
+2025-04-08 17:43:27 [INFO] Portfolio curve dates set from 2022-01-01 to 2024-12-03
+2025-04-08 17:43:27 [INFO] Saved portfolio value curve data to ..\data\exp_result\models\TransformerCA_GridSearch\Evaluation_5_best_assets\TransformerCA_portfolio_value_curve.csv
+2025-04-08 17:43:27 [INFO] Saved portfolio value curve data to comparison dir: ..\data\exp_result\models\evaluation_final_Top5\TransformerCA\TransformerCA_portfolio_value_curve.csv
+2025-04-08 17:43:27 [INFO] Saved portfolio value plot to ..\data\exp_result\models\TransformerCA_GridSearch\Evaluation_5_best_assets\TransformerCA_portfolio_value_curve.png
+2025-04-08 17:43:27 [INFO] --- Evaluation script finished for TransformerCA ---
+2025-04-08 17:43:27 [INFO] Successfully loaded configuration from ../experiments/configs/test_config_iTransformer.yaml

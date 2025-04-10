@@ -1,0 +1,20 @@
+Evaluation Results for Model: iTransformer
+Config Path: ../experiments/configs/test_config_iTransformer.yaml
+Weights Path: ../data/exp_result/models/iTransformer_GridSearch/iTransformer_best_grid_model.pth
+Number of Stocks: 110
+Features Used: ['Daily profit', 'Turnover']
+Lookback: 20
+Evaluation Set Size: 1067
+------------------------------
+METRICS:
+Cumulative Return (%): 80.1753
+Annualized Return (%): 14.9183
+Annualized Volatility (%): 17.6767
+Annualized Sharpe Ratio: 0.6007
+Maximum Drawdown (%): -21.0030
+IC (Spearman): 0.0959
+ICIR (Spearman): 0.5533
+IC (Pearson): 0.0997
+ICIR (Pearson): 0.5741
+Precision@5: 0.4388
+Eval Loss (RankLoss): nan

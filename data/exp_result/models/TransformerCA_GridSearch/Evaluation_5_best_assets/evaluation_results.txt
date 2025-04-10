@@ -1,0 +1,20 @@
+Evaluation Results for Model: TransformerCA
+Config Path: ../experiments/configs/test_config_TransformerCA.yaml
+Weights Path: ../data/exp_result/models/TransformerCA_GridSearch/TransformerCA_best_grid_model.pth
+Number of Stocks: 110
+Features Used: ['Daily profit', 'Turnover']
+Lookback: 20
+Evaluation Set Size: 1067
+------------------------------
+METRICS:
+Cumulative Return (%): 62.7735
+Annualized Return (%): 12.1944
+Annualized Volatility (%): 21.2731
+Annualized Sharpe Ratio: 0.3711
+Maximum Drawdown (%): -33.9246
+IC (Spearman): 0.0872
+ICIR (Spearman): 0.4140
+IC (Pearson): 0.0883
+ICIR (Pearson): 0.4311
+Precision@5: 0.4686
+Eval Loss (RankLoss): nan

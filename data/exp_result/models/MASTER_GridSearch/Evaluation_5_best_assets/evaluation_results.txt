@@ -1,0 +1,20 @@
+Evaluation Results for Model: MASTER
+Config Path: ../experiments/configs/test_config_MASTER.yaml
+Weights Path: ../data/exp_result/models/MASTER_GridSearch/MASTER_best_grid_model.pth
+Number of Stocks: 110
+Features Used: ['Daily profit', 'Turnover']
+Lookback: 20
+Evaluation Set Size: 1067
+------------------------------
+METRICS:
+Cumulative Return (%): 148.6605
+Annualized Return (%): 24.0032
+Annualized Volatility (%): 20.5842
+Annualized Sharpe Ratio: 0.9572
+Maximum Drawdown (%): -40.8972
+IC (Spearman): 0.1649
+ICIR (Spearman): 0.7207
+IC (Pearson): 0.0780
+ICIR (Pearson): 0.6388
+Precision@5: 0.4746
+Eval Loss (RankLoss): nan

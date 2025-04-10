@@ -1,0 +1,41 @@
+2025-04-08 17:44:05 [INFO] Logging setup complete.
+2025-04-08 17:44:05 [INFO] Starting evaluation for model: CrossFormer
+2025-04-08 17:44:05 [INFO] Configuration loaded from: ../experiments/configs/test_config_CrossFormer.yaml
+2025-04-08 17:44:05 [INFO] Using device: cuda
+2025-04-08 17:44:05 [INFO] Output directory: ..\data\exp_result\models\CrossFormer_GridSearch\Evaluation_5_best_assets
+2025-04-08 17:44:05 [INFO] Using Train ratio: 0.70, Evaluation (Val+Test) ratio: 0.30
+2025-04-08 17:44:05 [INFO] Processing 110 tickers.
+2025-04-08 17:44:05 [INFO] --- Loading and Preparing Data ---
+2025-04-08 17:44:39 [WARNING] NaN values still present in ticker 'TJX' after ffill/bfill. Check data source or filling logic.
+2025-04-08 17:44:40 [INFO] Data split: Train size=2536, Eval size=1087
+2025-04-08 17:44:40 [INFO] Saved scalers.
+2025-04-08 17:44:40 [INFO] Evaluation sequences prepared. Seq shape: torch.Size([1067, 20, 110, 2]), Tgt shape: torch.Size([1067, 110, 1])
+2025-04-08 17:44:40 [INFO] Evaluation period dates range from 2022-01-02 to 2024-12-03
+2025-04-08 17:44:40 [INFO] --- Building Model: CrossFormer ---
+2025-04-08 17:44:40 [INFO] Built CrossFormer with 1,661,504 trainable parameters.
+2025-04-08 17:44:40 [INFO] Successfully loaded model weights from ../data/exp_result/models/CrossFormer_GridSearch/CrossFormer_best_grid_model.pth
+2025-04-08 17:44:40 [INFO] --- Evaluating Model on Combined Val+Test Set ---
+2025-04-08 17:44:40 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-08 17:44:41 [INFO] Evaluation finished. Eval Loss (RankLoss): nan
+2025-04-08 17:44:41 [INFO] --- Calculating Metrics on Combined Val+Test Set ---
+2025-04-08 17:44:42 [INFO] --- Predictive Quality Metrics ---
+2025-04-08 17:44:42 [INFO] IC (Spearman): 0.0620
+2025-04-08 17:44:42 [INFO] ICIR (Spearman): 0.3795
+2025-04-08 17:44:42 [INFO] IC (Pearson): 0.0627
+2025-04-08 17:44:42 [INFO] ICIR (Pearson): 0.3957
+2025-04-08 17:44:42 [INFO] Predictive Quality: Precision@5: 44.3299%
+2025-04-08 17:44:42 [INFO] --- Portfolio Performance Metrics ---
+2025-04-08 17:44:42 [INFO] Cumulative Return (%): 40.6615
+2025-04-08 17:44:42 [INFO] Annualized Return (%): 8.3916
+2025-04-08 17:44:42 [INFO] Annualized Volatility (%): 18.7995
+2025-04-08 17:44:42 [INFO] Annualized Sharpe Ratio: 0.2176
+2025-04-08 17:44:42 [INFO] Maximum Drawdown (%): -25.4089
+2025-04-08 17:44:42 [INFO] Final Combined Metrics: {'Cumulative Return (%)': 40.661513805389404, 'Annualized Return (%)': 8.391562159790977, 'Annualized Volatility (%)': 18.79952705572952, 'Annualized Sharpe Ratio': 0.21764174864719515, 'Maximum Drawdown (%)': -25.40893031664597, 'IC (Spearman)': 0.062029468333440224, 'ICIR (Spearman)': 0.37953310963455134, 'IC (Pearson)': 0.06273417246629068, 'ICIR (Pearson)': 0.3956916412387707, 'Precision@5': 0.44329896907216493, 'Eval Loss (RankLoss)': nan}
+2025-04-08 17:44:42 [INFO] Saved evaluation results to ..\data\exp_result\models\CrossFormer_GridSearch\Evaluation_5_best_assets\evaluation_results.txt
+2025-04-08 17:44:42 [INFO] Saved evaluation metrics to CSV: ..\data\exp_result\models\CrossFormer_GridSearch\Evaluation_5_best_assets\evaluation_results.csv
+2025-04-08 17:44:42 [INFO] Portfolio curve dates set from 2022-01-01 to 2024-12-03
+2025-04-08 17:44:42 [INFO] Saved portfolio value curve data to ..\data\exp_result\models\CrossFormer_GridSearch\Evaluation_5_best_assets\CrossFormer_portfolio_value_curve.csv
+2025-04-08 17:44:42 [INFO] Saved portfolio value curve data to comparison dir: ..\data\exp_result\models\evaluation_final_Top5\CrossFormer\CrossFormer_portfolio_value_curve.csv
+2025-04-08 17:44:42 [INFO] Saved portfolio value plot to ..\data\exp_result\models\CrossFormer_GridSearch\Evaluation_5_best_assets\CrossFormer_portfolio_value_curve.png
+2025-04-08 17:44:42 [INFO] --- Evaluation script finished for CrossFormer ---
+2025-04-08 17:44:42 [INFO] Successfully loaded configuration from ../experiments/configs/test_config_MASTER.yaml

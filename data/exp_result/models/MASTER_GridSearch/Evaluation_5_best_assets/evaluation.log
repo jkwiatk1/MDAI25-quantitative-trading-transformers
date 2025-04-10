@@ -1,0 +1,40 @@
+2025-04-08 17:44:42 [INFO] Logging setup complete.
+2025-04-08 17:44:42 [INFO] Starting evaluation for model: MASTER
+2025-04-08 17:44:42 [INFO] Configuration loaded from: ../experiments/configs/test_config_MASTER.yaml
+2025-04-08 17:44:42 [INFO] Using device: cuda
+2025-04-08 17:44:42 [INFO] Output directory: ..\data\exp_result\models\MASTER_GridSearch\Evaluation_5_best_assets
+2025-04-08 17:44:42 [INFO] Using Train ratio: 0.70, Evaluation (Val+Test) ratio: 0.30
+2025-04-08 17:44:42 [INFO] Processing 110 tickers.
+2025-04-08 17:44:42 [INFO] --- Loading and Preparing Data ---
+2025-04-08 17:45:17 [WARNING] NaN values still present in ticker 'TJX' after ffill/bfill. Check data source or filling logic.
+2025-04-08 17:45:17 [INFO] Data split: Train size=2536, Eval size=1087
+2025-04-08 17:45:18 [INFO] Saved scalers.
+2025-04-08 17:45:18 [INFO] Evaluation sequences prepared. Seq shape: torch.Size([1067, 20, 110, 2]), Tgt shape: torch.Size([1067, 110, 1])
+2025-04-08 17:45:18 [INFO] Evaluation period dates range from 2022-01-02 to 2024-12-03
+2025-04-08 17:45:18 [INFO] --- Building Model: MASTER ---
+2025-04-08 17:45:18 [INFO] Built MASTER with 349,697 trainable parameters.
+2025-04-08 17:45:18 [INFO] Successfully loaded model weights from ../data/exp_result/models/MASTER_GridSearch/MASTER_best_grid_model.pth
+2025-04-08 17:45:18 [INFO] --- Evaluating Model on Combined Val+Test Set ---
+2025-04-08 17:45:18 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-08 17:45:25 [INFO] Evaluation finished. Eval Loss (RankLoss): nan
+2025-04-08 17:45:25 [INFO] --- Calculating Metrics on Combined Val+Test Set ---
+2025-04-08 17:45:25 [INFO] --- Predictive Quality Metrics ---
+2025-04-08 17:45:25 [INFO] IC (Spearman): 0.1649
+2025-04-08 17:45:25 [INFO] ICIR (Spearman): 0.7207
+2025-04-08 17:45:25 [INFO] IC (Pearson): 0.0780
+2025-04-08 17:45:25 [INFO] ICIR (Pearson): 0.6388
+2025-04-08 17:45:25 [INFO] Predictive Quality: Precision@5: 47.4602%
+2025-04-08 17:45:25 [INFO] --- Portfolio Performance Metrics ---
+2025-04-08 17:45:25 [INFO] Cumulative Return (%): 148.6605
+2025-04-08 17:45:25 [INFO] Annualized Return (%): 24.0032
+2025-04-08 17:45:25 [INFO] Annualized Volatility (%): 20.5842
+2025-04-08 17:45:25 [INFO] Annualized Sharpe Ratio: 0.9572
+2025-04-08 17:45:25 [INFO] Maximum Drawdown (%): -40.8972
+2025-04-08 17:45:25 [INFO] Final Combined Metrics: {'Cumulative Return (%)': 148.6605405807495, 'Annualized Return (%)': 24.003209550294425, 'Annualized Volatility (%)': 20.584240415890033, 'Annualized Sharpe Ratio': 0.957198720720624, 'Maximum Drawdown (%)': -40.89719612232382, 'IC (Spearman)': 0.1649339920194745, 'ICIR (Spearman)': 0.7207079334990858, 'IC (Pearson)': 0.07803975230038011, 'ICIR (Pearson)': 0.6387623830393492, 'Precision@5': 0.474601686972821, 'Eval Loss (RankLoss)': nan}
+2025-04-08 17:45:25 [INFO] Saved evaluation results to ..\data\exp_result\models\MASTER_GridSearch\Evaluation_5_best_assets\evaluation_results.txt
+2025-04-08 17:45:25 [INFO] Saved evaluation metrics to CSV: ..\data\exp_result\models\MASTER_GridSearch\Evaluation_5_best_assets\evaluation_results.csv
+2025-04-08 17:45:25 [INFO] Portfolio curve dates set from 2022-01-01 to 2024-12-03
+2025-04-08 17:45:25 [INFO] Saved portfolio value curve data to ..\data\exp_result\models\MASTER_GridSearch\Evaluation_5_best_assets\MASTER_portfolio_value_curve.csv
+2025-04-08 17:45:25 [INFO] Saved portfolio value curve data to comparison dir: ..\data\exp_result\models\evaluation_final_Top5\MASTER\MASTER_portfolio_value_curve.csv
+2025-04-08 17:45:26 [INFO] Saved portfolio value plot to ..\data\exp_result\models\MASTER_GridSearch\Evaluation_5_best_assets\MASTER_portfolio_value_curve.png
+2025-04-08 17:45:26 [INFO] --- Evaluation script finished for MASTER ---

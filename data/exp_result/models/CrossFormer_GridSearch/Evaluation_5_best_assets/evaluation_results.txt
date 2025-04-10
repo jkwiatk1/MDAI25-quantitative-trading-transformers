@@ -1,0 +1,20 @@
+Evaluation Results for Model: CrossFormer
+Config Path: ../experiments/configs/test_config_CrossFormer.yaml
+Weights Path: ../data/exp_result/models/CrossFormer_GridSearch/CrossFormer_best_grid_model.pth
+Number of Stocks: 110
+Features Used: ['Daily profit', 'Turnover']
+Lookback: 20
+Evaluation Set Size: 1067
+------------------------------
+METRICS:
+Cumulative Return (%): 40.6615
+Annualized Return (%): 8.3916
+Annualized Volatility (%): 18.7995
+Annualized Sharpe Ratio: 0.2176
+Maximum Drawdown (%): -25.4089
+IC (Spearman): 0.0620
+ICIR (Spearman): 0.3795
+IC (Pearson): 0.0627
+ICIR (Pearson): 0.3957
+Precision@5: 0.4433
+Eval Loss (RankLoss): nan

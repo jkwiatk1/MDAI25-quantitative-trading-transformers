@@ -1,0 +1,70 @@
+data:
+  end_date: '2024-12-03'
+  init_cols_to_use:
+  - Date
+  - Close
+  - High
+  - Low
+  - Open
+  - Volume
+  output_dir: ../data/exp_result/models
+  path: ../data/data_download/kaggle_data/preprocess/sp500_stocks_historical_data.xlsx
+  preproc_cols_to_use:
+  - Daily profit
+  - Turnover
+  preproc_target_col: Daily profit
+  start_date: '2015-01-03'
+  tickers: ../data/data_download/kaggle_data/preprocess/sp500_tickers.csv
+  yahoo_data: true
+grid_search:
+  batch_size:
+  - 64
+  d_ff:
+  - 64
+  - 128
+  d_model:
+  - 64
+  - 128
+  dropout:
+  - 0.1
+  - 0.2
+  learning_rate:
+  - 0.001
+  - 0.0005
+  num_encoder_layers:
+  - 1
+  - 2
+  - 3
+grid_search_results:
+  best_params:
+    batch_size: 64
+    d_ff: 128
+    d_model: 128
+    dropout: 0.2
+    learning_rate: 0.001
+    num_encoder_layers: 2
+  best_val_loss: 1.2121248543262482
+model:
+  d_ff: 128
+  d_model: 128
+  dropout: 0.2
+  n_heads: 2
+  name: VanillaTransformer
+  num_encoder_layers: 2
+  weights_path: ../data/exp_result/models/VanillaTransformer/VanillaTransformer_best_val.pth
+training:
+  lambda_rank: 0.5
+  learning_rate: 0.001
+  lookback: 20
+  loss_function: RankLoss
+  lr_scheduler:
+    factor: 0.5
+    gamma: 0.1
+    mode: min
+    patience: 3
+    step_size: 10
+    type: ReduceLROnPlateau
+  n_epochs: 50
+  patience: 8
+  test_split: 0.15
+  val_split: 0.15

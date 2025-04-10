@@ -1,0 +1,10 @@
+2025-04-08 17:57:27 [INFO] Benchmark calculation script logging setup complete.
+2025-04-08 17:57:27 [INFO] --- Starting Benchmark Calculation Script (S&P 500 Buy & Hold Only) ---
+2025-04-08 17:57:27 [INFO] Config path: .\configs\sp500_index_config.yaml
+2025-04-08 17:57:27 [INFO] Calculating S&P 500 Buy & Hold metrics...
+2025-04-08 17:57:28 [INFO] Benchmark data covers 734 days in the test period.
+2025-04-08 17:57:28 [INFO] S&P 500 Buy & Hold Metrics: {'Cumulative Return (%)': 26.93351908656434, 'Annualized Return (%)': 8.53261388743205, 'Annualized Volatility (%)': 17.554220073366142, 'Annualized Sharpe Ratio': 0.24111658784187898, 'Maximum Drawdown (%)': -25.425096066387937}
+2025-04-08 17:57:28 [INFO] S&P 500 metrics summary saved to CSV: ..\data\exp_result\models\benchmarks_results\sp500_bh_metrics_summary.csv
+2025-04-08 17:57:28 [INFO] S&P 500 evaluation results saved to TXT: ..\data\exp_result\models\benchmarks_results\sp500_bh_metrics_summary.txt
+2025-04-08 17:57:28 [INFO] S&P 500 value curve saved to ..\data\exp_result\models\benchmarks_results\sp500_bh_value_curve.csv
+2025-04-08 17:57:28 [INFO] --- Benchmark Calculation Script Finished ---

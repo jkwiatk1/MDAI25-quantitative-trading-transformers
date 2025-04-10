@@ -1,0 +1,41 @@
+2025-04-08 17:43:27 [INFO] Logging setup complete.
+2025-04-08 17:43:27 [INFO] Starting evaluation for model: iTransformer
+2025-04-08 17:43:27 [INFO] Configuration loaded from: ../experiments/configs/test_config_iTransformer.yaml
+2025-04-08 17:43:27 [INFO] Using device: cuda
+2025-04-08 17:43:27 [INFO] Output directory: ..\data\exp_result\models\iTransformer_GridSearch\Evaluation_5_best_assets
+2025-04-08 17:43:27 [INFO] Using Train ratio: 0.70, Evaluation (Val+Test) ratio: 0.30
+2025-04-08 17:43:27 [INFO] Processing 110 tickers.
+2025-04-08 17:43:27 [INFO] --- Loading and Preparing Data ---
+2025-04-08 17:44:02 [WARNING] NaN values still present in ticker 'TJX' after ffill/bfill. Check data source or filling logic.
+2025-04-08 17:44:02 [INFO] Data split: Train size=2536, Eval size=1087
+2025-04-08 17:44:03 [INFO] Saved scalers.
+2025-04-08 17:44:03 [INFO] Evaluation sequences prepared. Seq shape: torch.Size([1067, 20, 110, 2]), Tgt shape: torch.Size([1067, 110, 1])
+2025-04-08 17:44:03 [INFO] Evaluation period dates range from 2022-01-02 to 2024-12-03
+2025-04-08 17:44:03 [INFO] --- Building Model: iTransformer ---
+2025-04-08 17:44:03 [INFO] Built iTransformer with 36,353 trainable parameters.
+2025-04-08 17:44:03 [INFO] Successfully loaded model weights from ../data/exp_result/models/iTransformer_GridSearch/iTransformer_best_grid_model.pth
+2025-04-08 17:44:03 [INFO] --- Evaluating Model on Combined Val+Test Set ---
+2025-04-08 17:44:03 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-08 17:44:03 [INFO] Evaluation finished. Eval Loss (RankLoss): nan
+2025-04-08 17:44:03 [INFO] --- Calculating Metrics on Combined Val+Test Set ---
+2025-04-08 17:44:04 [INFO] --- Predictive Quality Metrics ---
+2025-04-08 17:44:04 [INFO] IC (Spearman): 0.0959
+2025-04-08 17:44:04 [INFO] ICIR (Spearman): 0.5533
+2025-04-08 17:44:04 [INFO] IC (Pearson): 0.0997
+2025-04-08 17:44:04 [INFO] ICIR (Pearson): 0.5741
+2025-04-08 17:44:04 [INFO] Predictive Quality: Precision@5: 43.8800%
+2025-04-08 17:44:04 [INFO] --- Portfolio Performance Metrics ---
+2025-04-08 17:44:04 [INFO] Cumulative Return (%): 80.1753
+2025-04-08 17:44:04 [INFO] Annualized Return (%): 14.9183
+2025-04-08 17:44:04 [INFO] Annualized Volatility (%): 17.6767
+2025-04-08 17:44:04 [INFO] Annualized Sharpe Ratio: 0.6007
+2025-04-08 17:44:04 [INFO] Maximum Drawdown (%): -21.0030
+2025-04-08 17:44:04 [INFO] Final Combined Metrics: {'Cumulative Return (%)': 80.17534017562866, 'Annualized Return (%)': 14.91828999567737, 'Annualized Volatility (%)': 17.676688507449978, 'Annualized Sharpe Ratio': 0.6006944904023013, 'Maximum Drawdown (%)': -21.00303737743744, 'IC (Spearman)': 0.09589164339734525, 'ICIR (Spearman)': 0.5532698597750902, 'IC (Pearson)': 0.0996762760025854, 'ICIR (Pearson)': 0.5740777142116745, 'Precision@5': 0.4388003748828492, 'Eval Loss (RankLoss)': nan}
+2025-04-08 17:44:04 [INFO] Saved evaluation results to ..\data\exp_result\models\iTransformer_GridSearch\Evaluation_5_best_assets\evaluation_results.txt
+2025-04-08 17:44:04 [INFO] Saved evaluation metrics to CSV: ..\data\exp_result\models\iTransformer_GridSearch\Evaluation_5_best_assets\evaluation_results.csv
+2025-04-08 17:44:04 [INFO] Portfolio curve dates set from 2022-01-01 to 2024-12-03
+2025-04-08 17:44:04 [INFO] Saved portfolio value curve data to ..\data\exp_result\models\iTransformer_GridSearch\Evaluation_5_best_assets\iTransformer_portfolio_value_curve.csv
+2025-04-08 17:44:04 [INFO] Saved portfolio value curve data to comparison dir: ..\data\exp_result\models\evaluation_final_Top5\iTransformer\iTransformer_portfolio_value_curve.csv
+2025-04-08 17:44:05 [INFO] Saved portfolio value plot to ..\data\exp_result\models\iTransformer_GridSearch\Evaluation_5_best_assets\iTransformer_portfolio_value_curve.png
+2025-04-08 17:44:05 [INFO] --- Evaluation script finished for iTransformer ---
+2025-04-08 17:44:05 [INFO] Successfully loaded configuration from ../experiments/configs/test_config_CrossFormer.yaml

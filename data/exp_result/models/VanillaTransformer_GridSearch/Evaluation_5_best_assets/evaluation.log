@@ -1,0 +1,41 @@
+2025-04-08 17:42:02 [INFO] Logging setup complete.
+2025-04-08 17:42:02 [INFO] Starting evaluation for model: VanillaTransformer
+2025-04-08 17:42:02 [INFO] Configuration loaded from: ../experiments/configs/test_config_VanillaTransformer.yaml
+2025-04-08 17:42:02 [INFO] Using device: cuda
+2025-04-08 17:42:02 [INFO] Output directory: ..\data\exp_result\models\VanillaTransformer_GridSearch\Evaluation_5_best_assets
+2025-04-08 17:42:02 [INFO] Using Train ratio: 0.70, Evaluation (Val+Test) ratio: 0.30
+2025-04-08 17:42:02 [INFO] Processing 110 tickers.
+2025-04-08 17:42:02 [INFO] --- Loading and Preparing Data ---
+2025-04-08 17:42:36 [WARNING] NaN values still present in ticker 'TJX' after ffill/bfill. Check data source or filling logic.
+2025-04-08 17:42:36 [INFO] Data split: Train size=2536, Eval size=1087
+2025-04-08 17:42:37 [INFO] Saved scalers.
+2025-04-08 17:42:37 [INFO] Evaluation sequences prepared. Seq shape: torch.Size([1067, 20, 110, 2]), Tgt shape: torch.Size([1067, 110, 1])
+2025-04-08 17:42:37 [INFO] Evaluation period dates range from 2022-01-02 to 2024-12-03
+2025-04-08 17:42:37 [INFO] --- Building Model: VanillaTransformer ---
+2025-04-08 17:42:37 [INFO] Built VanillaTransformer with 199,937 trainable parameters.
+2025-04-08 17:42:37 [INFO] Successfully loaded model weights from ../data/exp_result/models/VanillaTransformer_GridSearch/VanillaTransformer_best_grid_model.pth
+2025-04-08 17:42:37 [INFO] --- Evaluating Model on Combined Val+Test Set ---
+2025-04-08 17:42:37 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-08 17:42:41 [INFO] Evaluation finished. Eval Loss (RankLoss): nan
+2025-04-08 17:42:41 [INFO] --- Calculating Metrics on Combined Val+Test Set ---
+2025-04-08 17:42:42 [INFO] --- Predictive Quality Metrics ---
+2025-04-08 17:42:42 [INFO] IC (Spearman): 0.0178
+2025-04-08 17:42:42 [INFO] ICIR (Spearman): 0.1045
+2025-04-08 17:42:42 [INFO] IC (Pearson): 0.0447
+2025-04-08 17:42:42 [INFO] ICIR (Pearson): 0.3528
+2025-04-08 17:42:42 [INFO] Predictive Quality: Precision@5: 47.3852%
+2025-04-08 17:42:42 [INFO] --- Portfolio Performance Metrics ---
+2025-04-08 17:42:42 [INFO] Cumulative Return (%): 87.3963
+2025-04-08 17:42:42 [INFO] Annualized Return (%): 15.9898
+2025-04-08 17:42:42 [INFO] Annualized Volatility (%): 19.2165
+2025-04-08 17:42:42 [INFO] Annualized Sharpe Ratio: 0.6083
+2025-04-08 17:42:42 [INFO] Maximum Drawdown (%): -22.2481
+2025-04-08 17:42:42 [INFO] Final Combined Metrics: {'Cumulative Return (%)': 87.39633560180664, 'Annualized Return (%)': 15.989767363288943, 'Annualized Volatility (%)': 19.216492752418343, 'Annualized Sharpe Ratio': 0.6083194735677427, 'Maximum Drawdown (%)': -22.24808408986876, 'IC (Spearman)': 0.017782913442664722, 'ICIR (Spearman)': 0.10454919865704539, 'IC (Pearson)': 0.04469363640403073, 'ICIR (Pearson)': 0.3528254217567968, 'Precision@5': 0.4738519212746017, 'Eval Loss (RankLoss)': nan}
+2025-04-08 17:42:42 [INFO] Saved evaluation results to ..\data\exp_result\models\VanillaTransformer_GridSearch\Evaluation_5_best_assets\evaluation_results.txt
+2025-04-08 17:42:42 [INFO] Saved evaluation metrics to CSV: ..\data\exp_result\models\VanillaTransformer_GridSearch\Evaluation_5_best_assets\evaluation_results.csv
+2025-04-08 17:42:42 [INFO] Portfolio curve dates set from 2022-01-01 to 2024-12-03
+2025-04-08 17:42:42 [INFO] Saved portfolio value curve data to ..\data\exp_result\models\VanillaTransformer_GridSearch\Evaluation_5_best_assets\VanillaTransformer_portfolio_value_curve.csv
+2025-04-08 17:42:42 [INFO] Saved portfolio value curve data to comparison dir: ..\data\exp_result\models\evaluation_final_Top5\VanillaTransformer\VanillaTransformer_portfolio_value_curve.csv
+2025-04-08 17:42:43 [INFO] Saved portfolio value plot to ..\data\exp_result\models\VanillaTransformer_GridSearch\Evaluation_5_best_assets\VanillaTransformer_portfolio_value_curve.png
+2025-04-08 17:42:43 [INFO] --- Evaluation script finished for VanillaTransformer ---
+2025-04-08 17:42:43 [INFO] Successfully loaded configuration from ../experiments/configs/test_config_TransformerCA.yaml

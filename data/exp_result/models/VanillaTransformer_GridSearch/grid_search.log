@@ -1,0 +1,2131 @@
+2025-04-07 01:01:48 [INFO] Logging setup complete.
+2025-04-07 01:01:48 [INFO] Using device: cuda
+2025-04-07 01:01:48 [INFO] --- Loading and Preparing Data (with correct split/scaling) ---
+2025-04-07 01:01:48 [INFO] Processing 110 tickers with 2 features.
+2025-04-07 01:02:23 [WARNING] NaN values still present in ticker 'TJX' after ffill/bfill. Check data source or filling logic.
+2025-04-07 01:02:23 [INFO] Data split: Train ratio=0.70, Val ratio=0.15
+2025-04-07 01:02:24 [INFO] Data normalization complete (Fit on train, Transform train/val).
+2025-04-07 01:02:24 [INFO] Sequences prepared: Train=torch.Size([2516, 20, 110, 2]), Val=torch.Size([523, 20, 110, 2])
+2025-04-07 01:02:24 [INFO] Parameter Grid: {'learning_rate': [0.001, 0.0005], 'batch_size': [64], 'd_ff': [64, 128], 'dropout': [0.1, 0.2], 'd_model': [64, 128], 'num_encoder_layers': [1, 2, 3]}
+2025-04-07 01:02:24 [INFO] --- Starting Grid Search with 48 Combinations ---
+2025-04-07 01:02:24 [INFO] 
+--- Combination 1/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 01:02:24 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:02:26 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:02:26 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_1
+2025-04-07 01:02:26 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_1\VanillaTransformer_comb_1_best_val.pth
+2025-04-07 01:02:33 [INFO]    -> New best validation model saved.
+2025-04-07 01:02:33 [INFO] Epoch 1/50 | Train Loss: 1.085763 | Val Loss: 1.225698 | LR: 1.0e-03
+2025-04-07 01:02:40 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:02:40 [INFO] Epoch 2/50 | Train Loss: 1.008197 | Val Loss: 1.229718 | LR: 1.0e-03
+2025-04-07 01:02:47 [INFO]    -> New best validation model saved.
+2025-04-07 01:02:47 [INFO] Epoch 3/50 | Train Loss: 0.996512 | Val Loss: 1.221009 | LR: 1.0e-03
+2025-04-07 01:02:54 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:02:54 [INFO] Epoch 4/50 | Train Loss: 0.992890 | Val Loss: 1.227732 | LR: 1.0e-03
+2025-04-07 01:03:01 [INFO]    -> New best validation model saved.
+2025-04-07 01:03:01 [INFO] Epoch 5/50 | Train Loss: 0.988929 | Val Loss: 1.215661 | LR: 1.0e-03
+2025-04-07 01:03:07 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:03:07 [INFO] Epoch 6/50 | Train Loss: 0.986748 | Val Loss: 1.223457 | LR: 1.0e-03
+2025-04-07 01:03:14 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:03:14 [INFO] Epoch 7/50 | Train Loss: 0.983209 | Val Loss: 1.219299 | LR: 1.0e-03
+2025-04-07 01:03:21 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:03:21 [INFO] Epoch 8/50 | Train Loss: 0.988352 | Val Loss: 1.219542 | LR: 1.0e-03
+2025-04-07 01:03:28 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:03:28 [INFO] Epoch 9/50 | Train Loss: 0.979632 | Val Loss: 1.215839 | LR: 1.0e-03
+2025-04-07 01:03:35 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:03:35 [INFO] Epoch 10/50 | Train Loss: 0.981943 | Val Loss: 1.216675 | LR: 1.0e-03
+2025-04-07 01:03:42 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:03:42 [INFO] Epoch 11/50 | Train Loss: 0.979670 | Val Loss: 1.218795 | LR: 1.0e-03
+2025-04-07 01:03:49 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:03:49 [INFO] Epoch 12/50 | Train Loss: 0.961474 | Val Loss: 1.216468 | LR: 1.0e-03
+2025-04-07 01:03:56 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:03:56 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:03:56 [INFO] Training complete. Best Validation Loss: 1.215661
+2025-04-07 01:03:56 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_1\VanillaTransformer_comb_1_loss_curve.png
+2025-04-07 01:03:56 [INFO] Comb 1 finished. Best Val Loss: 1.215661
+2025-04-07 01:03:56 [INFO]    -> New overall best model saved. Loss: 1.215661
+2025-04-07 01:03:56 [INFO] Time for comb 1: 91.63s.
+2025-04-07 01:03:56 [INFO] 
+--- Combination 2/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 01:03:56 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:03:56 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:03:56 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_2
+2025-04-07 01:03:56 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_2\VanillaTransformer_comb_2_best_val.pth
+2025-04-07 01:04:09 [INFO]    -> New best validation model saved.
+2025-04-07 01:04:09 [INFO] Epoch 1/50 | Train Loss: 1.061289 | Val Loss: 1.215868 | LR: 1.0e-03
+2025-04-07 01:04:21 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:04:21 [INFO] Epoch 2/50 | Train Loss: 1.003080 | Val Loss: 1.227550 | LR: 1.0e-03
+2025-04-07 01:04:34 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:04:34 [INFO] Epoch 3/50 | Train Loss: 0.997992 | Val Loss: 1.216751 | LR: 1.0e-03
+2025-04-07 01:04:46 [INFO]    -> New best validation model saved.
+2025-04-07 01:04:46 [INFO] Epoch 4/50 | Train Loss: 0.987185 | Val Loss: 1.214736 | LR: 1.0e-03
+2025-04-07 01:04:59 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:04:59 [INFO] Epoch 5/50 | Train Loss: 0.990411 | Val Loss: 1.214859 | LR: 1.0e-03
+2025-04-07 01:05:11 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:05:11 [INFO] Epoch 6/50 | Train Loss: 0.977266 | Val Loss: 1.215996 | LR: 1.0e-03
+2025-04-07 01:05:24 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:05:24 [INFO] Epoch 7/50 | Train Loss: 0.971582 | Val Loss: 1.215325 | LR: 1.0e-03
+2025-04-07 01:05:37 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:05:37 [INFO] Epoch 8/50 | Train Loss: 0.985457 | Val Loss: 1.217326 | LR: 1.0e-03
+2025-04-07 01:05:49 [INFO]    -> New best validation model saved.
+2025-04-07 01:05:49 [INFO] Epoch 9/50 | Train Loss: 0.976584 | Val Loss: 1.214044 | LR: 1.0e-03
+2025-04-07 01:06:01 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:06:01 [INFO] Epoch 10/50 | Train Loss: 0.981759 | Val Loss: 1.220637 | LR: 1.0e-03
+2025-04-07 01:06:14 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:06:14 [INFO] Epoch 11/50 | Train Loss: 0.985050 | Val Loss: 1.215763 | LR: 1.0e-03
+2025-04-07 01:06:26 [INFO]    -> New best validation model saved.
+2025-04-07 01:06:26 [INFO] Epoch 12/50 | Train Loss: 0.981517 | Val Loss: 1.213021 | LR: 1.0e-03
+2025-04-07 01:06:38 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:06:38 [INFO] Epoch 13/50 | Train Loss: 0.982619 | Val Loss: 1.215988 | LR: 1.0e-03
+2025-04-07 01:06:51 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:06:51 [INFO] Epoch 14/50 | Train Loss: 0.983366 | Val Loss: 1.217484 | LR: 1.0e-03
+2025-04-07 01:07:03 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:07:03 [INFO] Epoch 15/50 | Train Loss: 0.978036 | Val Loss: 1.214159 | LR: 1.0e-03
+2025-04-07 01:07:15 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:07:15 [INFO] Epoch 16/50 | Train Loss: 0.980893 | Val Loss: 1.214214 | LR: 1.0e-03
+2025-04-07 01:07:27 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:07:27 [INFO] Epoch 17/50 | Train Loss: 0.966063 | Val Loss: 1.213948 | LR: 1.0e-03
+2025-04-07 01:07:40 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:07:40 [INFO] Epoch 18/50 | Train Loss: 0.981206 | Val Loss: 1.220437 | LR: 1.0e-03
+2025-04-07 01:07:52 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:07:52 [INFO] Epoch 19/50 | Train Loss: 0.976914 | Val Loss: 1.218494 | LR: 1.0e-03
+2025-04-07 01:08:04 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:08:04 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:08:04 [INFO] Training complete. Best Validation Loss: 1.213021
+2025-04-07 01:08:04 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_2\VanillaTransformer_comb_2_loss_curve.png
+2025-04-07 01:08:04 [INFO] Comb 2 finished. Best Val Loss: 1.213021
+2025-04-07 01:08:04 [INFO]    -> New overall best model saved. Loss: 1.213021
+2025-04-07 01:08:04 [INFO] Time for comb 2: 248.41s.
+2025-04-07 01:08:04 [INFO] 
+--- Combination 3/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 01:08:04 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:08:04 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:08:04 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_3
+2025-04-07 01:08:04 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_3\VanillaTransformer_comb_3_best_val.pth
+2025-04-07 01:08:23 [INFO]    -> New best validation model saved.
+2025-04-07 01:08:23 [INFO] Epoch 1/50 | Train Loss: 1.065368 | Val Loss: 1.222274 | LR: 1.0e-03
+2025-04-07 01:08:41 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:08:41 [INFO] Epoch 2/50 | Train Loss: 1.000508 | Val Loss: 1.237454 | LR: 1.0e-03
+2025-04-07 01:08:59 [INFO]    -> New best validation model saved.
+2025-04-07 01:08:59 [INFO] Epoch 3/50 | Train Loss: 0.979847 | Val Loss: 1.216007 | LR: 1.0e-03
+2025-04-07 01:09:17 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:09:17 [INFO] Epoch 4/50 | Train Loss: 0.983747 | Val Loss: 1.218308 | LR: 1.0e-03
+2025-04-07 01:09:35 [INFO]    -> New best validation model saved.
+2025-04-07 01:09:35 [INFO] Epoch 5/50 | Train Loss: 0.984031 | Val Loss: 1.214907 | LR: 1.0e-03
+2025-04-07 01:09:53 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:09:53 [INFO] Epoch 6/50 | Train Loss: 0.987830 | Val Loss: 1.214995 | LR: 1.0e-03
+2025-04-07 01:10:11 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:10:11 [INFO] Epoch 7/50 | Train Loss: 0.982461 | Val Loss: 1.220059 | LR: 1.0e-03
+2025-04-07 01:10:30 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:10:30 [INFO] Epoch 8/50 | Train Loss: 0.983657 | Val Loss: 1.216998 | LR: 1.0e-03
+2025-04-07 01:10:48 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:10:48 [INFO] Epoch 9/50 | Train Loss: 0.981622 | Val Loss: 1.215555 | LR: 1.0e-03
+2025-04-07 01:11:06 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:11:06 [INFO] Epoch 10/50 | Train Loss: 0.974138 | Val Loss: 1.224683 | LR: 1.0e-03
+2025-04-07 01:11:23 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:11:23 [INFO] Epoch 11/50 | Train Loss: 0.979245 | Val Loss: 1.216039 | LR: 1.0e-03
+2025-04-07 01:11:42 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:11:42 [INFO] Epoch 12/50 | Train Loss: 0.981181 | Val Loss: 1.217214 | LR: 1.0e-03
+2025-04-07 01:12:00 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:12:00 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:12:00 [INFO] Training complete. Best Validation Loss: 1.214907
+2025-04-07 01:12:00 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_3\VanillaTransformer_comb_3_loss_curve.png
+2025-04-07 01:12:00 [INFO] Comb 3 finished. Best Val Loss: 1.214907
+2025-04-07 01:12:00 [INFO] Time for comb 3: 235.52s.
+2025-04-07 01:12:00 [INFO] 
+--- Combination 4/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 01:12:00 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:12:00 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:12:00 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_4
+2025-04-07 01:12:00 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_4\VanillaTransformer_comb_4_best_val.pth
+2025-04-07 01:12:14 [INFO]    -> New best validation model saved.
+2025-04-07 01:12:14 [INFO] Epoch 1/50 | Train Loss: 1.127854 | Val Loss: 1.227613 | LR: 1.0e-03
+2025-04-07 01:12:28 [INFO]    -> New best validation model saved.
+2025-04-07 01:12:28 [INFO] Epoch 2/50 | Train Loss: 1.024977 | Val Loss: 1.225120 | LR: 1.0e-03
+2025-04-07 01:12:42 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:12:42 [INFO] Epoch 3/50 | Train Loss: 1.009473 | Val Loss: 1.225704 | LR: 1.0e-03
+2025-04-07 01:12:56 [INFO]    -> New best validation model saved.
+2025-04-07 01:12:56 [INFO] Epoch 4/50 | Train Loss: 0.993389 | Val Loss: 1.215658 | LR: 1.0e-03
+2025-04-07 01:13:10 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:13:10 [INFO] Epoch 5/50 | Train Loss: 0.991114 | Val Loss: 1.217104 | LR: 1.0e-03
+2025-04-07 01:13:24 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:13:24 [INFO] Epoch 6/50 | Train Loss: 0.987674 | Val Loss: 1.221766 | LR: 1.0e-03
+2025-04-07 01:13:39 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:13:39 [INFO] Epoch 7/50 | Train Loss: 0.957561 | Val Loss: 1.215913 | LR: 1.0e-03
+2025-04-07 01:13:53 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:13:53 [INFO] Epoch 8/50 | Train Loss: 0.991428 | Val Loss: 1.223320 | LR: 1.0e-03
+2025-04-07 01:14:07 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:14:07 [INFO] Epoch 9/50 | Train Loss: 0.986926 | Val Loss: 1.216108 | LR: 1.0e-03
+2025-04-07 01:14:21 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:14:21 [INFO] Epoch 10/50 | Train Loss: 0.983012 | Val Loss: 1.215844 | LR: 1.0e-03
+2025-04-07 01:14:36 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:14:36 [INFO] Epoch 11/50 | Train Loss: 0.985141 | Val Loss: 1.219961 | LR: 1.0e-03
+2025-04-07 01:14:50 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:14:50 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:14:50 [INFO] Training complete. Best Validation Loss: 1.215658
+2025-04-07 01:14:50 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_4\VanillaTransformer_comb_4_loss_curve.png
+2025-04-07 01:14:50 [INFO] Comb 4 finished. Best Val Loss: 1.215658
+2025-04-07 01:14:50 [INFO] Time for comb 4: 170.34s.
+2025-04-07 01:14:50 [INFO] 
+--- Combination 5/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 01:14:50 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:14:50 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:14:50 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_5
+2025-04-07 01:14:50 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_5\VanillaTransformer_comb_5_best_val.pth
+2025-04-07 01:15:17 [INFO]    -> New best validation model saved.
+2025-04-07 01:15:17 [INFO] Epoch 1/50 | Train Loss: 1.186300 | Val Loss: 1.251257 | LR: 1.0e-03
+2025-04-07 01:15:44 [INFO]    -> New best validation model saved.
+2025-04-07 01:15:44 [INFO] Epoch 2/50 | Train Loss: 1.014680 | Val Loss: 1.219034 | LR: 1.0e-03
+2025-04-07 01:16:12 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:16:12 [INFO] Epoch 3/50 | Train Loss: 1.005796 | Val Loss: 1.221954 | LR: 1.0e-03
+2025-04-07 01:16:39 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:16:39 [INFO] Epoch 4/50 | Train Loss: 0.996433 | Val Loss: 1.222026 | LR: 1.0e-03
+2025-04-07 01:17:07 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:17:07 [INFO] Epoch 5/50 | Train Loss: 0.990237 | Val Loss: 1.223526 | LR: 1.0e-03
+2025-04-07 01:17:34 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:17:34 [INFO] Epoch 6/50 | Train Loss: 0.988287 | Val Loss: 1.227102 | LR: 1.0e-03
+2025-04-07 01:18:01 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:18:01 [INFO] Epoch 7/50 | Train Loss: 0.990800 | Val Loss: 1.229937 | LR: 1.0e-03
+2025-04-07 01:18:29 [INFO]    -> New best validation model saved.
+2025-04-07 01:18:29 [INFO] Epoch 8/50 | Train Loss: 0.981074 | Val Loss: 1.217708 | LR: 1.0e-03
+2025-04-07 01:18:56 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:18:56 [INFO] Epoch 9/50 | Train Loss: 0.986519 | Val Loss: 1.220262 | LR: 1.0e-03
+2025-04-07 01:19:23 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:19:23 [INFO] Epoch 10/50 | Train Loss: 0.981628 | Val Loss: 1.219736 | LR: 1.0e-03
+2025-04-07 01:19:51 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:19:51 [INFO] Epoch 11/50 | Train Loss: 0.985373 | Val Loss: 1.223190 | LR: 1.0e-03
+2025-04-07 01:20:18 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:20:18 [INFO] Epoch 12/50 | Train Loss: 0.984102 | Val Loss: 1.220492 | LR: 1.0e-03
+2025-04-07 01:20:45 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:20:45 [INFO] Epoch 13/50 | Train Loss: 0.988122 | Val Loss: 1.217974 | LR: 1.0e-03
+2025-04-07 01:21:12 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:21:12 [INFO] Epoch 14/50 | Train Loss: 0.977872 | Val Loss: 1.224259 | LR: 1.0e-03
+2025-04-07 01:21:39 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:21:39 [INFO] Epoch 15/50 | Train Loss: 0.974454 | Val Loss: 1.225863 | LR: 1.0e-03
+2025-04-07 01:22:06 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:22:06 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:22:06 [INFO] Training complete. Best Validation Loss: 1.217708
+2025-04-07 01:22:06 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_5\VanillaTransformer_comb_5_loss_curve.png
+2025-04-07 01:22:06 [INFO] Comb 5 finished. Best Val Loss: 1.217708
+2025-04-07 01:22:06 [INFO] Time for comb 5: 436.21s.
+2025-04-07 01:22:06 [INFO] 
+--- Combination 6/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 01:22:06 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:22:06 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:22:06 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_6
+2025-04-07 01:22:06 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_6\VanillaTransformer_comb_6_best_val.pth
+2025-04-07 01:22:47 [INFO]    -> New best validation model saved.
+2025-04-07 01:22:47 [INFO] Epoch 1/50 | Train Loss: 1.253208 | Val Loss: 1.291273 | LR: 1.0e-03
+2025-04-07 01:23:27 [INFO]    -> New best validation model saved.
+2025-04-07 01:23:27 [INFO] Epoch 2/50 | Train Loss: 1.015450 | Val Loss: 1.218357 | LR: 1.0e-03
+2025-04-07 01:24:08 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:24:08 [INFO] Epoch 3/50 | Train Loss: 0.987200 | Val Loss: 1.225971 | LR: 1.0e-03
+2025-04-07 01:24:48 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:24:48 [INFO] Epoch 4/50 | Train Loss: 1.000127 | Val Loss: 1.234157 | LR: 1.0e-03
+2025-04-07 01:25:28 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:25:28 [INFO] Epoch 5/50 | Train Loss: 0.999076 | Val Loss: 1.231720 | LR: 1.0e-03
+2025-04-07 01:26:08 [INFO]    -> New best validation model saved.
+2025-04-07 01:26:08 [INFO] Epoch 6/50 | Train Loss: 0.987555 | Val Loss: 1.214194 | LR: 1.0e-03
+2025-04-07 01:26:48 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:26:48 [INFO] Epoch 7/50 | Train Loss: 0.985205 | Val Loss: 1.216908 | LR: 1.0e-03
+2025-04-07 01:27:28 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:27:28 [INFO] Epoch 8/50 | Train Loss: 0.989089 | Val Loss: 1.215495 | LR: 1.0e-03
+2025-04-07 01:28:08 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:28:08 [INFO] Epoch 9/50 | Train Loss: 0.972232 | Val Loss: 1.217401 | LR: 1.0e-03
+2025-04-07 01:28:48 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:28:48 [INFO] Epoch 10/50 | Train Loss: 0.985196 | Val Loss: 1.220886 | LR: 1.0e-03
+2025-04-07 01:29:28 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:29:28 [INFO] Epoch 11/50 | Train Loss: 0.982930 | Val Loss: 1.218099 | LR: 1.0e-03
+2025-04-07 01:30:08 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:30:08 [INFO] Epoch 12/50 | Train Loss: 0.985703 | Val Loss: 1.219342 | LR: 1.0e-03
+2025-04-07 01:30:48 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:30:48 [INFO] Epoch 13/50 | Train Loss: 0.974468 | Val Loss: 1.217050 | LR: 1.0e-03
+2025-04-07 01:31:28 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:31:28 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:31:28 [INFO] Training complete. Best Validation Loss: 1.214194
+2025-04-07 01:31:28 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_6\VanillaTransformer_comb_6_loss_curve.png
+2025-04-07 01:31:28 [INFO] Comb 6 finished. Best Val Loss: 1.214194
+2025-04-07 01:31:28 [INFO] Time for comb 6: 561.96s.
+2025-04-07 01:31:28 [INFO] 
+--- Combination 7/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 01:31:28 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:31:28 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:31:28 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_7
+2025-04-07 01:31:28 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_7\VanillaTransformer_comb_7_best_val.pth
+2025-04-07 01:31:35 [INFO]    -> New best validation model saved.
+2025-04-07 01:31:35 [INFO] Epoch 1/50 | Train Loss: 1.070491 | Val Loss: 1.220632 | LR: 1.0e-03
+2025-04-07 01:31:41 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:31:41 [INFO] Epoch 2/50 | Train Loss: 1.002997 | Val Loss: 1.222176 | LR: 1.0e-03
+2025-04-07 01:31:47 [INFO]    -> New best validation model saved.
+2025-04-07 01:31:47 [INFO] Epoch 3/50 | Train Loss: 0.992384 | Val Loss: 1.217514 | LR: 1.0e-03
+2025-04-07 01:31:54 [INFO]    -> New best validation model saved.
+2025-04-07 01:31:54 [INFO] Epoch 4/50 | Train Loss: 0.993831 | Val Loss: 1.214252 | LR: 1.0e-03
+2025-04-07 01:32:00 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:32:00 [INFO] Epoch 5/50 | Train Loss: 0.992334 | Val Loss: 1.215138 | LR: 1.0e-03
+2025-04-07 01:32:07 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:32:07 [INFO] Epoch 6/50 | Train Loss: 0.988846 | Val Loss: 1.217137 | LR: 1.0e-03
+2025-04-07 01:32:13 [INFO]    -> New best validation model saved.
+2025-04-07 01:32:13 [INFO] Epoch 7/50 | Train Loss: 0.972767 | Val Loss: 1.213872 | LR: 1.0e-03
+2025-04-07 01:32:20 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:32:20 [INFO] Epoch 8/50 | Train Loss: 0.984064 | Val Loss: 1.214853 | LR: 1.0e-03
+2025-04-07 01:32:26 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:32:26 [INFO] Epoch 9/50 | Train Loss: 0.983815 | Val Loss: 1.218359 | LR: 1.0e-03
+2025-04-07 01:32:33 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:32:33 [INFO] Epoch 10/50 | Train Loss: 0.982332 | Val Loss: 1.226421 | LR: 1.0e-03
+2025-04-07 01:32:39 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:32:39 [INFO] Epoch 11/50 | Train Loss: 0.982482 | Val Loss: 1.219156 | LR: 1.0e-03
+2025-04-07 01:32:45 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:32:45 [INFO] Epoch 12/50 | Train Loss: 0.972871 | Val Loss: 1.215292 | LR: 1.0e-03
+2025-04-07 01:32:52 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:32:52 [INFO] Epoch 13/50 | Train Loss: 0.977599 | Val Loss: 1.224736 | LR: 1.0e-03
+2025-04-07 01:32:58 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:32:58 [INFO] Epoch 14/50 | Train Loss: 0.973515 | Val Loss: 1.225403 | LR: 1.0e-03
+2025-04-07 01:33:05 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:33:05 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:33:05 [INFO] Training complete. Best Validation Loss: 1.213872
+2025-04-07 01:33:05 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_7\VanillaTransformer_comb_7_loss_curve.png
+2025-04-07 01:33:05 [INFO] Comb 7 finished. Best Val Loss: 1.213872
+2025-04-07 01:33:05 [INFO] Time for comb 7: 96.66s.
+2025-04-07 01:33:05 [INFO] 
+--- Combination 8/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 01:33:05 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:33:05 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:33:05 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_8
+2025-04-07 01:33:05 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_8\VanillaTransformer_comb_8_best_val.pth
+2025-04-07 01:33:17 [INFO]    -> New best validation model saved.
+2025-04-07 01:33:17 [INFO] Epoch 1/50 | Train Loss: 1.149380 | Val Loss: 1.219717 | LR: 1.0e-03
+2025-04-07 01:33:29 [INFO]    -> New best validation model saved.
+2025-04-07 01:33:29 [INFO] Epoch 2/50 | Train Loss: 0.992699 | Val Loss: 1.216301 | LR: 1.0e-03
+2025-04-07 01:33:42 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:33:42 [INFO] Epoch 3/50 | Train Loss: 1.006167 | Val Loss: 1.243421 | LR: 1.0e-03
+2025-04-07 01:33:54 [INFO]    -> New best validation model saved.
+2025-04-07 01:33:54 [INFO] Epoch 4/50 | Train Loss: 0.994224 | Val Loss: 1.215159 | LR: 1.0e-03
+2025-04-07 01:34:06 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:34:06 [INFO] Epoch 5/50 | Train Loss: 0.990161 | Val Loss: 1.226961 | LR: 1.0e-03
+2025-04-07 01:34:18 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:34:18 [INFO] Epoch 6/50 | Train Loss: 0.987668 | Val Loss: 1.216661 | LR: 1.0e-03
+2025-04-07 01:34:30 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:34:30 [INFO] Epoch 7/50 | Train Loss: 0.986719 | Val Loss: 1.215551 | LR: 1.0e-03
+2025-04-07 01:34:42 [INFO]    -> New best validation model saved.
+2025-04-07 01:34:42 [INFO] Epoch 8/50 | Train Loss: 0.983948 | Val Loss: 1.214692 | LR: 1.0e-03
+2025-04-07 01:34:54 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:34:54 [INFO] Epoch 9/50 | Train Loss: 0.986157 | Val Loss: 1.223402 | LR: 1.0e-03
+2025-04-07 01:35:07 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:35:07 [INFO] Epoch 10/50 | Train Loss: 0.980162 | Val Loss: 1.218698 | LR: 1.0e-03
+2025-04-07 01:35:19 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:35:19 [INFO] Epoch 11/50 | Train Loss: 0.977818 | Val Loss: 1.218752 | LR: 1.0e-03
+2025-04-07 01:35:31 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:35:31 [INFO] Epoch 12/50 | Train Loss: 0.976054 | Val Loss: 1.225779 | LR: 1.0e-03
+2025-04-07 01:35:44 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:35:44 [INFO] Epoch 13/50 | Train Loss: 0.983855 | Val Loss: 1.236718 | LR: 1.0e-03
+2025-04-07 01:35:56 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:35:56 [INFO] Epoch 14/50 | Train Loss: 0.982129 | Val Loss: 1.220078 | LR: 1.0e-03
+2025-04-07 01:36:08 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:36:08 [INFO] Epoch 15/50 | Train Loss: 0.980252 | Val Loss: 1.216830 | LR: 1.0e-03
+2025-04-07 01:36:20 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:36:20 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:36:20 [INFO] Training complete. Best Validation Loss: 1.214692
+2025-04-07 01:36:20 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_8\VanillaTransformer_comb_8_loss_curve.png
+2025-04-07 01:36:20 [INFO] Comb 8 finished. Best Val Loss: 1.214692
+2025-04-07 01:36:20 [INFO] Time for comb 8: 195.47s.
+2025-04-07 01:36:20 [INFO] 
+--- Combination 9/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 01:36:20 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:36:20 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:36:20 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_9
+2025-04-07 01:36:20 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_9\VanillaTransformer_comb_9_best_val.pth
+2025-04-07 01:36:38 [INFO]    -> New best validation model saved.
+2025-04-07 01:36:38 [INFO] Epoch 1/50 | Train Loss: 1.052675 | Val Loss: 1.223695 | LR: 1.0e-03
+2025-04-07 01:36:56 [INFO]    -> New best validation model saved.
+2025-04-07 01:36:56 [INFO] Epoch 2/50 | Train Loss: 1.006512 | Val Loss: 1.213147 | LR: 1.0e-03
+2025-04-07 01:37:15 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:37:15 [INFO] Epoch 3/50 | Train Loss: 0.995671 | Val Loss: 1.229349 | LR: 1.0e-03
+2025-04-07 01:37:32 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:37:32 [INFO] Epoch 4/50 | Train Loss: 0.995747 | Val Loss: 1.215368 | LR: 1.0e-03
+2025-04-07 01:37:50 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:37:50 [INFO] Epoch 5/50 | Train Loss: 0.989558 | Val Loss: 1.216605 | LR: 1.0e-03
+2025-04-07 01:38:08 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:38:08 [INFO] Epoch 6/50 | Train Loss: 0.987260 | Val Loss: 1.213164 | LR: 1.0e-03
+2025-04-07 01:38:26 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:38:26 [INFO] Epoch 7/50 | Train Loss: 0.980515 | Val Loss: 1.215043 | LR: 1.0e-03
+2025-04-07 01:38:44 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:38:44 [INFO] Epoch 8/50 | Train Loss: 0.982605 | Val Loss: 1.215180 | LR: 1.0e-03
+2025-04-07 01:39:01 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:39:01 [INFO] Epoch 9/50 | Train Loss: 0.983220 | Val Loss: 1.225028 | LR: 1.0e-03
+2025-04-07 01:39:19 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:39:19 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:39:19 [INFO] Training complete. Best Validation Loss: 1.213147
+2025-04-07 01:39:19 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_9\VanillaTransformer_comb_9_loss_curve.png
+2025-04-07 01:39:19 [INFO] Comb 9 finished. Best Val Loss: 1.213147
+2025-04-07 01:39:19 [INFO] Time for comb 9: 179.00s.
+2025-04-07 01:39:19 [INFO] 
+--- Combination 10/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 01:39:19 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:39:19 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:39:19 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_10
+2025-04-07 01:39:19 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_10\VanillaTransformer_comb_10_best_val.pth
+2025-04-07 01:39:33 [INFO]    -> New best validation model saved.
+2025-04-07 01:39:33 [INFO] Epoch 1/50 | Train Loss: 1.124249 | Val Loss: 1.254045 | LR: 1.0e-03
+2025-04-07 01:39:47 [INFO]    -> New best validation model saved.
+2025-04-07 01:39:47 [INFO] Epoch 2/50 | Train Loss: 1.019763 | Val Loss: 1.225560 | LR: 1.0e-03
+2025-04-07 01:40:01 [INFO]    -> New best validation model saved.
+2025-04-07 01:40:01 [INFO] Epoch 3/50 | Train Loss: 1.001902 | Val Loss: 1.219229 | LR: 1.0e-03
+2025-04-07 01:40:15 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:40:15 [INFO] Epoch 4/50 | Train Loss: 0.992570 | Val Loss: 1.223338 | LR: 1.0e-03
+2025-04-07 01:40:29 [INFO]    -> New best validation model saved.
+2025-04-07 01:40:29 [INFO] Epoch 5/50 | Train Loss: 0.997353 | Val Loss: 1.216605 | LR: 1.0e-03
+2025-04-07 01:40:43 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:40:43 [INFO] Epoch 6/50 | Train Loss: 0.999096 | Val Loss: 1.217645 | LR: 1.0e-03
+2025-04-07 01:40:57 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:40:57 [INFO] Epoch 7/50 | Train Loss: 0.987147 | Val Loss: 1.217235 | LR: 1.0e-03
+2025-04-07 01:41:12 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:41:12 [INFO] Epoch 8/50 | Train Loss: 0.963077 | Val Loss: 1.219276 | LR: 1.0e-03
+2025-04-07 01:41:25 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:41:25 [INFO] Epoch 9/50 | Train Loss: 0.986535 | Val Loss: 1.221655 | LR: 1.0e-03
+2025-04-07 01:41:39 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:41:39 [INFO] Epoch 10/50 | Train Loss: 0.985128 | Val Loss: 1.225766 | LR: 1.0e-03
+2025-04-07 01:41:53 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:41:53 [INFO] Epoch 11/50 | Train Loss: 0.986414 | Val Loss: 1.225390 | LR: 1.0e-03
+2025-04-07 01:42:08 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:42:08 [INFO] Epoch 12/50 | Train Loss: 0.982278 | Val Loss: 1.217952 | LR: 1.0e-03
+2025-04-07 01:42:22 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:42:22 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:42:22 [INFO] Training complete. Best Validation Loss: 1.216605
+2025-04-07 01:42:22 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_10\VanillaTransformer_comb_10_loss_curve.png
+2025-04-07 01:42:22 [INFO] Comb 10 finished. Best Val Loss: 1.216605
+2025-04-07 01:42:22 [INFO] Time for comb 10: 182.24s.
+2025-04-07 01:42:22 [INFO] 
+--- Combination 11/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 01:42:22 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:42:22 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:42:22 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_11
+2025-04-07 01:42:22 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_11\VanillaTransformer_comb_11_best_val.pth
+2025-04-07 01:42:48 [INFO]    -> New best validation model saved.
+2025-04-07 01:42:48 [INFO] Epoch 1/50 | Train Loss: 1.194379 | Val Loss: 1.233622 | LR: 1.0e-03
+2025-04-07 01:43:15 [INFO]    -> New best validation model saved.
+2025-04-07 01:43:15 [INFO] Epoch 2/50 | Train Loss: 1.017392 | Val Loss: 1.214829 | LR: 1.0e-03
+2025-04-07 01:43:42 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:43:42 [INFO] Epoch 3/50 | Train Loss: 1.003442 | Val Loss: 1.219674 | LR: 1.0e-03
+2025-04-07 01:44:09 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:44:09 [INFO] Epoch 4/50 | Train Loss: 1.003184 | Val Loss: 1.222078 | LR: 1.0e-03
+2025-04-07 01:44:36 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:44:36 [INFO] Epoch 5/50 | Train Loss: 0.994630 | Val Loss: 1.217436 | LR: 1.0e-03
+2025-04-07 01:45:03 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:45:03 [INFO] Epoch 6/50 | Train Loss: 0.987434 | Val Loss: 1.218051 | LR: 1.0e-03
+2025-04-07 01:45:30 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:45:30 [INFO] Epoch 7/50 | Train Loss: 0.988163 | Val Loss: 1.214919 | LR: 1.0e-03
+2025-04-07 01:45:56 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:45:56 [INFO] Epoch 8/50 | Train Loss: 0.977411 | Val Loss: 1.225244 | LR: 1.0e-03
+2025-04-07 01:46:23 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:46:23 [INFO] Epoch 9/50 | Train Loss: 0.983871 | Val Loss: 1.217076 | LR: 1.0e-03
+2025-04-07 01:46:50 [INFO]    -> New best validation model saved.
+2025-04-07 01:46:50 [INFO] Epoch 10/50 | Train Loss: 0.985834 | Val Loss: 1.213608 | LR: 1.0e-03
+2025-04-07 01:47:17 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:47:17 [INFO] Epoch 11/50 | Train Loss: 0.974407 | Val Loss: 1.220186 | LR: 1.0e-03
+2025-04-07 01:47:44 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:47:44 [INFO] Epoch 12/50 | Train Loss: 0.984410 | Val Loss: 1.215684 | LR: 1.0e-03
+2025-04-07 01:48:11 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:48:11 [INFO] Epoch 13/50 | Train Loss: 0.984991 | Val Loss: 1.218259 | LR: 1.0e-03
+2025-04-07 01:48:37 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 01:48:37 [INFO] Epoch 14/50 | Train Loss: 0.982220 | Val Loss: 1.218822 | LR: 1.0e-03
+2025-04-07 01:49:04 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 01:49:04 [INFO] Epoch 15/50 | Train Loss: 0.983061 | Val Loss: 1.215729 | LR: 1.0e-03
+2025-04-07 01:49:31 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 01:49:31 [INFO] Epoch 16/50 | Train Loss: 0.984056 | Val Loss: 1.235628 | LR: 1.0e-03
+2025-04-07 01:49:58 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 01:49:58 [INFO] Epoch 17/50 | Train Loss: 0.982663 | Val Loss: 1.219363 | LR: 1.0e-03
+2025-04-07 01:50:24 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 01:50:24 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 01:50:24 [INFO] Training complete. Best Validation Loss: 1.213608
+2025-04-07 01:50:24 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_11\VanillaTransformer_comb_11_loss_curve.png
+2025-04-07 01:50:24 [INFO] Comb 11 finished. Best Val Loss: 1.213608
+2025-04-07 01:50:24 [INFO] Time for comb 11: 482.77s.
+2025-04-07 01:50:24 [INFO] 
+--- Combination 12/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 01:50:24 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 01:50:24 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 01:50:24 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_12
+2025-04-07 01:50:24 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_12\VanillaTransformer_comb_12_best_val.pth
+2025-04-07 01:51:04 [INFO]    -> New best validation model saved.
+2025-04-07 01:51:04 [INFO] Epoch 1/50 | Train Loss: 1.254030 | Val Loss: 1.257036 | LR: 1.0e-03
+2025-04-07 01:51:44 [INFO]    -> New best validation model saved.
+2025-04-07 01:51:44 [INFO] Epoch 2/50 | Train Loss: 1.027215 | Val Loss: 1.217236 | LR: 1.0e-03
+2025-04-07 01:52:24 [INFO]    -> New best validation model saved.
+2025-04-07 01:52:24 [INFO] Epoch 3/50 | Train Loss: 1.013113 | Val Loss: 1.215475 | LR: 1.0e-03
+2025-04-07 01:53:03 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:53:03 [INFO] Epoch 4/50 | Train Loss: 1.009321 | Val Loss: 1.219596 | LR: 1.0e-03
+2025-04-07 01:53:43 [INFO]    -> New best validation model saved.
+2025-04-07 01:53:43 [INFO] Epoch 5/50 | Train Loss: 0.995033 | Val Loss: 1.214224 | LR: 1.0e-03
+2025-04-07 01:54:23 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:54:23 [INFO] Epoch 6/50 | Train Loss: 0.977197 | Val Loss: 1.218136 | LR: 1.0e-03
+2025-04-07 01:55:03 [INFO]    -> New best validation model saved.
+2025-04-07 01:55:03 [INFO] Epoch 7/50 | Train Loss: 0.989468 | Val Loss: 1.213426 | LR: 1.0e-03
+2025-04-07 01:55:42 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:55:42 [INFO] Epoch 8/50 | Train Loss: 0.976094 | Val Loss: 1.215655 | LR: 1.0e-03
+2025-04-07 01:56:22 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:56:22 [INFO] Epoch 9/50 | Train Loss: 0.986558 | Val Loss: 1.214381 | LR: 1.0e-03
+2025-04-07 01:57:02 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:57:02 [INFO] Epoch 10/50 | Train Loss: 0.985658 | Val Loss: 1.221666 | LR: 1.0e-03
+2025-04-07 01:57:42 [INFO]    -> New best validation model saved.
+2025-04-07 01:57:42 [INFO] Epoch 11/50 | Train Loss: 0.985168 | Val Loss: 1.212542 | LR: 1.0e-03
+2025-04-07 01:58:21 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 01:58:21 [INFO] Epoch 12/50 | Train Loss: 0.985077 | Val Loss: 1.215956 | LR: 1.0e-03
+2025-04-07 01:59:01 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 01:59:01 [INFO] Epoch 13/50 | Train Loss: 0.982192 | Val Loss: 1.212700 | LR: 1.0e-03
+2025-04-07 01:59:41 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 01:59:41 [INFO] Epoch 14/50 | Train Loss: 0.982372 | Val Loss: 1.214152 | LR: 1.0e-03
+2025-04-07 02:00:20 [INFO]    -> New best validation model saved.
+2025-04-07 02:00:20 [INFO] Epoch 15/50 | Train Loss: 0.979019 | Val Loss: 1.212349 | LR: 1.0e-03
+2025-04-07 02:01:00 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:01:00 [INFO] Epoch 16/50 | Train Loss: 0.983728 | Val Loss: 1.212611 | LR: 1.0e-03
+2025-04-07 02:01:40 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:01:40 [INFO] Epoch 17/50 | Train Loss: 0.983730 | Val Loss: 1.212498 | LR: 1.0e-03
+2025-04-07 02:02:19 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:02:19 [INFO] Epoch 18/50 | Train Loss: 0.977061 | Val Loss: 1.212775 | LR: 1.0e-03
+2025-04-07 02:02:59 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:02:59 [INFO] Epoch 19/50 | Train Loss: 0.982073 | Val Loss: 1.212841 | LR: 1.0e-03
+2025-04-07 02:03:39 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:03:39 [INFO] Epoch 20/50 | Train Loss: 0.984966 | Val Loss: 1.213010 | LR: 1.0e-03
+2025-04-07 02:04:18 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:04:18 [INFO] Epoch 21/50 | Train Loss: 0.976986 | Val Loss: 1.217375 | LR: 1.0e-03
+2025-04-07 02:04:58 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:04:58 [INFO] Epoch 22/50 | Train Loss: 0.979939 | Val Loss: 1.214833 | LR: 1.0e-03
+2025-04-07 02:05:37 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:05:37 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:05:37 [INFO] Training complete. Best Validation Loss: 1.212349
+2025-04-07 02:05:37 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_12\VanillaTransformer_comb_12_loss_curve.png
+2025-04-07 02:05:37 [INFO] Comb 12 finished. Best Val Loss: 1.212349
+2025-04-07 02:05:37 [INFO]    -> New overall best model saved. Loss: 1.212349
+2025-04-07 02:05:37 [INFO] Time for comb 12: 912.96s.
+2025-04-07 02:05:37 [INFO] 
+--- Combination 13/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 02:05:37 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:05:37 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:05:37 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_13
+2025-04-07 02:05:37 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_13\VanillaTransformer_comb_13_best_val.pth
+2025-04-07 02:05:45 [INFO]    -> New best validation model saved.
+2025-04-07 02:05:45 [INFO] Epoch 1/50 | Train Loss: 1.256923 | Val Loss: 1.227626 | LR: 1.0e-03
+2025-04-07 02:05:53 [INFO]    -> New best validation model saved.
+2025-04-07 02:05:53 [INFO] Epoch 2/50 | Train Loss: 1.011124 | Val Loss: 1.216834 | LR: 1.0e-03
+2025-04-07 02:06:00 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:06:00 [INFO] Epoch 3/50 | Train Loss: 1.003808 | Val Loss: 1.220028 | LR: 1.0e-03
+2025-04-07 02:06:08 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:06:08 [INFO] Epoch 4/50 | Train Loss: 0.999920 | Val Loss: 1.220335 | LR: 1.0e-03
+2025-04-07 02:06:15 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:06:15 [INFO] Epoch 5/50 | Train Loss: 0.989765 | Val Loss: 1.219938 | LR: 1.0e-03
+2025-04-07 02:06:23 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:06:23 [INFO] Epoch 6/50 | Train Loss: 0.981441 | Val Loss: 1.216962 | LR: 1.0e-03
+2025-04-07 02:06:30 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:06:30 [INFO] Epoch 7/50 | Train Loss: 0.986636 | Val Loss: 1.226726 | LR: 1.0e-03
+2025-04-07 02:06:38 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:06:38 [INFO] Epoch 8/50 | Train Loss: 0.985950 | Val Loss: 1.220592 | LR: 1.0e-03
+2025-04-07 02:06:46 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:06:46 [INFO] Epoch 9/50 | Train Loss: 0.981707 | Val Loss: 1.218031 | LR: 1.0e-03
+2025-04-07 02:06:53 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:06:53 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:06:53 [INFO] Training complete. Best Validation Loss: 1.216834
+2025-04-07 02:06:53 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_13\VanillaTransformer_comb_13_loss_curve.png
+2025-04-07 02:06:53 [INFO] Comb 13 finished. Best Val Loss: 1.216834
+2025-04-07 02:06:53 [INFO] Time for comb 13: 75.87s.
+2025-04-07 02:06:53 [INFO] 
+--- Combination 14/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 02:06:53 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:06:53 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:06:53 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_14
+2025-04-07 02:06:53 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_14\VanillaTransformer_comb_14_best_val.pth
+2025-04-07 02:07:08 [INFO]    -> New best validation model saved.
+2025-04-07 02:07:08 [INFO] Epoch 1/50 | Train Loss: 1.044877 | Val Loss: 1.225788 | LR: 1.0e-03
+2025-04-07 02:07:22 [INFO]    -> New best validation model saved.
+2025-04-07 02:07:22 [INFO] Epoch 2/50 | Train Loss: 1.005452 | Val Loss: 1.214453 | LR: 1.0e-03
+2025-04-07 02:07:37 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:07:37 [INFO] Epoch 3/50 | Train Loss: 0.985687 | Val Loss: 1.220051 | LR: 1.0e-03
+2025-04-07 02:07:51 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:07:51 [INFO] Epoch 4/50 | Train Loss: 0.988003 | Val Loss: 1.221020 | LR: 1.0e-03
+2025-04-07 02:08:06 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:08:06 [INFO] Epoch 5/50 | Train Loss: 0.986083 | Val Loss: 1.229548 | LR: 1.0e-03
+2025-04-07 02:08:21 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:08:21 [INFO] Epoch 6/50 | Train Loss: 0.988092 | Val Loss: 1.215710 | LR: 1.0e-03
+2025-04-07 02:08:35 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:08:35 [INFO] Epoch 7/50 | Train Loss: 0.982512 | Val Loss: 1.218626 | LR: 1.0e-03
+2025-04-07 02:08:50 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:08:50 [INFO] Epoch 8/50 | Train Loss: 0.979247 | Val Loss: 1.216501 | LR: 1.0e-03
+2025-04-07 02:09:04 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:09:04 [INFO] Epoch 9/50 | Train Loss: 0.983124 | Val Loss: 1.217878 | LR: 1.0e-03
+2025-04-07 02:09:19 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:09:19 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:09:19 [INFO] Training complete. Best Validation Loss: 1.214453
+2025-04-07 02:09:19 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_14\VanillaTransformer_comb_14_loss_curve.png
+2025-04-07 02:09:19 [INFO] Comb 14 finished. Best Val Loss: 1.214453
+2025-04-07 02:09:19 [INFO] Time for comb 14: 145.66s.
+2025-04-07 02:09:19 [INFO] 
+--- Combination 15/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 02:09:19 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:09:19 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:09:19 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_15
+2025-04-07 02:09:19 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_15\VanillaTransformer_comb_15_best_val.pth
+2025-04-07 02:09:40 [INFO]    -> New best validation model saved.
+2025-04-07 02:09:40 [INFO] Epoch 1/50 | Train Loss: 1.099437 | Val Loss: 1.218179 | LR: 1.0e-03
+2025-04-07 02:10:02 [INFO]    -> New best validation model saved.
+2025-04-07 02:10:02 [INFO] Epoch 2/50 | Train Loss: 1.008751 | Val Loss: 1.217401 | LR: 1.0e-03
+2025-04-07 02:10:23 [INFO]    -> New best validation model saved.
+2025-04-07 02:10:23 [INFO] Epoch 3/50 | Train Loss: 0.987062 | Val Loss: 1.215551 | LR: 1.0e-03
+2025-04-07 02:10:45 [INFO]    -> New best validation model saved.
+2025-04-07 02:10:45 [INFO] Epoch 4/50 | Train Loss: 0.981946 | Val Loss: 1.214911 | LR: 1.0e-03
+2025-04-07 02:11:07 [INFO]    -> New best validation model saved.
+2025-04-07 02:11:07 [INFO] Epoch 5/50 | Train Loss: 0.969177 | Val Loss: 1.214419 | LR: 1.0e-03
+2025-04-07 02:11:28 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:11:28 [INFO] Epoch 6/50 | Train Loss: 0.982336 | Val Loss: 1.214477 | LR: 1.0e-03
+2025-04-07 02:11:50 [INFO]    -> New best validation model saved.
+2025-04-07 02:11:50 [INFO] Epoch 7/50 | Train Loss: 0.984737 | Val Loss: 1.213700 | LR: 1.0e-03
+2025-04-07 02:12:11 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:12:11 [INFO] Epoch 8/50 | Train Loss: 0.982121 | Val Loss: 1.217745 | LR: 1.0e-03
+2025-04-07 02:12:33 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:12:33 [INFO] Epoch 9/50 | Train Loss: 0.983060 | Val Loss: 1.223010 | LR: 1.0e-03
+2025-04-07 02:12:54 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:12:54 [INFO] Epoch 10/50 | Train Loss: 0.981699 | Val Loss: 1.228193 | LR: 1.0e-03
+2025-04-07 02:13:16 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:13:16 [INFO] Epoch 11/50 | Train Loss: 0.984233 | Val Loss: 1.220607 | LR: 1.0e-03
+2025-04-07 02:13:37 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:13:37 [INFO] Epoch 12/50 | Train Loss: 0.984520 | Val Loss: 1.214917 | LR: 1.0e-03
+2025-04-07 02:13:59 [INFO]    -> New best validation model saved.
+2025-04-07 02:13:59 [INFO] Epoch 13/50 | Train Loss: 0.977634 | Val Loss: 1.213616 | LR: 1.0e-03
+2025-04-07 02:14:20 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:14:20 [INFO] Epoch 14/50 | Train Loss: 0.970282 | Val Loss: 1.216967 | LR: 1.0e-03
+2025-04-07 02:14:42 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:14:42 [INFO] Epoch 15/50 | Train Loss: 0.980882 | Val Loss: 1.219890 | LR: 1.0e-03
+2025-04-07 02:15:03 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:15:03 [INFO] Epoch 16/50 | Train Loss: 0.962769 | Val Loss: 1.220844 | LR: 1.0e-03
+2025-04-07 02:15:25 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:15:25 [INFO] Epoch 17/50 | Train Loss: 0.979694 | Val Loss: 1.213743 | LR: 1.0e-03
+2025-04-07 02:15:46 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:15:46 [INFO] Epoch 18/50 | Train Loss: 0.978265 | Val Loss: 1.214499 | LR: 1.0e-03
+2025-04-07 02:16:08 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:16:08 [INFO] Epoch 19/50 | Train Loss: 0.977084 | Val Loss: 1.216071 | LR: 1.0e-04
+2025-04-07 02:16:29 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:16:29 [INFO] Epoch 20/50 | Train Loss: 0.971643 | Val Loss: 1.216831 | LR: 1.0e-04
+2025-04-07 02:16:51 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:16:51 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:16:51 [INFO] Training complete. Best Validation Loss: 1.213616
+2025-04-07 02:16:51 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_15\VanillaTransformer_comb_15_loss_curve.png
+2025-04-07 02:16:51 [INFO] Comb 15 finished. Best Val Loss: 1.213616
+2025-04-07 02:16:51 [INFO] Time for comb 15: 452.23s.
+2025-04-07 02:16:51 [INFO] 
+--- Combination 16/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 02:16:51 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:16:51 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:16:51 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_16
+2025-04-07 02:16:51 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_16\VanillaTransformer_comb_16_best_val.pth
+2025-04-07 02:17:06 [INFO]    -> New best validation model saved.
+2025-04-07 02:17:06 [INFO] Epoch 1/50 | Train Loss: 1.087727 | Val Loss: 1.220019 | LR: 1.0e-03
+2025-04-07 02:17:21 [INFO]    -> New best validation model saved.
+2025-04-07 02:17:21 [INFO] Epoch 2/50 | Train Loss: 1.005609 | Val Loss: 1.216092 | LR: 1.0e-03
+2025-04-07 02:17:36 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:17:36 [INFO] Epoch 3/50 | Train Loss: 0.987041 | Val Loss: 1.220677 | LR: 1.0e-03
+2025-04-07 02:17:51 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:17:51 [INFO] Epoch 4/50 | Train Loss: 0.986796 | Val Loss: 1.229204 | LR: 1.0e-03
+2025-04-07 02:18:06 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:18:06 [INFO] Epoch 5/50 | Train Loss: 0.984901 | Val Loss: 1.218665 | LR: 1.0e-03
+2025-04-07 02:18:21 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:18:21 [INFO] Epoch 6/50 | Train Loss: 0.985420 | Val Loss: 1.217565 | LR: 1.0e-03
+2025-04-07 02:18:37 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:18:37 [INFO] Epoch 7/50 | Train Loss: 0.981604 | Val Loss: 1.217181 | LR: 1.0e-03
+2025-04-07 02:18:52 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:18:52 [INFO] Epoch 8/50 | Train Loss: 0.982714 | Val Loss: 1.223698 | LR: 1.0e-03
+2025-04-07 02:19:07 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:19:07 [INFO] Epoch 9/50 | Train Loss: 0.984325 | Val Loss: 1.219281 | LR: 1.0e-03
+2025-04-07 02:19:22 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:19:22 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:19:22 [INFO] Training complete. Best Validation Loss: 1.216092
+2025-04-07 02:19:22 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_16\VanillaTransformer_comb_16_loss_curve.png
+2025-04-07 02:19:22 [INFO] Comb 16 finished. Best Val Loss: 1.216092
+2025-04-07 02:19:22 [INFO] Time for comb 16: 150.66s.
+2025-04-07 02:19:22 [INFO] 
+--- Combination 17/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 02:19:22 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:19:22 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:19:22 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_17
+2025-04-07 02:19:22 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_17\VanillaTransformer_comb_17_best_val.pth
+2025-04-07 02:19:51 [INFO]    -> New best validation model saved.
+2025-04-07 02:19:51 [INFO] Epoch 1/50 | Train Loss: 1.151080 | Val Loss: 1.218386 | LR: 1.0e-03
+2025-04-07 02:20:20 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:20:20 [INFO] Epoch 2/50 | Train Loss: 1.008067 | Val Loss: 1.219534 | LR: 1.0e-03
+2025-04-07 02:20:49 [INFO]    -> New best validation model saved.
+2025-04-07 02:20:49 [INFO] Epoch 3/50 | Train Loss: 0.980643 | Val Loss: 1.214668 | LR: 1.0e-03
+2025-04-07 02:21:18 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:21:18 [INFO] Epoch 4/50 | Train Loss: 0.995127 | Val Loss: 1.215316 | LR: 1.0e-03
+2025-04-07 02:21:47 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:21:47 [INFO] Epoch 5/50 | Train Loss: 0.990790 | Val Loss: 1.228183 | LR: 1.0e-03
+2025-04-07 02:22:16 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:22:16 [INFO] Epoch 6/50 | Train Loss: 0.997954 | Val Loss: 1.215658 | LR: 1.0e-03
+2025-04-07 02:22:45 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:22:45 [INFO] Epoch 7/50 | Train Loss: 0.984292 | Val Loss: 1.228510 | LR: 1.0e-03
+2025-04-07 02:23:14 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:23:14 [INFO] Epoch 8/50 | Train Loss: 0.982164 | Val Loss: 1.233911 | LR: 1.0e-03
+2025-04-07 02:23:43 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:23:43 [INFO] Epoch 9/50 | Train Loss: 0.990780 | Val Loss: 1.227814 | LR: 1.0e-03
+2025-04-07 02:24:12 [INFO]    -> New best validation model saved.
+2025-04-07 02:24:12 [INFO] Epoch 10/50 | Train Loss: 0.984454 | Val Loss: 1.213289 | LR: 1.0e-03
+2025-04-07 02:24:41 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:24:41 [INFO] Epoch 11/50 | Train Loss: 0.984602 | Val Loss: 1.214218 | LR: 1.0e-03
+2025-04-07 02:25:10 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:25:10 [INFO] Epoch 12/50 | Train Loss: 0.982878 | Val Loss: 1.220247 | LR: 1.0e-03
+2025-04-07 02:25:39 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:25:39 [INFO] Epoch 13/50 | Train Loss: 0.979587 | Val Loss: 1.219379 | LR: 1.0e-03
+2025-04-07 02:26:08 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:26:08 [INFO] Epoch 14/50 | Train Loss: 0.986370 | Val Loss: 1.223208 | LR: 1.0e-03
+2025-04-07 02:26:37 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:26:37 [INFO] Epoch 15/50 | Train Loss: 0.981931 | Val Loss: 1.213430 | LR: 1.0e-03
+2025-04-07 02:27:06 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:27:06 [INFO] Epoch 16/50 | Train Loss: 0.983294 | Val Loss: 1.213685 | LR: 1.0e-03
+2025-04-07 02:27:35 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:27:35 [INFO] Epoch 17/50 | Train Loss: 0.979242 | Val Loss: 1.213638 | LR: 1.0e-03
+2025-04-07 02:28:04 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:28:04 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:28:04 [INFO] Training complete. Best Validation Loss: 1.213289
+2025-04-07 02:28:04 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_17\VanillaTransformer_comb_17_loss_curve.png
+2025-04-07 02:28:04 [INFO] Comb 17 finished. Best Val Loss: 1.213289
+2025-04-07 02:28:04 [INFO] Time for comb 17: 522.17s.
+2025-04-07 02:28:04 [INFO] 
+--- Combination 18/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 02:28:04 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:28:04 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:28:04 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_18
+2025-04-07 02:28:04 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_18\VanillaTransformer_comb_18_best_val.pth
+2025-04-07 02:28:47 [INFO]    -> New best validation model saved.
+2025-04-07 02:28:47 [INFO] Epoch 1/50 | Train Loss: 1.195129 | Val Loss: 1.217929 | LR: 1.0e-03
+2025-04-07 02:29:30 [INFO]    -> New best validation model saved.
+2025-04-07 02:29:30 [INFO] Epoch 2/50 | Train Loss: 1.014244 | Val Loss: 1.213639 | LR: 1.0e-03
+2025-04-07 02:30:13 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:30:13 [INFO] Epoch 3/50 | Train Loss: 0.991174 | Val Loss: 1.214874 | LR: 1.0e-03
+2025-04-07 02:30:56 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:30:56 [INFO] Epoch 4/50 | Train Loss: 0.994050 | Val Loss: 1.214753 | LR: 1.0e-03
+2025-04-07 02:31:39 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:31:39 [INFO] Epoch 5/50 | Train Loss: 0.981384 | Val Loss: 1.213885 | LR: 1.0e-03
+2025-04-07 02:32:22 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:32:22 [INFO] Epoch 6/50 | Train Loss: 0.983156 | Val Loss: 1.225591 | LR: 1.0e-03
+2025-04-07 02:33:05 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:33:05 [INFO] Epoch 7/50 | Train Loss: 0.978408 | Val Loss: 1.217526 | LR: 1.0e-03
+2025-04-07 02:33:48 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:33:48 [INFO] Epoch 8/50 | Train Loss: 0.982369 | Val Loss: 1.216012 | LR: 1.0e-03
+2025-04-07 02:34:30 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:34:30 [INFO] Epoch 9/50 | Train Loss: 0.985147 | Val Loss: 1.215564 | LR: 1.0e-03
+2025-04-07 02:35:13 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:35:13 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:35:13 [INFO] Training complete. Best Validation Loss: 1.213639
+2025-04-07 02:35:14 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_18\VanillaTransformer_comb_18_loss_curve.png
+2025-04-07 02:35:14 [INFO] Comb 18 finished. Best Val Loss: 1.213639
+2025-04-07 02:35:14 [INFO] Time for comb 18: 429.58s.
+2025-04-07 02:35:14 [INFO] 
+--- Combination 19/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 02:35:14 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:35:14 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:35:14 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_19
+2025-04-07 02:35:14 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_19\VanillaTransformer_comb_19_best_val.pth
+2025-04-07 02:35:21 [INFO]    -> New best validation model saved.
+2025-04-07 02:35:21 [INFO] Epoch 1/50 | Train Loss: 1.089670 | Val Loss: 1.221489 | LR: 1.0e-03
+2025-04-07 02:35:29 [INFO]    -> New best validation model saved.
+2025-04-07 02:35:29 [INFO] Epoch 2/50 | Train Loss: 1.014100 | Val Loss: 1.216145 | LR: 1.0e-03
+2025-04-07 02:35:36 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:35:36 [INFO] Epoch 3/50 | Train Loss: 0.998550 | Val Loss: 1.219160 | LR: 1.0e-03
+2025-04-07 02:35:44 [INFO]    -> New best validation model saved.
+2025-04-07 02:35:44 [INFO] Epoch 4/50 | Train Loss: 0.991501 | Val Loss: 1.216073 | LR: 1.0e-03
+2025-04-07 02:35:51 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:35:51 [INFO] Epoch 5/50 | Train Loss: 0.985432 | Val Loss: 1.232987 | LR: 1.0e-03
+2025-04-07 02:35:59 [INFO]    -> New best validation model saved.
+2025-04-07 02:35:59 [INFO] Epoch 6/50 | Train Loss: 0.986650 | Val Loss: 1.214738 | LR: 1.0e-03
+2025-04-07 02:36:07 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:36:07 [INFO] Epoch 7/50 | Train Loss: 0.972158 | Val Loss: 1.217345 | LR: 1.0e-03
+2025-04-07 02:36:14 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:36:14 [INFO] Epoch 8/50 | Train Loss: 0.980501 | Val Loss: 1.227495 | LR: 1.0e-03
+2025-04-07 02:36:22 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:36:22 [INFO] Epoch 9/50 | Train Loss: 0.979430 | Val Loss: 1.217786 | LR: 1.0e-03
+2025-04-07 02:36:29 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:36:29 [INFO] Epoch 10/50 | Train Loss: 0.961911 | Val Loss: 1.217556 | LR: 1.0e-03
+2025-04-07 02:36:37 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:36:37 [INFO] Epoch 11/50 | Train Loss: 0.977585 | Val Loss: 1.224168 | LR: 1.0e-03
+2025-04-07 02:36:44 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:36:44 [INFO] Epoch 12/50 | Train Loss: 0.979401 | Val Loss: 1.221028 | LR: 1.0e-03
+2025-04-07 02:36:52 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:36:52 [INFO] Epoch 13/50 | Train Loss: 0.977371 | Val Loss: 1.221563 | LR: 1.0e-03
+2025-04-07 02:37:00 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:37:00 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:37:00 [INFO] Training complete. Best Validation Loss: 1.214738
+2025-04-07 02:37:00 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_19\VanillaTransformer_comb_19_loss_curve.png
+2025-04-07 02:37:00 [INFO] Comb 19 finished. Best Val Loss: 1.214738
+2025-04-07 02:37:00 [INFO] Time for comb 19: 106.18s.
+2025-04-07 02:37:00 [INFO] 
+--- Combination 20/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 02:37:00 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:37:00 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:37:00 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_20
+2025-04-07 02:37:00 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_20\VanillaTransformer_comb_20_best_val.pth
+2025-04-07 02:37:14 [INFO]    -> New best validation model saved.
+2025-04-07 02:37:14 [INFO] Epoch 1/50 | Train Loss: 1.370988 | Val Loss: 1.241686 | LR: 1.0e-03
+2025-04-07 02:37:29 [INFO]    -> New best validation model saved.
+2025-04-07 02:37:29 [INFO] Epoch 2/50 | Train Loss: 1.032210 | Val Loss: 1.223368 | LR: 1.0e-03
+2025-04-07 02:37:43 [INFO]    -> New best validation model saved.
+2025-04-07 02:37:43 [INFO] Epoch 3/50 | Train Loss: 1.008456 | Val Loss: 1.220117 | LR: 1.0e-03
+2025-04-07 02:37:58 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:37:58 [INFO] Epoch 4/50 | Train Loss: 0.972408 | Val Loss: 1.221839 | LR: 1.0e-03
+2025-04-07 02:38:12 [INFO]    -> New best validation model saved.
+2025-04-07 02:38:12 [INFO] Epoch 5/50 | Train Loss: 0.991153 | Val Loss: 1.216195 | LR: 1.0e-03
+2025-04-07 02:38:27 [INFO]    -> New best validation model saved.
+2025-04-07 02:38:27 [INFO] Epoch 6/50 | Train Loss: 0.992336 | Val Loss: 1.214037 | LR: 1.0e-03
+2025-04-07 02:38:42 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:38:42 [INFO] Epoch 7/50 | Train Loss: 0.989707 | Val Loss: 1.224266 | LR: 1.0e-03
+2025-04-07 02:38:56 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:38:56 [INFO] Epoch 8/50 | Train Loss: 0.988291 | Val Loss: 1.216682 | LR: 1.0e-03
+2025-04-07 02:39:11 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:39:11 [INFO] Epoch 9/50 | Train Loss: 0.989169 | Val Loss: 1.218965 | LR: 1.0e-03
+2025-04-07 02:39:25 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:39:25 [INFO] Epoch 10/50 | Train Loss: 0.982090 | Val Loss: 1.218950 | LR: 1.0e-03
+2025-04-07 02:39:40 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:39:40 [INFO] Epoch 11/50 | Train Loss: 0.985534 | Val Loss: 1.215600 | LR: 1.0e-03
+2025-04-07 02:39:54 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:39:54 [INFO] Epoch 12/50 | Train Loss: 0.983878 | Val Loss: 1.221651 | LR: 1.0e-03
+2025-04-07 02:40:09 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:40:09 [INFO] Epoch 13/50 | Train Loss: 0.984180 | Val Loss: 1.215381 | LR: 1.0e-03
+2025-04-07 02:40:23 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:40:23 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:40:23 [INFO] Training complete. Best Validation Loss: 1.214037
+2025-04-07 02:40:24 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_20\VanillaTransformer_comb_20_loss_curve.png
+2025-04-07 02:40:24 [INFO] Comb 20 finished. Best Val Loss: 1.214037
+2025-04-07 02:40:24 [INFO] Time for comb 20: 203.91s.
+2025-04-07 02:40:24 [INFO] 
+--- Combination 21/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 02:40:24 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:40:24 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:40:24 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_21
+2025-04-07 02:40:24 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_21\VanillaTransformer_comb_21_best_val.pth
+2025-04-07 02:40:45 [INFO]    -> New best validation model saved.
+2025-04-07 02:40:45 [INFO] Epoch 1/50 | Train Loss: 1.136368 | Val Loss: 1.219650 | LR: 1.0e-03
+2025-04-07 02:41:07 [INFO]    -> New best validation model saved.
+2025-04-07 02:41:07 [INFO] Epoch 2/50 | Train Loss: 1.006196 | Val Loss: 1.218800 | LR: 1.0e-03
+2025-04-07 02:41:28 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:41:28 [INFO] Epoch 3/50 | Train Loss: 0.996523 | Val Loss: 1.220018 | LR: 1.0e-03
+2025-04-07 02:41:50 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:41:50 [INFO] Epoch 4/50 | Train Loss: 0.988419 | Val Loss: 1.236896 | LR: 1.0e-03
+2025-04-07 02:42:11 [INFO]    -> New best validation model saved.
+2025-04-07 02:42:11 [INFO] Epoch 5/50 | Train Loss: 0.987138 | Val Loss: 1.213719 | LR: 1.0e-03
+2025-04-07 02:42:33 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:42:33 [INFO] Epoch 6/50 | Train Loss: 0.986747 | Val Loss: 1.216388 | LR: 1.0e-03
+2025-04-07 02:42:54 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:42:54 [INFO] Epoch 7/50 | Train Loss: 0.985228 | Val Loss: 1.218801 | LR: 1.0e-03
+2025-04-07 02:43:16 [INFO]    -> New best validation model saved.
+2025-04-07 02:43:16 [INFO] Epoch 8/50 | Train Loss: 0.983023 | Val Loss: 1.213302 | LR: 1.0e-03
+2025-04-07 02:43:37 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:43:37 [INFO] Epoch 9/50 | Train Loss: 0.980836 | Val Loss: 1.224140 | LR: 1.0e-03
+2025-04-07 02:43:59 [INFO]    -> New best validation model saved.
+2025-04-07 02:43:59 [INFO] Epoch 10/50 | Train Loss: 0.985399 | Val Loss: 1.212841 | LR: 1.0e-03
+2025-04-07 02:44:20 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:44:20 [INFO] Epoch 11/50 | Train Loss: 0.979270 | Val Loss: 1.214475 | LR: 1.0e-03
+2025-04-07 02:44:42 [INFO]    -> New best validation model saved.
+2025-04-07 02:44:42 [INFO] Epoch 12/50 | Train Loss: 0.984467 | Val Loss: 1.212768 | LR: 1.0e-03
+2025-04-07 02:45:04 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:45:04 [INFO] Epoch 13/50 | Train Loss: 0.980924 | Val Loss: 1.212960 | LR: 1.0e-03
+2025-04-07 02:45:25 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:45:25 [INFO] Epoch 14/50 | Train Loss: 0.982584 | Val Loss: 1.216414 | LR: 1.0e-03
+2025-04-07 02:45:47 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:45:47 [INFO] Epoch 15/50 | Train Loss: 0.981744 | Val Loss: 1.214801 | LR: 1.0e-03
+2025-04-07 02:46:08 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:46:08 [INFO] Epoch 16/50 | Train Loss: 0.981505 | Val Loss: 1.218110 | LR: 1.0e-03
+2025-04-07 02:46:30 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:46:30 [INFO] Epoch 17/50 | Train Loss: 0.979246 | Val Loss: 1.213101 | LR: 1.0e-03
+2025-04-07 02:46:51 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:46:51 [INFO] Epoch 18/50 | Train Loss: 0.980643 | Val Loss: 1.219200 | LR: 1.0e-03
+2025-04-07 02:47:13 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:47:13 [INFO] Epoch 19/50 | Train Loss: 0.980669 | Val Loss: 1.213666 | LR: 1.0e-03
+2025-04-07 02:47:34 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:47:34 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:47:34 [INFO] Training complete. Best Validation Loss: 1.212768
+2025-04-07 02:47:34 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_21\VanillaTransformer_comb_21_loss_curve.png
+2025-04-07 02:47:34 [INFO] Comb 21 finished. Best Val Loss: 1.212768
+2025-04-07 02:47:34 [INFO] Time for comb 21: 430.70s.
+2025-04-07 02:47:34 [INFO] 
+--- Combination 22/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 02:47:34 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:47:34 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:47:34 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_22
+2025-04-07 02:47:34 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_22\VanillaTransformer_comb_22_best_val.pth
+2025-04-07 02:47:49 [INFO]    -> New best validation model saved.
+2025-04-07 02:47:49 [INFO] Epoch 1/50 | Train Loss: 1.124669 | Val Loss: 1.219527 | LR: 1.0e-03
+2025-04-07 02:48:04 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:48:04 [INFO] Epoch 2/50 | Train Loss: 1.010934 | Val Loss: 1.225371 | LR: 1.0e-03
+2025-04-07 02:48:19 [INFO]    -> New best validation model saved.
+2025-04-07 02:48:19 [INFO] Epoch 3/50 | Train Loss: 1.000609 | Val Loss: 1.215696 | LR: 1.0e-03
+2025-04-07 02:48:35 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:48:35 [INFO] Epoch 4/50 | Train Loss: 0.986864 | Val Loss: 1.216360 | LR: 1.0e-03
+2025-04-07 02:48:50 [INFO]    -> New best validation model saved.
+2025-04-07 02:48:50 [INFO] Epoch 5/50 | Train Loss: 0.963725 | Val Loss: 1.215088 | LR: 1.0e-03
+2025-04-07 02:49:05 [INFO]    -> New best validation model saved.
+2025-04-07 02:49:05 [INFO] Epoch 6/50 | Train Loss: 0.975549 | Val Loss: 1.213396 | LR: 1.0e-03
+2025-04-07 02:49:20 [INFO]    -> New best validation model saved.
+2025-04-07 02:49:20 [INFO] Epoch 7/50 | Train Loss: 0.983842 | Val Loss: 1.212894 | LR: 1.0e-03
+2025-04-07 02:49:35 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:49:35 [INFO] Epoch 8/50 | Train Loss: 0.982103 | Val Loss: 1.213700 | LR: 1.0e-03
+2025-04-07 02:49:50 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:49:50 [INFO] Epoch 9/50 | Train Loss: 0.984036 | Val Loss: 1.215211 | LR: 1.0e-03
+2025-04-07 02:50:05 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:50:05 [INFO] Epoch 10/50 | Train Loss: 0.980265 | Val Loss: 1.213407 | LR: 1.0e-03
+2025-04-07 02:50:20 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:50:20 [INFO] Epoch 11/50 | Train Loss: 0.981573 | Val Loss: 1.219607 | LR: 1.0e-03
+2025-04-07 02:50:35 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:50:35 [INFO] Epoch 12/50 | Train Loss: 0.984396 | Val Loss: 1.213197 | LR: 1.0e-03
+2025-04-07 02:50:50 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:50:50 [INFO] Epoch 13/50 | Train Loss: 0.981796 | Val Loss: 1.213287 | LR: 1.0e-03
+2025-04-07 02:51:05 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:51:05 [INFO] Epoch 14/50 | Train Loss: 0.983745 | Val Loss: 1.219717 | LR: 1.0e-03
+2025-04-07 02:51:20 [INFO]    -> New best validation model saved.
+2025-04-07 02:51:20 [INFO] Epoch 15/50 | Train Loss: 0.980507 | Val Loss: 1.212765 | LR: 1.0e-03
+2025-04-07 02:51:35 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:51:35 [INFO] Epoch 16/50 | Train Loss: 0.980356 | Val Loss: 1.213449 | LR: 1.0e-03
+2025-04-07 02:51:50 [INFO]    -> New best validation model saved.
+2025-04-07 02:51:50 [INFO] Epoch 17/50 | Train Loss: 0.980760 | Val Loss: 1.212511 | LR: 1.0e-03
+2025-04-07 02:52:05 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:52:05 [INFO] Epoch 18/50 | Train Loss: 0.984601 | Val Loss: 1.229545 | LR: 1.0e-03
+2025-04-07 02:52:20 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:52:20 [INFO] Epoch 19/50 | Train Loss: 0.981874 | Val Loss: 1.213941 | LR: 1.0e-03
+2025-04-07 02:52:35 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:52:35 [INFO] Epoch 20/50 | Train Loss: 0.980478 | Val Loss: 1.213516 | LR: 1.0e-03
+2025-04-07 02:52:50 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:52:50 [INFO] Epoch 21/50 | Train Loss: 0.978589 | Val Loss: 1.212546 | LR: 1.0e-03
+2025-04-07 02:53:06 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:53:06 [INFO] Epoch 22/50 | Train Loss: 0.980019 | Val Loss: 1.215820 | LR: 1.0e-03
+2025-04-07 02:53:21 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:53:21 [INFO] Epoch 23/50 | Train Loss: 0.979047 | Val Loss: 1.214560 | LR: 1.0e-03
+2025-04-07 02:53:36 [INFO]    -> New best validation model saved.
+2025-04-07 02:53:36 [INFO] Epoch 24/50 | Train Loss: 0.961115 | Val Loss: 1.212408 | LR: 1.0e-03
+2025-04-07 02:53:51 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:53:51 [INFO] Epoch 25/50 | Train Loss: 0.978908 | Val Loss: 1.213122 | LR: 1.0e-03
+2025-04-07 02:54:06 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:54:06 [INFO] Epoch 26/50 | Train Loss: 0.980640 | Val Loss: 1.212643 | LR: 1.0e-03
+2025-04-07 02:54:21 [INFO]    -> New best validation model saved.
+2025-04-07 02:54:21 [INFO] Epoch 27/50 | Train Loss: 0.980248 | Val Loss: 1.212325 | LR: 1.0e-03
+2025-04-07 02:54:36 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:54:36 [INFO] Epoch 28/50 | Train Loss: 0.972907 | Val Loss: 1.214120 | LR: 1.0e-03
+2025-04-07 02:54:51 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:54:51 [INFO] Epoch 29/50 | Train Loss: 0.979315 | Val Loss: 1.212486 | LR: 1.0e-03
+2025-04-07 02:55:06 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 02:55:06 [INFO] Epoch 30/50 | Train Loss: 0.976105 | Val Loss: 1.213048 | LR: 1.0e-03
+2025-04-07 02:55:21 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 02:55:21 [INFO] Epoch 31/50 | Train Loss: 0.976785 | Val Loss: 1.213526 | LR: 1.0e-03
+2025-04-07 02:55:36 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 02:55:36 [INFO] Epoch 32/50 | Train Loss: 0.978368 | Val Loss: 1.213339 | LR: 1.0e-03
+2025-04-07 02:55:51 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 02:55:51 [INFO] Epoch 33/50 | Train Loss: 0.980437 | Val Loss: 1.214934 | LR: 1.0e-03
+2025-04-07 02:56:06 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 02:56:06 [INFO] Epoch 34/50 | Train Loss: 0.980914 | Val Loss: 1.212478 | LR: 1.0e-03
+2025-04-07 02:56:21 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 02:56:21 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 02:56:21 [INFO] Training complete. Best Validation Loss: 1.212325
+2025-04-07 02:56:21 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_22\VanillaTransformer_comb_22_loss_curve.png
+2025-04-07 02:56:21 [INFO] Comb 22 finished. Best Val Loss: 1.212325
+2025-04-07 02:56:21 [INFO]    -> New overall best model saved. Loss: 1.212325
+2025-04-07 02:56:21 [INFO] Time for comb 22: 527.03s.
+2025-04-07 02:56:21 [INFO] 
+--- Combination 23/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 02:56:21 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 02:56:21 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 02:56:21 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_23
+2025-04-07 02:56:21 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_23\VanillaTransformer_comb_23_best_val.pth
+2025-04-07 02:56:50 [INFO]    -> New best validation model saved.
+2025-04-07 02:56:50 [INFO] Epoch 1/50 | Train Loss: 1.125079 | Val Loss: 1.221680 | LR: 1.0e-03
+2025-04-07 02:57:19 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:57:19 [INFO] Epoch 2/50 | Train Loss: 1.012307 | Val Loss: 1.227539 | LR: 1.0e-03
+2025-04-07 02:57:48 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:57:48 [INFO] Epoch 3/50 | Train Loss: 0.991156 | Val Loss: 1.232290 | LR: 1.0e-03
+2025-04-07 02:58:17 [INFO]    -> New best validation model saved.
+2025-04-07 02:58:17 [INFO] Epoch 4/50 | Train Loss: 0.988124 | Val Loss: 1.218263 | LR: 1.0e-03
+2025-04-07 02:58:46 [INFO]    -> New best validation model saved.
+2025-04-07 02:58:46 [INFO] Epoch 5/50 | Train Loss: 0.970317 | Val Loss: 1.214258 | LR: 1.0e-03
+2025-04-07 02:59:16 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 02:59:16 [INFO] Epoch 6/50 | Train Loss: 0.983342 | Val Loss: 1.219973 | LR: 1.0e-03
+2025-04-07 02:59:45 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 02:59:45 [INFO] Epoch 7/50 | Train Loss: 0.982969 | Val Loss: 1.216877 | LR: 1.0e-03
+2025-04-07 03:00:14 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:00:14 [INFO] Epoch 8/50 | Train Loss: 0.973902 | Val Loss: 1.218656 | LR: 1.0e-03
+2025-04-07 03:00:43 [INFO]    -> New best validation model saved.
+2025-04-07 03:00:43 [INFO] Epoch 9/50 | Train Loss: 0.984125 | Val Loss: 1.213706 | LR: 1.0e-03
+2025-04-07 03:01:12 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:01:12 [INFO] Epoch 10/50 | Train Loss: 0.983676 | Val Loss: 1.217733 | LR: 1.0e-03
+2025-04-07 03:01:41 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:01:41 [INFO] Epoch 11/50 | Train Loss: 0.981043 | Val Loss: 1.214799 | LR: 1.0e-03
+2025-04-07 03:02:10 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:02:10 [INFO] Epoch 12/50 | Train Loss: 0.978205 | Val Loss: 1.220093 | LR: 1.0e-03
+2025-04-07 03:02:39 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:02:39 [INFO] Epoch 13/50 | Train Loss: 0.974951 | Val Loss: 1.220210 | LR: 1.0e-03
+2025-04-07 03:03:08 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:03:08 [INFO] Epoch 14/50 | Train Loss: 0.981556 | Val Loss: 1.216106 | LR: 1.0e-03
+2025-04-07 03:03:37 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:03:37 [INFO] Epoch 15/50 | Train Loss: 0.980358 | Val Loss: 1.225890 | LR: 1.0e-03
+2025-04-07 03:04:06 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:04:06 [INFO] Epoch 16/50 | Train Loss: 0.956856 | Val Loss: 1.220008 | LR: 1.0e-03
+2025-04-07 03:04:35 [INFO]    -> New best validation model saved.
+2025-04-07 03:04:35 [INFO] Epoch 17/50 | Train Loss: 0.981223 | Val Loss: 1.212272 | LR: 1.0e-03
+2025-04-07 03:05:04 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:05:04 [INFO] Epoch 18/50 | Train Loss: 0.980100 | Val Loss: 1.213907 | LR: 1.0e-03
+2025-04-07 03:05:33 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:05:33 [INFO] Epoch 19/50 | Train Loss: 0.981426 | Val Loss: 1.233380 | LR: 1.0e-03
+2025-04-07 03:06:02 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:06:02 [INFO] Epoch 20/50 | Train Loss: 0.976786 | Val Loss: 1.214268 | LR: 1.0e-03
+2025-04-07 03:06:31 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:06:31 [INFO] Epoch 21/50 | Train Loss: 0.980821 | Val Loss: 1.214261 | LR: 1.0e-03
+2025-04-07 03:07:00 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:07:00 [INFO] Epoch 22/50 | Train Loss: 0.981796 | Val Loss: 1.213480 | LR: 1.0e-03
+2025-04-07 03:07:29 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:07:29 [INFO] Epoch 23/50 | Train Loss: 0.973652 | Val Loss: 1.214919 | LR: 1.0e-03
+2025-04-07 03:07:58 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:07:58 [INFO] Epoch 24/50 | Train Loss: 0.980332 | Val Loss: 1.212454 | LR: 1.0e-03
+2025-04-07 03:08:27 [INFO]    -> New best validation model saved.
+2025-04-07 03:08:27 [INFO] Epoch 25/50 | Train Loss: 0.982044 | Val Loss: 1.212125 | LR: 1.0e-03
+2025-04-07 03:08:56 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:08:56 [INFO] Epoch 26/50 | Train Loss: 0.982226 | Val Loss: 1.213165 | LR: 1.0e-03
+2025-04-07 03:09:25 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:09:25 [INFO] Epoch 27/50 | Train Loss: 0.981113 | Val Loss: 1.221352 | LR: 1.0e-03
+2025-04-07 03:09:54 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:09:54 [INFO] Epoch 28/50 | Train Loss: 0.976977 | Val Loss: 1.213066 | LR: 1.0e-03
+2025-04-07 03:10:23 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:10:23 [INFO] Epoch 29/50 | Train Loss: 0.982484 | Val Loss: 1.221066 | LR: 1.0e-03
+2025-04-07 03:10:52 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:10:52 [INFO] Epoch 30/50 | Train Loss: 0.979897 | Val Loss: 1.212604 | LR: 1.0e-03
+2025-04-07 03:11:21 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:11:21 [INFO] Epoch 31/50 | Train Loss: 0.979114 | Val Loss: 1.212216 | LR: 1.0e-03
+2025-04-07 03:11:50 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:11:50 [INFO] Epoch 32/50 | Train Loss: 0.977723 | Val Loss: 1.214939 | LR: 1.0e-03
+2025-04-07 03:12:19 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:12:19 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:12:19 [INFO] Training complete. Best Validation Loss: 1.212125
+2025-04-07 03:12:19 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_23\VanillaTransformer_comb_23_loss_curve.png
+2025-04-07 03:12:19 [INFO] Comb 23 finished. Best Val Loss: 1.212125
+2025-04-07 03:12:19 [INFO]    -> New overall best model saved. Loss: 1.212125
+2025-04-07 03:12:19 [INFO] Time for comb 23: 957.65s.
+2025-04-07 03:12:19 [INFO] 
+--- Combination 24/48: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 03:12:19 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:12:19 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:12:19 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_24
+2025-04-07 03:12:19 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_24\VanillaTransformer_comb_24_best_val.pth
+2025-04-07 03:13:02 [INFO]    -> New best validation model saved.
+2025-04-07 03:13:02 [INFO] Epoch 1/50 | Train Loss: 1.283292 | Val Loss: 1.220486 | LR: 1.0e-03
+2025-04-07 03:13:45 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:13:45 [INFO] Epoch 2/50 | Train Loss: 1.020091 | Val Loss: 1.221227 | LR: 1.0e-03
+2025-04-07 03:14:28 [INFO]    -> New best validation model saved.
+2025-04-07 03:14:28 [INFO] Epoch 3/50 | Train Loss: 1.006576 | Val Loss: 1.218890 | LR: 1.0e-03
+2025-04-07 03:15:11 [INFO]    -> New best validation model saved.
+2025-04-07 03:15:11 [INFO] Epoch 4/50 | Train Loss: 0.997839 | Val Loss: 1.218019 | LR: 1.0e-03
+2025-04-07 03:15:54 [INFO]    -> New best validation model saved.
+2025-04-07 03:15:54 [INFO] Epoch 5/50 | Train Loss: 0.996362 | Val Loss: 1.216349 | LR: 1.0e-03
+2025-04-07 03:16:37 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:16:37 [INFO] Epoch 6/50 | Train Loss: 0.991372 | Val Loss: 1.235959 | LR: 1.0e-03
+2025-04-07 03:17:20 [INFO]    -> New best validation model saved.
+2025-04-07 03:17:20 [INFO] Epoch 7/50 | Train Loss: 0.990619 | Val Loss: 1.215989 | LR: 1.0e-03
+2025-04-07 03:18:03 [INFO]    -> New best validation model saved.
+2025-04-07 03:18:03 [INFO] Epoch 8/50 | Train Loss: 0.987037 | Val Loss: 1.214780 | LR: 1.0e-03
+2025-04-07 03:18:46 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:18:46 [INFO] Epoch 9/50 | Train Loss: 0.987044 | Val Loss: 1.217102 | LR: 1.0e-03
+2025-04-07 03:19:29 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:19:29 [INFO] Epoch 10/50 | Train Loss: 0.981909 | Val Loss: 1.218758 | LR: 1.0e-03
+2025-04-07 03:20:12 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:20:12 [INFO] Epoch 11/50 | Train Loss: 0.980836 | Val Loss: 1.227565 | LR: 1.0e-03
+2025-04-07 03:20:54 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:20:54 [INFO] Epoch 12/50 | Train Loss: 0.987858 | Val Loss: 1.255588 | LR: 1.0e-03
+2025-04-07 03:21:37 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:21:37 [INFO] Epoch 13/50 | Train Loss: 0.983240 | Val Loss: 1.217333 | LR: 1.0e-03
+2025-04-07 03:22:20 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:22:20 [INFO] Epoch 14/50 | Train Loss: 0.985959 | Val Loss: 1.217424 | LR: 1.0e-03
+2025-04-07 03:23:03 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:23:03 [INFO] Epoch 15/50 | Train Loss: 0.980026 | Val Loss: 1.219797 | LR: 1.0e-03
+2025-04-07 03:23:46 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:23:46 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:23:46 [INFO] Training complete. Best Validation Loss: 1.214780
+2025-04-07 03:23:47 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_24\VanillaTransformer_comb_24_loss_curve.png
+2025-04-07 03:23:47 [INFO] Comb 24 finished. Best Val Loss: 1.214780
+2025-04-07 03:23:47 [INFO] Time for comb 24: 687.56s.
+2025-04-07 03:23:47 [INFO] 
+--- Combination 25/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 03:23:47 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:23:47 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:23:47 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_25
+2025-04-07 03:23:47 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_25\VanillaTransformer_comb_25_best_val.pth
+2025-04-07 03:23:53 [INFO]    -> New best validation model saved.
+2025-04-07 03:23:53 [INFO] Epoch 1/50 | Train Loss: 1.221571 | Val Loss: 1.224969 | LR: 5.0e-04
+2025-04-07 03:23:59 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:23:59 [INFO] Epoch 2/50 | Train Loss: 1.057719 | Val Loss: 1.226129 | LR: 5.0e-04
+2025-04-07 03:24:05 [INFO]    -> New best validation model saved.
+2025-04-07 03:24:05 [INFO] Epoch 3/50 | Train Loss: 1.031211 | Val Loss: 1.223622 | LR: 5.0e-04
+2025-04-07 03:24:12 [INFO]    -> New best validation model saved.
+2025-04-07 03:24:12 [INFO] Epoch 4/50 | Train Loss: 1.009871 | Val Loss: 1.216385 | LR: 5.0e-04
+2025-04-07 03:24:18 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:24:18 [INFO] Epoch 5/50 | Train Loss: 1.006336 | Val Loss: 1.220344 | LR: 5.0e-04
+2025-04-07 03:24:24 [INFO]    -> New best validation model saved.
+2025-04-07 03:24:24 [INFO] Epoch 6/50 | Train Loss: 0.999629 | Val Loss: 1.215853 | LR: 5.0e-04
+2025-04-07 03:24:31 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:24:31 [INFO] Epoch 7/50 | Train Loss: 0.999518 | Val Loss: 1.219936 | LR: 5.0e-04
+2025-04-07 03:24:37 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:24:37 [INFO] Epoch 8/50 | Train Loss: 0.992660 | Val Loss: 1.218277 | LR: 5.0e-04
+2025-04-07 03:24:43 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:24:43 [INFO] Epoch 9/50 | Train Loss: 0.991334 | Val Loss: 1.218117 | LR: 5.0e-04
+2025-04-07 03:24:50 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:24:50 [INFO] Epoch 10/50 | Train Loss: 0.986247 | Val Loss: 1.217374 | LR: 5.0e-04
+2025-04-07 03:24:56 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:24:56 [INFO] Epoch 11/50 | Train Loss: 0.990693 | Val Loss: 1.218989 | LR: 5.0e-04
+2025-04-07 03:25:02 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:25:02 [INFO] Epoch 12/50 | Train Loss: 0.988399 | Val Loss: 1.216396 | LR: 5.0e-04
+2025-04-07 03:25:09 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:25:09 [INFO] Epoch 13/50 | Train Loss: 0.985836 | Val Loss: 1.219113 | LR: 5.0e-04
+2025-04-07 03:25:15 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:25:15 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:25:15 [INFO] Training complete. Best Validation Loss: 1.215853
+2025-04-07 03:25:15 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_25\VanillaTransformer_comb_25_loss_curve.png
+2025-04-07 03:25:15 [INFO] Comb 25 finished. Best Val Loss: 1.215853
+2025-04-07 03:25:15 [INFO] Time for comb 25: 88.46s.
+2025-04-07 03:25:15 [INFO] 
+--- Combination 26/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 03:25:15 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:25:15 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:25:15 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_26
+2025-04-07 03:25:15 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_26\VanillaTransformer_comb_26_best_val.pth
+2025-04-07 03:25:27 [INFO]    -> New best validation model saved.
+2025-04-07 03:25:27 [INFO] Epoch 1/50 | Train Loss: 1.075562 | Val Loss: 1.220140 | LR: 5.0e-04
+2025-04-07 03:25:39 [INFO]    -> New best validation model saved.
+2025-04-07 03:25:39 [INFO] Epoch 2/50 | Train Loss: 1.019948 | Val Loss: 1.218965 | LR: 5.0e-04
+2025-04-07 03:25:51 [INFO]    -> New best validation model saved.
+2025-04-07 03:25:51 [INFO] Epoch 3/50 | Train Loss: 1.006151 | Val Loss: 1.218078 | LR: 5.0e-04
+2025-04-07 03:26:03 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:26:03 [INFO] Epoch 4/50 | Train Loss: 0.997639 | Val Loss: 1.225664 | LR: 5.0e-04
+2025-04-07 03:26:15 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:26:15 [INFO] Epoch 5/50 | Train Loss: 0.997114 | Val Loss: 1.218695 | LR: 5.0e-04
+2025-04-07 03:26:27 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:26:27 [INFO] Epoch 6/50 | Train Loss: 0.994797 | Val Loss: 1.231438 | LR: 5.0e-04
+2025-04-07 03:26:39 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:26:39 [INFO] Epoch 7/50 | Train Loss: 0.991193 | Val Loss: 1.218744 | LR: 5.0e-04
+2025-04-07 03:26:51 [INFO]    -> New best validation model saved.
+2025-04-07 03:26:51 [INFO] Epoch 8/50 | Train Loss: 0.988615 | Val Loss: 1.217941 | LR: 5.0e-04
+2025-04-07 03:27:03 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:27:03 [INFO] Epoch 9/50 | Train Loss: 0.986666 | Val Loss: 1.230200 | LR: 5.0e-04
+2025-04-07 03:27:15 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:27:15 [INFO] Epoch 10/50 | Train Loss: 0.983997 | Val Loss: 1.228957 | LR: 5.0e-04
+2025-04-07 03:27:27 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:27:27 [INFO] Epoch 11/50 | Train Loss: 0.983792 | Val Loss: 1.219674 | LR: 5.0e-04
+2025-04-07 03:27:39 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:27:39 [INFO] Epoch 12/50 | Train Loss: 0.984303 | Val Loss: 1.227729 | LR: 5.0e-04
+2025-04-07 03:27:51 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:27:51 [INFO] Epoch 13/50 | Train Loss: 0.971556 | Val Loss: 1.224168 | LR: 5.0e-04
+2025-04-07 03:28:03 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:28:03 [INFO] Epoch 14/50 | Train Loss: 0.978717 | Val Loss: 1.220994 | LR: 5.0e-04
+2025-04-07 03:28:15 [INFO]    -> New best validation model saved.
+2025-04-07 03:28:15 [INFO] Epoch 15/50 | Train Loss: 0.982896 | Val Loss: 1.216808 | LR: 5.0e-04
+2025-04-07 03:28:27 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:28:27 [INFO] Epoch 16/50 | Train Loss: 0.980794 | Val Loss: 1.219360 | LR: 5.0e-04
+2025-04-07 03:28:39 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:28:39 [INFO] Epoch 17/50 | Train Loss: 0.979113 | Val Loss: 1.216910 | LR: 5.0e-04
+2025-04-07 03:28:51 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:28:51 [INFO] Epoch 18/50 | Train Loss: 0.975927 | Val Loss: 1.225461 | LR: 5.0e-04
+2025-04-07 03:29:03 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:29:03 [INFO] Epoch 19/50 | Train Loss: 0.976518 | Val Loss: 1.223467 | LR: 5.0e-04
+2025-04-07 03:29:15 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:29:15 [INFO] Epoch 20/50 | Train Loss: 0.973963 | Val Loss: 1.223917 | LR: 5.0e-04
+2025-04-07 03:29:27 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:29:27 [INFO] Epoch 21/50 | Train Loss: 0.978223 | Val Loss: 1.226051 | LR: 5.0e-04
+2025-04-07 03:29:40 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:29:40 [INFO] Epoch 22/50 | Train Loss: 0.976044 | Val Loss: 1.218892 | LR: 5.0e-04
+2025-04-07 03:29:52 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:29:52 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:29:52 [INFO] Training complete. Best Validation Loss: 1.216808
+2025-04-07 03:29:52 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_26\VanillaTransformer_comb_26_loss_curve.png
+2025-04-07 03:29:52 [INFO] Comb 26 finished. Best Val Loss: 1.216808
+2025-04-07 03:29:52 [INFO] Time for comb 26: 276.63s.
+2025-04-07 03:29:52 [INFO] 
+--- Combination 27/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 03:29:52 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:29:52 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:29:52 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_27
+2025-04-07 03:29:52 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_27\VanillaTransformer_comb_27_best_val.pth
+2025-04-07 03:30:09 [INFO]    -> New best validation model saved.
+2025-04-07 03:30:09 [INFO] Epoch 1/50 | Train Loss: 1.039044 | Val Loss: 1.217544 | LR: 5.0e-04
+2025-04-07 03:30:27 [INFO]    -> New best validation model saved.
+2025-04-07 03:30:27 [INFO] Epoch 2/50 | Train Loss: 1.007982 | Val Loss: 1.215586 | LR: 5.0e-04
+2025-04-07 03:30:45 [INFO]    -> New best validation model saved.
+2025-04-07 03:30:45 [INFO] Epoch 3/50 | Train Loss: 0.996340 | Val Loss: 1.215212 | LR: 5.0e-04
+2025-04-07 03:31:03 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:31:03 [INFO] Epoch 4/50 | Train Loss: 0.995148 | Val Loss: 1.219654 | LR: 5.0e-04
+2025-04-07 03:31:20 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:31:20 [INFO] Epoch 5/50 | Train Loss: 0.987781 | Val Loss: 1.215719 | LR: 5.0e-04
+2025-04-07 03:31:38 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:31:38 [INFO] Epoch 6/50 | Train Loss: 0.988705 | Val Loss: 1.215376 | LR: 5.0e-04
+2025-04-07 03:31:56 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:31:56 [INFO] Epoch 7/50 | Train Loss: 0.987388 | Val Loss: 1.215280 | LR: 5.0e-04
+2025-04-07 03:32:14 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:32:14 [INFO] Epoch 8/50 | Train Loss: 0.986651 | Val Loss: 1.215401 | LR: 5.0e-04
+2025-04-07 03:32:31 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:32:31 [INFO] Epoch 9/50 | Train Loss: 0.992683 | Val Loss: 1.215552 | LR: 5.0e-04
+2025-04-07 03:32:49 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:32:49 [INFO] Epoch 10/50 | Train Loss: 0.985769 | Val Loss: 1.216506 | LR: 5.0e-04
+2025-04-07 03:33:07 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:33:07 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:33:07 [INFO] Training complete. Best Validation Loss: 1.215212
+2025-04-07 03:33:07 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_27\VanillaTransformer_comb_27_loss_curve.png
+2025-04-07 03:33:07 [INFO] Comb 27 finished. Best Val Loss: 1.215212
+2025-04-07 03:33:07 [INFO] Time for comb 27: 195.20s.
+2025-04-07 03:33:07 [INFO] 
+--- Combination 28/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 03:33:07 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:33:07 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:33:07 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_28
+2025-04-07 03:33:07 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_28\VanillaTransformer_comb_28_best_val.pth
+2025-04-07 03:33:21 [INFO]    -> New best validation model saved.
+2025-04-07 03:33:21 [INFO] Epoch 1/50 | Train Loss: 1.228077 | Val Loss: 1.219702 | LR: 5.0e-04
+2025-04-07 03:33:35 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:33:35 [INFO] Epoch 2/50 | Train Loss: 1.043919 | Val Loss: 1.221940 | LR: 5.0e-04
+2025-04-07 03:33:49 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:33:49 [INFO] Epoch 3/50 | Train Loss: 1.018964 | Val Loss: 1.220831 | LR: 5.0e-04
+2025-04-07 03:34:03 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:34:03 [INFO] Epoch 4/50 | Train Loss: 1.007576 | Val Loss: 1.229122 | LR: 5.0e-04
+2025-04-07 03:34:16 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:34:16 [INFO] Epoch 5/50 | Train Loss: 0.999241 | Val Loss: 1.223688 | LR: 5.0e-04
+2025-04-07 03:34:30 [INFO]    -> New best validation model saved.
+2025-04-07 03:34:30 [INFO] Epoch 6/50 | Train Loss: 0.994961 | Val Loss: 1.216354 | LR: 5.0e-04
+2025-04-07 03:34:44 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:34:44 [INFO] Epoch 7/50 | Train Loss: 0.995737 | Val Loss: 1.225462 | LR: 5.0e-04
+2025-04-07 03:34:58 [INFO]    -> New best validation model saved.
+2025-04-07 03:34:58 [INFO] Epoch 8/50 | Train Loss: 0.996884 | Val Loss: 1.214715 | LR: 5.0e-04
+2025-04-07 03:35:12 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:35:12 [INFO] Epoch 9/50 | Train Loss: 0.994124 | Val Loss: 1.218648 | LR: 5.0e-04
+2025-04-07 03:35:26 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:35:26 [INFO] Epoch 10/50 | Train Loss: 0.990266 | Val Loss: 1.216234 | LR: 5.0e-04
+2025-04-07 03:35:40 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:35:40 [INFO] Epoch 11/50 | Train Loss: 0.969955 | Val Loss: 1.216978 | LR: 5.0e-04
+2025-04-07 03:35:54 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:35:54 [INFO] Epoch 12/50 | Train Loss: 0.979400 | Val Loss: 1.219904 | LR: 5.0e-04
+2025-04-07 03:36:08 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:36:08 [INFO] Epoch 13/50 | Train Loss: 0.980038 | Val Loss: 1.218423 | LR: 5.0e-04
+2025-04-07 03:36:22 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:36:22 [INFO] Epoch 14/50 | Train Loss: 0.987206 | Val Loss: 1.217207 | LR: 5.0e-04
+2025-04-07 03:36:36 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:36:36 [INFO] Epoch 15/50 | Train Loss: 0.985231 | Val Loss: 1.216142 | LR: 5.0e-04
+2025-04-07 03:36:50 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:36:50 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:36:50 [INFO] Training complete. Best Validation Loss: 1.214715
+2025-04-07 03:36:50 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_28\VanillaTransformer_comb_28_loss_curve.png
+2025-04-07 03:36:50 [INFO] Comb 28 finished. Best Val Loss: 1.214715
+2025-04-07 03:36:50 [INFO] Time for comb 28: 222.88s.
+2025-04-07 03:36:50 [INFO] 
+--- Combination 29/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 03:36:50 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:36:50 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:36:50 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_29
+2025-04-07 03:36:50 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_29\VanillaTransformer_comb_29_best_val.pth
+2025-04-07 03:37:16 [INFO]    -> New best validation model saved.
+2025-04-07 03:37:16 [INFO] Epoch 1/50 | Train Loss: 1.068451 | Val Loss: 1.241625 | LR: 5.0e-04
+2025-04-07 03:37:43 [INFO]    -> New best validation model saved.
+2025-04-07 03:37:43 [INFO] Epoch 2/50 | Train Loss: 1.015649 | Val Loss: 1.221375 | LR: 5.0e-04
+2025-04-07 03:38:10 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:38:10 [INFO] Epoch 3/50 | Train Loss: 0.998269 | Val Loss: 1.226029 | LR: 5.0e-04
+2025-04-07 03:38:37 [INFO]    -> New best validation model saved.
+2025-04-07 03:38:37 [INFO] Epoch 4/50 | Train Loss: 1.003319 | Val Loss: 1.217039 | LR: 5.0e-04
+2025-04-07 03:39:03 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:39:03 [INFO] Epoch 5/50 | Train Loss: 0.987044 | Val Loss: 1.222749 | LR: 5.0e-04
+2025-04-07 03:39:30 [INFO]    -> New best validation model saved.
+2025-04-07 03:39:30 [INFO] Epoch 6/50 | Train Loss: 0.991737 | Val Loss: 1.216754 | LR: 5.0e-04
+2025-04-07 03:39:57 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:39:57 [INFO] Epoch 7/50 | Train Loss: 0.989285 | Val Loss: 1.217528 | LR: 5.0e-04
+2025-04-07 03:40:24 [INFO]    -> New best validation model saved.
+2025-04-07 03:40:24 [INFO] Epoch 8/50 | Train Loss: 0.983746 | Val Loss: 1.215569 | LR: 5.0e-04
+2025-04-07 03:40:50 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:40:50 [INFO] Epoch 9/50 | Train Loss: 0.986977 | Val Loss: 1.230727 | LR: 5.0e-04
+2025-04-07 03:41:17 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:41:17 [INFO] Epoch 10/50 | Train Loss: 0.985936 | Val Loss: 1.222387 | LR: 5.0e-04
+2025-04-07 03:41:44 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:41:44 [INFO] Epoch 11/50 | Train Loss: 0.976659 | Val Loss: 1.217321 | LR: 5.0e-04
+2025-04-07 03:42:11 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:42:11 [INFO] Epoch 12/50 | Train Loss: 0.986155 | Val Loss: 1.221973 | LR: 5.0e-04
+2025-04-07 03:42:37 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:42:37 [INFO] Epoch 13/50 | Train Loss: 0.979946 | Val Loss: 1.239897 | LR: 5.0e-04
+2025-04-07 03:43:04 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:43:04 [INFO] Epoch 14/50 | Train Loss: 0.984020 | Val Loss: 1.222148 | LR: 5.0e-04
+2025-04-07 03:43:31 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:43:31 [INFO] Epoch 15/50 | Train Loss: 0.978153 | Val Loss: 1.219751 | LR: 5.0e-04
+2025-04-07 03:43:58 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 03:43:58 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 03:43:58 [INFO] Training complete. Best Validation Loss: 1.215569
+2025-04-07 03:43:58 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_29\VanillaTransformer_comb_29_loss_curve.png
+2025-04-07 03:43:58 [INFO] Comb 29 finished. Best Val Loss: 1.215569
+2025-04-07 03:43:58 [INFO] Time for comb 29: 427.92s.
+2025-04-07 03:43:58 [INFO] 
+--- Combination 30/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 03:43:58 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 03:43:58 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 03:43:58 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_30
+2025-04-07 03:43:58 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_30\VanillaTransformer_comb_30_best_val.pth
+2025-04-07 03:44:37 [INFO]    -> New best validation model saved.
+2025-04-07 03:44:37 [INFO] Epoch 1/50 | Train Loss: 1.106150 | Val Loss: 1.218828 | LR: 5.0e-04
+2025-04-07 03:45:17 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:45:17 [INFO] Epoch 2/50 | Train Loss: 1.023035 | Val Loss: 1.249469 | LR: 5.0e-04
+2025-04-07 03:45:56 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:45:56 [INFO] Epoch 3/50 | Train Loss: 1.015793 | Val Loss: 1.223909 | LR: 5.0e-04
+2025-04-07 03:46:36 [INFO]    -> New best validation model saved.
+2025-04-07 03:46:36 [INFO] Epoch 4/50 | Train Loss: 1.001911 | Val Loss: 1.216377 | LR: 5.0e-04
+2025-04-07 03:47:15 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:47:15 [INFO] Epoch 5/50 | Train Loss: 1.001273 | Val Loss: 1.219870 | LR: 5.0e-04
+2025-04-07 03:47:55 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:47:55 [INFO] Epoch 6/50 | Train Loss: 0.992392 | Val Loss: 1.242418 | LR: 5.0e-04
+2025-04-07 03:48:35 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:48:35 [INFO] Epoch 7/50 | Train Loss: 0.988345 | Val Loss: 1.222346 | LR: 5.0e-04
+2025-04-07 03:49:14 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:49:14 [INFO] Epoch 8/50 | Train Loss: 0.992405 | Val Loss: 1.224470 | LR: 5.0e-04
+2025-04-07 03:49:54 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:49:54 [INFO] Epoch 9/50 | Train Loss: 0.987482 | Val Loss: 1.222202 | LR: 5.0e-04
+2025-04-07 03:50:33 [INFO]    -> New best validation model saved.
+2025-04-07 03:50:33 [INFO] Epoch 10/50 | Train Loss: 0.983641 | Val Loss: 1.214634 | LR: 5.0e-04
+2025-04-07 03:51:13 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:51:13 [INFO] Epoch 11/50 | Train Loss: 0.983856 | Val Loss: 1.217107 | LR: 5.0e-04
+2025-04-07 03:51:52 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:51:52 [INFO] Epoch 12/50 | Train Loss: 0.980065 | Val Loss: 1.218806 | LR: 5.0e-04
+2025-04-07 03:52:32 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:52:32 [INFO] Epoch 13/50 | Train Loss: 0.983359 | Val Loss: 1.215169 | LR: 5.0e-04
+2025-04-07 03:53:11 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:53:11 [INFO] Epoch 14/50 | Train Loss: 0.979611 | Val Loss: 1.222501 | LR: 5.0e-04
+2025-04-07 03:53:51 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:53:51 [INFO] Epoch 15/50 | Train Loss: 0.981810 | Val Loss: 1.226635 | LR: 5.0e-04
+2025-04-07 03:54:31 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:54:31 [INFO] Epoch 16/50 | Train Loss: 0.981550 | Val Loss: 1.217942 | LR: 5.0e-04
+2025-04-07 03:55:10 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 03:55:10 [INFO] Epoch 17/50 | Train Loss: 0.980724 | Val Loss: 1.222500 | LR: 5.0e-04
+2025-04-07 03:55:50 [INFO]    -> New best validation model saved.
+2025-04-07 03:55:50 [INFO] Epoch 18/50 | Train Loss: 0.982526 | Val Loss: 1.214354 | LR: 5.0e-04
+2025-04-07 03:56:29 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 03:56:29 [INFO] Epoch 19/50 | Train Loss: 0.976997 | Val Loss: 1.224442 | LR: 5.0e-04
+2025-04-07 03:57:09 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 03:57:09 [INFO] Epoch 20/50 | Train Loss: 0.976365 | Val Loss: 1.216683 | LR: 5.0e-04
+2025-04-07 03:57:48 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 03:57:48 [INFO] Epoch 21/50 | Train Loss: 0.983018 | Val Loss: 1.225733 | LR: 5.0e-04
+2025-04-07 03:58:28 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 03:58:28 [INFO] Epoch 22/50 | Train Loss: 0.982509 | Val Loss: 1.219075 | LR: 5.0e-04
+2025-04-07 03:59:08 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 03:59:08 [INFO] Epoch 23/50 | Train Loss: 0.979251 | Val Loss: 1.221062 | LR: 5.0e-04
+2025-04-07 03:59:47 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 03:59:47 [INFO] Epoch 24/50 | Train Loss: 0.974206 | Val Loss: 1.222139 | LR: 5.0e-04
+2025-04-07 04:00:27 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:00:27 [INFO] Epoch 25/50 | Train Loss: 0.978006 | Val Loss: 1.220843 | LR: 5.0e-04
+2025-04-07 04:01:06 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:01:06 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:01:06 [INFO] Training complete. Best Validation Loss: 1.214354
+2025-04-07 04:01:06 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_30\VanillaTransformer_comb_30_loss_curve.png
+2025-04-07 04:01:06 [INFO] Comb 30 finished. Best Val Loss: 1.214354
+2025-04-07 04:01:06 [INFO] Time for comb 30: 1028.68s.
+2025-04-07 04:01:06 [INFO] 
+--- Combination 31/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 04:01:06 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:01:06 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:01:06 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_31
+2025-04-07 04:01:06 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_31\VanillaTransformer_comb_31_best_val.pth
+2025-04-07 04:01:13 [INFO]    -> New best validation model saved.
+2025-04-07 04:01:13 [INFO] Epoch 1/50 | Train Loss: 1.154085 | Val Loss: 1.220798 | LR: 5.0e-04
+2025-04-07 04:01:19 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:01:19 [INFO] Epoch 2/50 | Train Loss: 1.041073 | Val Loss: 1.230219 | LR: 5.0e-04
+2025-04-07 04:01:25 [INFO]    -> New best validation model saved.
+2025-04-07 04:01:25 [INFO] Epoch 3/50 | Train Loss: 0.999023 | Val Loss: 1.218254 | LR: 5.0e-04
+2025-04-07 04:01:32 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:01:32 [INFO] Epoch 4/50 | Train Loss: 1.009193 | Val Loss: 1.220146 | LR: 5.0e-04
+2025-04-07 04:01:38 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:01:38 [INFO] Epoch 5/50 | Train Loss: 0.998999 | Val Loss: 1.221922 | LR: 5.0e-04
+2025-04-07 04:01:44 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:01:44 [INFO] Epoch 6/50 | Train Loss: 0.995023 | Val Loss: 1.220488 | LR: 5.0e-04
+2025-04-07 04:01:51 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:01:51 [INFO] Epoch 7/50 | Train Loss: 0.999558 | Val Loss: 1.218493 | LR: 5.0e-04
+2025-04-07 04:01:57 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:01:57 [INFO] Epoch 8/50 | Train Loss: 0.991859 | Val Loss: 1.220119 | LR: 5.0e-04
+2025-04-07 04:02:03 [INFO]    -> New best validation model saved.
+2025-04-07 04:02:03 [INFO] Epoch 9/50 | Train Loss: 0.996396 | Val Loss: 1.217168 | LR: 5.0e-04
+2025-04-07 04:02:09 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:02:09 [INFO] Epoch 10/50 | Train Loss: 0.994287 | Val Loss: 1.218885 | LR: 5.0e-04
+2025-04-07 04:02:16 [INFO]    -> New best validation model saved.
+2025-04-07 04:02:16 [INFO] Epoch 11/50 | Train Loss: 0.987906 | Val Loss: 1.215703 | LR: 5.0e-04
+2025-04-07 04:02:22 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:02:22 [INFO] Epoch 12/50 | Train Loss: 0.986105 | Val Loss: 1.221020 | LR: 5.0e-04
+2025-04-07 04:02:28 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:02:28 [INFO] Epoch 13/50 | Train Loss: 0.979829 | Val Loss: 1.219559 | LR: 5.0e-04
+2025-04-07 04:02:35 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:02:35 [INFO] Epoch 14/50 | Train Loss: 0.987533 | Val Loss: 1.218310 | LR: 5.0e-04
+2025-04-07 04:02:41 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:02:41 [INFO] Epoch 15/50 | Train Loss: 0.981808 | Val Loss: 1.216272 | LR: 5.0e-04
+2025-04-07 04:02:47 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:02:47 [INFO] Epoch 16/50 | Train Loss: 0.986417 | Val Loss: 1.219046 | LR: 5.0e-04
+2025-04-07 04:02:54 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:02:54 [INFO] Epoch 17/50 | Train Loss: 0.983616 | Val Loss: 1.216720 | LR: 5.0e-04
+2025-04-07 04:03:00 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:03:00 [INFO] Epoch 18/50 | Train Loss: 0.979236 | Val Loss: 1.216944 | LR: 5.0e-04
+2025-04-07 04:03:06 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:03:06 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:03:06 [INFO] Training complete. Best Validation Loss: 1.215703
+2025-04-07 04:03:06 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_31\VanillaTransformer_comb_31_loss_curve.png
+2025-04-07 04:03:06 [INFO] Comb 31 finished. Best Val Loss: 1.215703
+2025-04-07 04:03:06 [INFO] Time for comb 31: 120.05s.
+2025-04-07 04:03:06 [INFO] 
+--- Combination 32/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 04:03:06 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:03:06 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:03:06 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_32
+2025-04-07 04:03:06 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_32\VanillaTransformer_comb_32_best_val.pth
+2025-04-07 04:03:18 [INFO]    -> New best validation model saved.
+2025-04-07 04:03:18 [INFO] Epoch 1/50 | Train Loss: 1.090684 | Val Loss: 1.217564 | LR: 5.0e-04
+2025-04-07 04:03:30 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:03:30 [INFO] Epoch 2/50 | Train Loss: 1.015079 | Val Loss: 1.220499 | LR: 5.0e-04
+2025-04-07 04:03:42 [INFO]    -> New best validation model saved.
+2025-04-07 04:03:42 [INFO] Epoch 3/50 | Train Loss: 0.990985 | Val Loss: 1.215182 | LR: 5.0e-04
+2025-04-07 04:03:54 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:03:54 [INFO] Epoch 4/50 | Train Loss: 0.994027 | Val Loss: 1.225144 | LR: 5.0e-04
+2025-04-07 04:04:07 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:04:07 [INFO] Epoch 5/50 | Train Loss: 0.992735 | Val Loss: 1.223605 | LR: 5.0e-04
+2025-04-07 04:04:19 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:04:19 [INFO] Epoch 6/50 | Train Loss: 0.990061 | Val Loss: 1.215211 | LR: 5.0e-04
+2025-04-07 04:04:31 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:04:31 [INFO] Epoch 7/50 | Train Loss: 0.985453 | Val Loss: 1.217929 | LR: 5.0e-04
+2025-04-07 04:04:43 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:04:43 [INFO] Epoch 8/50 | Train Loss: 0.989801 | Val Loss: 1.217091 | LR: 5.0e-04
+2025-04-07 04:04:55 [INFO]    -> New best validation model saved.
+2025-04-07 04:04:55 [INFO] Epoch 9/50 | Train Loss: 0.986959 | Val Loss: 1.214869 | LR: 5.0e-04
+2025-04-07 04:05:07 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:05:07 [INFO] Epoch 10/50 | Train Loss: 0.987438 | Val Loss: 1.218574 | LR: 5.0e-04
+2025-04-07 04:05:19 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:05:19 [INFO] Epoch 11/50 | Train Loss: 0.985148 | Val Loss: 1.215393 | LR: 5.0e-04
+2025-04-07 04:05:31 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:05:31 [INFO] Epoch 12/50 | Train Loss: 0.977933 | Val Loss: 1.215153 | LR: 5.0e-04
+2025-04-07 04:05:43 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:05:43 [INFO] Epoch 13/50 | Train Loss: 0.986344 | Val Loss: 1.216108 | LR: 5.0e-04
+2025-04-07 04:05:55 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:05:55 [INFO] Epoch 14/50 | Train Loss: 0.984175 | Val Loss: 1.216373 | LR: 5.0e-04
+2025-04-07 04:06:07 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:06:07 [INFO] Epoch 15/50 | Train Loss: 0.984858 | Val Loss: 1.215899 | LR: 5.0e-04
+2025-04-07 04:06:19 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:06:19 [INFO] Epoch 16/50 | Train Loss: 0.984929 | Val Loss: 1.216002 | LR: 5.0e-04
+2025-04-07 04:06:31 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:06:31 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:06:31 [INFO] Training complete. Best Validation Loss: 1.214869
+2025-04-07 04:06:31 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_32\VanillaTransformer_comb_32_loss_curve.png
+2025-04-07 04:06:31 [INFO] Comb 32 finished. Best Val Loss: 1.214869
+2025-04-07 04:06:31 [INFO] Time for comb 32: 204.54s.
+2025-04-07 04:06:31 [INFO] 
+--- Combination 33/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 04:06:31 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:06:31 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:06:31 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_33
+2025-04-07 04:06:31 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_33\VanillaTransformer_comb_33_best_val.pth
+2025-04-07 04:06:49 [INFO]    -> New best validation model saved.
+2025-04-07 04:06:49 [INFO] Epoch 1/50 | Train Loss: 1.105907 | Val Loss: 1.222034 | LR: 5.0e-04
+2025-04-07 04:07:06 [INFO]    -> New best validation model saved.
+2025-04-07 04:07:06 [INFO] Epoch 2/50 | Train Loss: 1.021569 | Val Loss: 1.221222 | LR: 5.0e-04
+2025-04-07 04:07:24 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:07:24 [INFO] Epoch 3/50 | Train Loss: 1.004150 | Val Loss: 1.221761 | LR: 5.0e-04
+2025-04-07 04:07:42 [INFO]    -> New best validation model saved.
+2025-04-07 04:07:42 [INFO] Epoch 4/50 | Train Loss: 0.999748 | Val Loss: 1.214900 | LR: 5.0e-04
+2025-04-07 04:08:00 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:08:00 [INFO] Epoch 5/50 | Train Loss: 0.994953 | Val Loss: 1.215003 | LR: 5.0e-04
+2025-04-07 04:08:17 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:08:17 [INFO] Epoch 6/50 | Train Loss: 0.985702 | Val Loss: 1.215926 | LR: 5.0e-04
+2025-04-07 04:08:35 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:08:35 [INFO] Epoch 7/50 | Train Loss: 0.988083 | Val Loss: 1.217041 | LR: 5.0e-04
+2025-04-07 04:08:53 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:08:53 [INFO] Epoch 8/50 | Train Loss: 0.984917 | Val Loss: 1.214969 | LR: 5.0e-04
+2025-04-07 04:09:11 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:09:11 [INFO] Epoch 9/50 | Train Loss: 0.985002 | Val Loss: 1.215078 | LR: 5.0e-04
+2025-04-07 04:09:28 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:09:28 [INFO] Epoch 10/50 | Train Loss: 0.985146 | Val Loss: 1.219944 | LR: 5.0e-04
+2025-04-07 04:09:46 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:09:46 [INFO] Epoch 11/50 | Train Loss: 0.972048 | Val Loss: 1.215333 | LR: 5.0e-04
+2025-04-07 04:10:04 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:10:04 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:10:04 [INFO] Training complete. Best Validation Loss: 1.214900
+2025-04-07 04:10:04 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_33\VanillaTransformer_comb_33_loss_curve.png
+2025-04-07 04:10:04 [INFO] Comb 33 finished. Best Val Loss: 1.214900
+2025-04-07 04:10:04 [INFO] Time for comb 33: 212.98s.
+2025-04-07 04:10:04 [INFO] 
+--- Combination 34/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 04:10:04 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:10:04 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:10:04 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_34
+2025-04-07 04:10:04 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_34\VanillaTransformer_comb_34_best_val.pth
+2025-04-07 04:10:18 [INFO]    -> New best validation model saved.
+2025-04-07 04:10:18 [INFO] Epoch 1/50 | Train Loss: 1.151907 | Val Loss: 1.225301 | LR: 5.0e-04
+2025-04-07 04:10:32 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:10:32 [INFO] Epoch 2/50 | Train Loss: 1.047684 | Val Loss: 1.230931 | LR: 5.0e-04
+2025-04-07 04:10:46 [INFO]    -> New best validation model saved.
+2025-04-07 04:10:46 [INFO] Epoch 3/50 | Train Loss: 1.025176 | Val Loss: 1.222598 | LR: 5.0e-04
+2025-04-07 04:11:00 [INFO]    -> New best validation model saved.
+2025-04-07 04:11:00 [INFO] Epoch 4/50 | Train Loss: 1.010810 | Val Loss: 1.216308 | LR: 5.0e-04
+2025-04-07 04:11:14 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:11:14 [INFO] Epoch 5/50 | Train Loss: 1.002191 | Val Loss: 1.218898 | LR: 5.0e-04
+2025-04-07 04:11:27 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:11:27 [INFO] Epoch 6/50 | Train Loss: 0.997548 | Val Loss: 1.224755 | LR: 5.0e-04
+2025-04-07 04:11:41 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:11:41 [INFO] Epoch 7/50 | Train Loss: 0.996602 | Val Loss: 1.256671 | LR: 5.0e-04
+2025-04-07 04:11:55 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:11:55 [INFO] Epoch 8/50 | Train Loss: 0.995901 | Val Loss: 1.224718 | LR: 5.0e-04
+2025-04-07 04:12:09 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:12:09 [INFO] Epoch 9/50 | Train Loss: 0.986797 | Val Loss: 1.220578 | LR: 5.0e-04
+2025-04-07 04:12:23 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:12:23 [INFO] Epoch 10/50 | Train Loss: 0.986500 | Val Loss: 1.219821 | LR: 5.0e-04
+2025-04-07 04:12:37 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:12:37 [INFO] Epoch 11/50 | Train Loss: 0.982958 | Val Loss: 1.218831 | LR: 5.0e-04
+2025-04-07 04:12:51 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:12:51 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:12:51 [INFO] Training complete. Best Validation Loss: 1.216308
+2025-04-07 04:12:51 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_34\VanillaTransformer_comb_34_loss_curve.png
+2025-04-07 04:12:51 [INFO] Comb 34 finished. Best Val Loss: 1.216308
+2025-04-07 04:12:51 [INFO] Time for comb 34: 167.21s.
+2025-04-07 04:12:51 [INFO] 
+--- Combination 35/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 04:12:51 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:12:51 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:12:51 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_35
+2025-04-07 04:12:51 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_35\VanillaTransformer_comb_35_best_val.pth
+2025-04-07 04:13:18 [INFO]    -> New best validation model saved.
+2025-04-07 04:13:18 [INFO] Epoch 1/50 | Train Loss: 1.126696 | Val Loss: 1.231666 | LR: 5.0e-04
+2025-04-07 04:13:45 [INFO]    -> New best validation model saved.
+2025-04-07 04:13:45 [INFO] Epoch 2/50 | Train Loss: 1.042382 | Val Loss: 1.221458 | LR: 5.0e-04
+2025-04-07 04:14:11 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:14:11 [INFO] Epoch 3/50 | Train Loss: 1.013395 | Val Loss: 1.221931 | LR: 5.0e-04
+2025-04-07 04:14:38 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:14:38 [INFO] Epoch 4/50 | Train Loss: 0.994377 | Val Loss: 1.224974 | LR: 5.0e-04
+2025-04-07 04:15:05 [INFO]    -> New best validation model saved.
+2025-04-07 04:15:05 [INFO] Epoch 5/50 | Train Loss: 0.999802 | Val Loss: 1.216728 | LR: 5.0e-04
+2025-04-07 04:15:32 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:15:32 [INFO] Epoch 6/50 | Train Loss: 0.993838 | Val Loss: 1.219156 | LR: 5.0e-04
+2025-04-07 04:15:58 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:15:58 [INFO] Epoch 7/50 | Train Loss: 0.997110 | Val Loss: 1.218460 | LR: 5.0e-04
+2025-04-07 04:16:25 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:16:25 [INFO] Epoch 8/50 | Train Loss: 0.988799 | Val Loss: 1.217713 | LR: 5.0e-04
+2025-04-07 04:16:52 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:16:52 [INFO] Epoch 9/50 | Train Loss: 0.983278 | Val Loss: 1.221085 | LR: 5.0e-04
+2025-04-07 04:17:19 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:17:19 [INFO] Epoch 10/50 | Train Loss: 0.991335 | Val Loss: 1.220769 | LR: 5.0e-04
+2025-04-07 04:17:45 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:17:45 [INFO] Epoch 11/50 | Train Loss: 0.986540 | Val Loss: 1.217886 | LR: 5.0e-04
+2025-04-07 04:18:12 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:18:12 [INFO] Epoch 12/50 | Train Loss: 0.985498 | Val Loss: 1.217020 | LR: 5.0e-04
+2025-04-07 04:18:39 [INFO]    -> New best validation model saved.
+2025-04-07 04:18:39 [INFO] Epoch 13/50 | Train Loss: 0.987341 | Val Loss: 1.215822 | LR: 5.0e-04
+2025-04-07 04:19:05 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:19:05 [INFO] Epoch 14/50 | Train Loss: 0.961007 | Val Loss: 1.216963 | LR: 5.0e-04
+2025-04-07 04:19:32 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:19:32 [INFO] Epoch 15/50 | Train Loss: 0.980900 | Val Loss: 1.219738 | LR: 5.0e-04
+2025-04-07 04:19:59 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:19:59 [INFO] Epoch 16/50 | Train Loss: 0.986638 | Val Loss: 1.217678 | LR: 5.0e-04
+2025-04-07 04:20:26 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:20:26 [INFO] Epoch 17/50 | Train Loss: 0.980278 | Val Loss: 1.216346 | LR: 5.0e-04
+2025-04-07 04:20:52 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:20:52 [INFO] Epoch 18/50 | Train Loss: 0.985283 | Val Loss: 1.217750 | LR: 5.0e-04
+2025-04-07 04:21:19 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:21:19 [INFO] Epoch 19/50 | Train Loss: 0.982715 | Val Loss: 1.216768 | LR: 5.0e-04
+2025-04-07 04:21:46 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:21:46 [INFO] Epoch 20/50 | Train Loss: 0.978321 | Val Loss: 1.221317 | LR: 5.0e-04
+2025-04-07 04:22:13 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:22:13 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:22:13 [INFO] Training complete. Best Validation Loss: 1.215822
+2025-04-07 04:22:13 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_35\VanillaTransformer_comb_35_loss_curve.png
+2025-04-07 04:22:13 [INFO] Comb 35 finished. Best Val Loss: 1.215822
+2025-04-07 04:22:13 [INFO] Time for comb 35: 561.97s.
+2025-04-07 04:22:13 [INFO] 
+--- Combination 36/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 64, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 04:22:13 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:22:13 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:22:13 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_36
+2025-04-07 04:22:13 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_36\VanillaTransformer_comb_36_best_val.pth
+2025-04-07 04:22:53 [INFO]    -> New best validation model saved.
+2025-04-07 04:22:53 [INFO] Epoch 1/50 | Train Loss: 1.132553 | Val Loss: 1.234421 | LR: 5.0e-04
+2025-04-07 04:23:32 [INFO]    -> New best validation model saved.
+2025-04-07 04:23:32 [INFO] Epoch 2/50 | Train Loss: 1.011701 | Val Loss: 1.227537 | LR: 5.0e-04
+2025-04-07 04:24:12 [INFO]    -> New best validation model saved.
+2025-04-07 04:24:12 [INFO] Epoch 3/50 | Train Loss: 1.021570 | Val Loss: 1.214921 | LR: 5.0e-04
+2025-04-07 04:24:51 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:24:51 [INFO] Epoch 4/50 | Train Loss: 0.997079 | Val Loss: 1.215429 | LR: 5.0e-04
+2025-04-07 04:25:31 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:25:31 [INFO] Epoch 5/50 | Train Loss: 0.995327 | Val Loss: 1.244415 | LR: 5.0e-04
+2025-04-07 04:26:10 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:26:10 [INFO] Epoch 6/50 | Train Loss: 0.985560 | Val Loss: 1.219466 | LR: 5.0e-04
+2025-04-07 04:26:50 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:26:50 [INFO] Epoch 7/50 | Train Loss: 0.992589 | Val Loss: 1.217941 | LR: 5.0e-04
+2025-04-07 04:27:29 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:27:29 [INFO] Epoch 8/50 | Train Loss: 0.987672 | Val Loss: 1.229241 | LR: 5.0e-04
+2025-04-07 04:28:09 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:28:09 [INFO] Epoch 9/50 | Train Loss: 0.986120 | Val Loss: 1.218077 | LR: 5.0e-04
+2025-04-07 04:28:49 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:28:49 [INFO] Epoch 10/50 | Train Loss: 0.982241 | Val Loss: 1.217563 | LR: 5.0e-04
+2025-04-07 04:29:28 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:29:28 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:29:28 [INFO] Training complete. Best Validation Loss: 1.214921
+2025-04-07 04:29:28 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_36\VanillaTransformer_comb_36_loss_curve.png
+2025-04-07 04:29:28 [INFO] Comb 36 finished. Best Val Loss: 1.214921
+2025-04-07 04:29:28 [INFO] Time for comb 36: 435.12s.
+2025-04-07 04:29:28 [INFO] 
+--- Combination 37/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 04:29:28 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:29:28 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:29:28 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_37
+2025-04-07 04:29:28 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_37\VanillaTransformer_comb_37_best_val.pth
+2025-04-07 04:29:36 [INFO]    -> New best validation model saved.
+2025-04-07 04:29:36 [INFO] Epoch 1/50 | Train Loss: 1.180609 | Val Loss: 1.220284 | LR: 5.0e-04
+2025-04-07 04:29:43 [INFO]    -> New best validation model saved.
+2025-04-07 04:29:43 [INFO] Epoch 2/50 | Train Loss: 1.035086 | Val Loss: 1.217198 | LR: 5.0e-04
+2025-04-07 04:29:51 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:29:51 [INFO] Epoch 3/50 | Train Loss: 1.012125 | Val Loss: 1.217630 | LR: 5.0e-04
+2025-04-07 04:29:59 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:29:59 [INFO] Epoch 4/50 | Train Loss: 1.002586 | Val Loss: 1.220996 | LR: 5.0e-04
+2025-04-07 04:30:06 [INFO]    -> New best validation model saved.
+2025-04-07 04:30:06 [INFO] Epoch 5/50 | Train Loss: 0.996894 | Val Loss: 1.216098 | LR: 5.0e-04
+2025-04-07 04:30:14 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:30:14 [INFO] Epoch 6/50 | Train Loss: 0.993128 | Val Loss: 1.217423 | LR: 5.0e-04
+2025-04-07 04:30:21 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:30:21 [INFO] Epoch 7/50 | Train Loss: 0.990291 | Val Loss: 1.220023 | LR: 5.0e-04
+2025-04-07 04:30:29 [INFO]    -> New best validation model saved.
+2025-04-07 04:30:29 [INFO] Epoch 8/50 | Train Loss: 0.991068 | Val Loss: 1.216063 | LR: 5.0e-04
+2025-04-07 04:30:36 [INFO]    -> New best validation model saved.
+2025-04-07 04:30:36 [INFO] Epoch 9/50 | Train Loss: 0.984616 | Val Loss: 1.215633 | LR: 5.0e-04
+2025-04-07 04:30:44 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:30:44 [INFO] Epoch 10/50 | Train Loss: 0.974418 | Val Loss: 1.216289 | LR: 5.0e-04
+2025-04-07 04:30:52 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:30:52 [INFO] Epoch 11/50 | Train Loss: 0.982386 | Val Loss: 1.219587 | LR: 5.0e-04
+2025-04-07 04:30:59 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:30:59 [INFO] Epoch 12/50 | Train Loss: 0.983385 | Val Loss: 1.227149 | LR: 5.0e-04
+2025-04-07 04:31:07 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:31:07 [INFO] Epoch 13/50 | Train Loss: 0.981472 | Val Loss: 1.216930 | LR: 5.0e-04
+2025-04-07 04:31:14 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:31:14 [INFO] Epoch 14/50 | Train Loss: 0.982993 | Val Loss: 1.216614 | LR: 5.0e-04
+2025-04-07 04:31:22 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:31:22 [INFO] Epoch 15/50 | Train Loss: 0.972575 | Val Loss: 1.215724 | LR: 5.0e-04
+2025-04-07 04:31:29 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:31:29 [INFO] Epoch 16/50 | Train Loss: 0.979284 | Val Loss: 1.226422 | LR: 5.0e-04
+2025-04-07 04:31:37 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:31:37 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:31:37 [INFO] Training complete. Best Validation Loss: 1.215633
+2025-04-07 04:31:37 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_37\VanillaTransformer_comb_37_loss_curve.png
+2025-04-07 04:31:37 [INFO] Comb 37 finished. Best Val Loss: 1.215633
+2025-04-07 04:31:37 [INFO] Time for comb 37: 128.92s.
+2025-04-07 04:31:37 [INFO] 
+--- Combination 38/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 04:31:37 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:31:37 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:31:37 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_38
+2025-04-07 04:31:37 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_38\VanillaTransformer_comb_38_best_val.pth
+2025-04-07 04:31:52 [INFO]    -> New best validation model saved.
+2025-04-07 04:31:52 [INFO] Epoch 1/50 | Train Loss: 1.077042 | Val Loss: 1.250509 | LR: 5.0e-04
+2025-04-07 04:32:06 [INFO]    -> New best validation model saved.
+2025-04-07 04:32:06 [INFO] Epoch 2/50 | Train Loss: 1.010012 | Val Loss: 1.220694 | LR: 5.0e-04
+2025-04-07 04:32:21 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:32:21 [INFO] Epoch 3/50 | Train Loss: 1.001873 | Val Loss: 1.225381 | LR: 5.0e-04
+2025-04-07 04:32:35 [INFO]    -> New best validation model saved.
+2025-04-07 04:32:35 [INFO] Epoch 4/50 | Train Loss: 0.991864 | Val Loss: 1.217416 | LR: 5.0e-04
+2025-04-07 04:32:50 [INFO]    -> New best validation model saved.
+2025-04-07 04:32:50 [INFO] Epoch 5/50 | Train Loss: 0.986764 | Val Loss: 1.217004 | LR: 5.0e-04
+2025-04-07 04:33:04 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:33:04 [INFO] Epoch 6/50 | Train Loss: 0.992063 | Val Loss: 1.219632 | LR: 5.0e-04
+2025-04-07 04:33:19 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:33:19 [INFO] Epoch 7/50 | Train Loss: 0.967253 | Val Loss: 1.217067 | LR: 5.0e-04
+2025-04-07 04:33:34 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:33:34 [INFO] Epoch 8/50 | Train Loss: 0.982051 | Val Loss: 1.217086 | LR: 5.0e-04
+2025-04-07 04:33:48 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:33:48 [INFO] Epoch 9/50 | Train Loss: 0.982531 | Val Loss: 1.217349 | LR: 5.0e-04
+2025-04-07 04:34:03 [INFO]    -> New best validation model saved.
+2025-04-07 04:34:03 [INFO] Epoch 10/50 | Train Loss: 0.986356 | Val Loss: 1.216702 | LR: 5.0e-04
+2025-04-07 04:34:17 [INFO]    -> New best validation model saved.
+2025-04-07 04:34:17 [INFO] Epoch 11/50 | Train Loss: 0.982025 | Val Loss: 1.216271 | LR: 5.0e-04
+2025-04-07 04:34:32 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:34:32 [INFO] Epoch 12/50 | Train Loss: 0.980895 | Val Loss: 1.217749 | LR: 5.0e-04
+2025-04-07 04:34:46 [INFO]    -> New best validation model saved.
+2025-04-07 04:34:46 [INFO] Epoch 13/50 | Train Loss: 0.982777 | Val Loss: 1.216260 | LR: 5.0e-04
+2025-04-07 04:35:01 [INFO]    -> New best validation model saved.
+2025-04-07 04:35:01 [INFO] Epoch 14/50 | Train Loss: 0.979329 | Val Loss: 1.215589 | LR: 5.0e-04
+2025-04-07 04:35:15 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:35:15 [INFO] Epoch 15/50 | Train Loss: 0.985659 | Val Loss: 1.217702 | LR: 5.0e-04
+2025-04-07 04:35:30 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:35:30 [INFO] Epoch 16/50 | Train Loss: 0.978177 | Val Loss: 1.217531 | LR: 5.0e-04
+2025-04-07 04:35:45 [INFO]    -> New best validation model saved.
+2025-04-07 04:35:45 [INFO] Epoch 17/50 | Train Loss: 0.980355 | Val Loss: 1.215065 | LR: 5.0e-04
+2025-04-07 04:35:59 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:35:59 [INFO] Epoch 18/50 | Train Loss: 0.968835 | Val Loss: 1.218049 | LR: 5.0e-04
+2025-04-07 04:36:14 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:36:14 [INFO] Epoch 19/50 | Train Loss: 0.980351 | Val Loss: 1.217153 | LR: 5.0e-04
+2025-04-07 04:36:28 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:36:28 [INFO] Epoch 20/50 | Train Loss: 0.981565 | Val Loss: 1.221283 | LR: 5.0e-04
+2025-04-07 04:36:43 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:36:43 [INFO] Epoch 21/50 | Train Loss: 0.979306 | Val Loss: 1.215916 | LR: 5.0e-04
+2025-04-07 04:36:57 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:36:57 [INFO] Epoch 22/50 | Train Loss: 0.975129 | Val Loss: 1.219672 | LR: 5.0e-04
+2025-04-07 04:37:12 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:37:12 [INFO] Epoch 23/50 | Train Loss: 0.980835 | Val Loss: 1.219778 | LR: 5.0e-04
+2025-04-07 04:37:26 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:37:26 [INFO] Epoch 24/50 | Train Loss: 0.972382 | Val Loss: 1.215221 | LR: 5.0e-04
+2025-04-07 04:37:41 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:37:41 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:37:41 [INFO] Training complete. Best Validation Loss: 1.215065
+2025-04-07 04:37:41 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_38\VanillaTransformer_comb_38_loss_curve.png
+2025-04-07 04:37:41 [INFO] Comb 38 finished. Best Val Loss: 1.215065
+2025-04-07 04:37:41 [INFO] Time for comb 38: 364.00s.
+2025-04-07 04:37:41 [INFO] 
+--- Combination 39/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 04:37:41 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:37:41 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:37:41 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_39
+2025-04-07 04:37:41 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_39\VanillaTransformer_comb_39_best_val.pth
+2025-04-07 04:38:03 [INFO]    -> New best validation model saved.
+2025-04-07 04:38:03 [INFO] Epoch 1/50 | Train Loss: 1.124746 | Val Loss: 1.220077 | LR: 5.0e-04
+2025-04-07 04:38:24 [INFO]    -> New best validation model saved.
+2025-04-07 04:38:24 [INFO] Epoch 2/50 | Train Loss: 1.006202 | Val Loss: 1.215686 | LR: 5.0e-04
+2025-04-07 04:38:46 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:38:46 [INFO] Epoch 3/50 | Train Loss: 1.000046 | Val Loss: 1.219142 | LR: 5.0e-04
+2025-04-07 04:39:07 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:39:07 [INFO] Epoch 4/50 | Train Loss: 0.984615 | Val Loss: 1.216085 | LR: 5.0e-04
+2025-04-07 04:39:29 [INFO]    -> New best validation model saved.
+2025-04-07 04:39:29 [INFO] Epoch 5/50 | Train Loss: 0.990392 | Val Loss: 1.215506 | LR: 5.0e-04
+2025-04-07 04:39:50 [INFO]    -> New best validation model saved.
+2025-04-07 04:39:50 [INFO] Epoch 6/50 | Train Loss: 0.992568 | Val Loss: 1.215498 | LR: 5.0e-04
+2025-04-07 04:40:12 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:40:12 [INFO] Epoch 7/50 | Train Loss: 0.990418 | Val Loss: 1.217526 | LR: 5.0e-04
+2025-04-07 04:40:33 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:40:33 [INFO] Epoch 8/50 | Train Loss: 0.986042 | Val Loss: 1.217228 | LR: 5.0e-04
+2025-04-07 04:40:55 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:40:55 [INFO] Epoch 9/50 | Train Loss: 0.984217 | Val Loss: 1.215972 | LR: 5.0e-04
+2025-04-07 04:41:16 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:41:16 [INFO] Epoch 10/50 | Train Loss: 0.978856 | Val Loss: 1.221186 | LR: 5.0e-04
+2025-04-07 04:41:38 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:41:38 [INFO] Epoch 11/50 | Train Loss: 0.988833 | Val Loss: 1.218753 | LR: 5.0e-04
+2025-04-07 04:42:00 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:42:00 [INFO] Epoch 12/50 | Train Loss: 0.986096 | Val Loss: 1.218239 | LR: 5.0e-04
+2025-04-07 04:42:21 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:42:21 [INFO] Epoch 13/50 | Train Loss: 0.983895 | Val Loss: 1.220901 | LR: 5.0e-04
+2025-04-07 04:42:43 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:42:43 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:42:43 [INFO] Training complete. Best Validation Loss: 1.215498
+2025-04-07 04:42:43 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_39\VanillaTransformer_comb_39_loss_curve.png
+2025-04-07 04:42:43 [INFO] Comb 39 finished. Best Val Loss: 1.215498
+2025-04-07 04:42:43 [INFO] Time for comb 39: 301.57s.
+2025-04-07 04:42:43 [INFO] 
+--- Combination 40/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 04:42:43 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:42:43 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:42:43 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_40
+2025-04-07 04:42:43 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_40\VanillaTransformer_comb_40_best_val.pth
+2025-04-07 04:42:58 [INFO]    -> New best validation model saved.
+2025-04-07 04:42:58 [INFO] Epoch 1/50 | Train Loss: 1.142233 | Val Loss: 1.223230 | LR: 5.0e-04
+2025-04-07 04:43:13 [INFO]    -> New best validation model saved.
+2025-04-07 04:43:13 [INFO] Epoch 2/50 | Train Loss: 1.034149 | Val Loss: 1.218195 | LR: 5.0e-04
+2025-04-07 04:43:28 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:43:28 [INFO] Epoch 3/50 | Train Loss: 1.010337 | Val Loss: 1.222965 | LR: 5.0e-04
+2025-04-07 04:43:43 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:43:43 [INFO] Epoch 4/50 | Train Loss: 0.998908 | Val Loss: 1.221313 | LR: 5.0e-04
+2025-04-07 04:43:58 [INFO]    -> New best validation model saved.
+2025-04-07 04:43:58 [INFO] Epoch 5/50 | Train Loss: 0.999062 | Val Loss: 1.215074 | LR: 5.0e-04
+2025-04-07 04:44:13 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:44:13 [INFO] Epoch 6/50 | Train Loss: 0.991251 | Val Loss: 1.217796 | LR: 5.0e-04
+2025-04-07 04:44:28 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:44:28 [INFO] Epoch 7/50 | Train Loss: 0.987474 | Val Loss: 1.215229 | LR: 5.0e-04
+2025-04-07 04:44:43 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:44:43 [INFO] Epoch 8/50 | Train Loss: 0.987254 | Val Loss: 1.226397 | LR: 5.0e-04
+2025-04-07 04:44:58 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:44:58 [INFO] Epoch 9/50 | Train Loss: 0.987418 | Val Loss: 1.222949 | LR: 5.0e-04
+2025-04-07 04:45:13 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:45:13 [INFO] Epoch 10/50 | Train Loss: 0.981996 | Val Loss: 1.234376 | LR: 5.0e-04
+2025-04-07 04:45:28 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:45:28 [INFO] Epoch 11/50 | Train Loss: 0.983471 | Val Loss: 1.220443 | LR: 5.0e-04
+2025-04-07 04:45:43 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:45:43 [INFO] Epoch 12/50 | Train Loss: 0.958277 | Val Loss: 1.218619 | LR: 5.0e-04
+2025-04-07 04:45:58 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:45:58 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:45:58 [INFO] Training complete. Best Validation Loss: 1.215074
+2025-04-07 04:45:59 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_40\VanillaTransformer_comb_40_loss_curve.png
+2025-04-07 04:45:59 [INFO] Comb 40 finished. Best Val Loss: 1.215074
+2025-04-07 04:45:59 [INFO] Time for comb 40: 195.83s.
+2025-04-07 04:45:59 [INFO] 
+--- Combination 41/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 04:45:59 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:45:59 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:45:59 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_41
+2025-04-07 04:45:59 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_41\VanillaTransformer_comb_41_best_val.pth
+2025-04-07 04:46:28 [INFO]    -> New best validation model saved.
+2025-04-07 04:46:28 [INFO] Epoch 1/50 | Train Loss: 1.202238 | Val Loss: 1.226557 | LR: 5.0e-04
+2025-04-07 04:46:57 [INFO]    -> New best validation model saved.
+2025-04-07 04:46:57 [INFO] Epoch 2/50 | Train Loss: 1.019372 | Val Loss: 1.225905 | LR: 5.0e-04
+2025-04-07 04:47:26 [INFO]    -> New best validation model saved.
+2025-04-07 04:47:26 [INFO] Epoch 3/50 | Train Loss: 1.007349 | Val Loss: 1.217943 | LR: 5.0e-04
+2025-04-07 04:47:55 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:47:55 [INFO] Epoch 4/50 | Train Loss: 1.001559 | Val Loss: 1.220359 | LR: 5.0e-04
+2025-04-07 04:48:24 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:48:24 [INFO] Epoch 5/50 | Train Loss: 1.000185 | Val Loss: 1.219363 | LR: 5.0e-04
+2025-04-07 04:48:53 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:48:53 [INFO] Epoch 6/50 | Train Loss: 0.996456 | Val Loss: 1.219061 | LR: 5.0e-04
+2025-04-07 04:49:22 [INFO]    -> New best validation model saved.
+2025-04-07 04:49:22 [INFO] Epoch 7/50 | Train Loss: 0.982869 | Val Loss: 1.217713 | LR: 5.0e-04
+2025-04-07 04:49:51 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:49:51 [INFO] Epoch 8/50 | Train Loss: 0.982855 | Val Loss: 1.217756 | LR: 5.0e-04
+2025-04-07 04:50:20 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:50:20 [INFO] Epoch 9/50 | Train Loss: 0.994797 | Val Loss: 1.217997 | LR: 5.0e-04
+2025-04-07 04:50:49 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:50:49 [INFO] Epoch 10/50 | Train Loss: 0.983478 | Val Loss: 1.218022 | LR: 5.0e-04
+2025-04-07 04:51:18 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:51:18 [INFO] Epoch 11/50 | Train Loss: 0.986663 | Val Loss: 1.217829 | LR: 5.0e-04
+2025-04-07 04:51:47 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:51:47 [INFO] Epoch 12/50 | Train Loss: 0.979435 | Val Loss: 1.217954 | LR: 5.0e-04
+2025-04-07 04:52:16 [INFO]    -> New best validation model saved.
+2025-04-07 04:52:16 [INFO] Epoch 13/50 | Train Loss: 0.976958 | Val Loss: 1.217188 | LR: 5.0e-04
+2025-04-07 04:52:45 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:52:45 [INFO] Epoch 14/50 | Train Loss: 0.984531 | Val Loss: 1.217787 | LR: 5.0e-04
+2025-04-07 04:53:14 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:53:14 [INFO] Epoch 15/50 | Train Loss: 0.983545 | Val Loss: 1.218215 | LR: 5.0e-04
+2025-04-07 04:53:43 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:53:43 [INFO] Epoch 16/50 | Train Loss: 0.982798 | Val Loss: 1.218447 | LR: 5.0e-04
+2025-04-07 04:54:12 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:54:12 [INFO] Epoch 17/50 | Train Loss: 0.983162 | Val Loss: 1.219521 | LR: 5.0e-04
+2025-04-07 04:54:41 [INFO]    -> New best validation model saved.
+2025-04-07 04:54:41 [INFO] Epoch 18/50 | Train Loss: 0.984997 | Val Loss: 1.215460 | LR: 5.0e-04
+2025-04-07 04:55:10 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:55:10 [INFO] Epoch 19/50 | Train Loss: 0.988848 | Val Loss: 1.215667 | LR: 5.0e-04
+2025-04-07 04:55:39 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 04:55:39 [INFO] Epoch 20/50 | Train Loss: 0.975173 | Val Loss: 1.216859 | LR: 5.0e-04
+2025-04-07 04:56:08 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 04:56:08 [INFO] Epoch 21/50 | Train Loss: 0.978691 | Val Loss: 1.239183 | LR: 5.0e-04
+2025-04-07 04:56:37 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 04:56:37 [INFO] Epoch 22/50 | Train Loss: 0.976973 | Val Loss: 1.220571 | LR: 5.0e-04
+2025-04-07 04:57:06 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 04:57:06 [INFO] Epoch 23/50 | Train Loss: 0.982134 | Val Loss: 1.230891 | LR: 5.0e-04
+2025-04-07 04:57:35 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 04:57:35 [INFO] Epoch 24/50 | Train Loss: 0.974852 | Val Loss: 1.219718 | LR: 5.0e-04
+2025-04-07 04:58:04 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 04:58:04 [INFO] Epoch 25/50 | Train Loss: 0.978845 | Val Loss: 1.224103 | LR: 5.0e-04
+2025-04-07 04:58:33 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 04:58:33 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 04:58:33 [INFO] Training complete. Best Validation Loss: 1.215460
+2025-04-07 04:58:33 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_41\VanillaTransformer_comb_41_loss_curve.png
+2025-04-07 04:58:33 [INFO] Comb 41 finished. Best Val Loss: 1.215460
+2025-04-07 04:58:33 [INFO] Time for comb 41: 754.25s.
+2025-04-07 04:58:33 [INFO] 
+--- Combination 42/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.1, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 04:58:33 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 04:58:33 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 04:58:33 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_42
+2025-04-07 04:58:33 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_42\VanillaTransformer_comb_42_best_val.pth
+2025-04-07 04:59:16 [INFO]    -> New best validation model saved.
+2025-04-07 04:59:16 [INFO] Epoch 1/50 | Train Loss: 1.075644 | Val Loss: 1.217216 | LR: 5.0e-04
+2025-04-07 04:59:59 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 04:59:59 [INFO] Epoch 2/50 | Train Loss: 1.005657 | Val Loss: 1.221778 | LR: 5.0e-04
+2025-04-07 05:00:42 [INFO]    -> New best validation model saved.
+2025-04-07 05:00:42 [INFO] Epoch 3/50 | Train Loss: 0.992951 | Val Loss: 1.216591 | LR: 5.0e-04
+2025-04-07 05:01:25 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:01:25 [INFO] Epoch 4/50 | Train Loss: 0.989174 | Val Loss: 1.216865 | LR: 5.0e-04
+2025-04-07 05:02:08 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:02:08 [INFO] Epoch 5/50 | Train Loss: 0.992262 | Val Loss: 1.225390 | LR: 5.0e-04
+2025-04-07 05:02:50 [INFO]    -> New best validation model saved.
+2025-04-07 05:02:50 [INFO] Epoch 6/50 | Train Loss: 0.988175 | Val Loss: 1.216406 | LR: 5.0e-04
+2025-04-07 05:03:33 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:03:33 [INFO] Epoch 7/50 | Train Loss: 0.988346 | Val Loss: 1.229110 | LR: 5.0e-04
+2025-04-07 05:04:16 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:04:16 [INFO] Epoch 8/50 | Train Loss: 0.981030 | Val Loss: 1.239217 | LR: 5.0e-04
+2025-04-07 05:04:59 [INFO]    -> New best validation model saved.
+2025-04-07 05:04:59 [INFO] Epoch 9/50 | Train Loss: 0.954370 | Val Loss: 1.215339 | LR: 5.0e-04
+2025-04-07 05:05:42 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:05:42 [INFO] Epoch 10/50 | Train Loss: 0.983311 | Val Loss: 1.219065 | LR: 5.0e-04
+2025-04-07 05:06:25 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:06:25 [INFO] Epoch 11/50 | Train Loss: 0.979407 | Val Loss: 1.220518 | LR: 5.0e-04
+2025-04-07 05:07:08 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:07:08 [INFO] Epoch 12/50 | Train Loss: 0.979215 | Val Loss: 1.226244 | LR: 5.0e-04
+2025-04-07 05:07:51 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:07:51 [INFO] Epoch 13/50 | Train Loss: 0.981442 | Val Loss: 1.220524 | LR: 5.0e-04
+2025-04-07 05:08:34 [INFO]    -> New best validation model saved.
+2025-04-07 05:08:34 [INFO] Epoch 14/50 | Train Loss: 0.984593 | Val Loss: 1.213601 | LR: 5.0e-04
+2025-04-07 05:09:17 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:09:17 [INFO] Epoch 15/50 | Train Loss: 0.981934 | Val Loss: 1.219352 | LR: 5.0e-04
+2025-04-07 05:10:00 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:10:00 [INFO] Epoch 16/50 | Train Loss: 0.984459 | Val Loss: 1.219010 | LR: 5.0e-04
+2025-04-07 05:10:43 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:10:43 [INFO] Epoch 17/50 | Train Loss: 0.981950 | Val Loss: 1.214061 | LR: 5.0e-04
+2025-04-07 05:11:26 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:11:26 [INFO] Epoch 18/50 | Train Loss: 0.958526 | Val Loss: 1.217344 | LR: 5.0e-04
+2025-04-07 05:12:09 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:12:09 [INFO] Epoch 19/50 | Train Loss: 0.978336 | Val Loss: 1.216184 | LR: 5.0e-04
+2025-04-07 05:12:52 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:12:52 [INFO] Epoch 20/50 | Train Loss: 0.979712 | Val Loss: 1.223444 | LR: 5.0e-04
+2025-04-07 05:13:35 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:13:35 [INFO] Epoch 21/50 | Train Loss: 0.978243 | Val Loss: 1.220876 | LR: 5.0e-04
+2025-04-07 05:14:18 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:14:18 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:14:18 [INFO] Training complete. Best Validation Loss: 1.213601
+2025-04-07 05:14:18 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_42\VanillaTransformer_comb_42_loss_curve.png
+2025-04-07 05:14:18 [INFO] Comb 42 finished. Best Val Loss: 1.213601
+2025-04-07 05:14:18 [INFO] Time for comb 42: 945.09s.
+2025-04-07 05:14:18 [INFO] 
+--- Combination 43/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 1} ---
+2025-04-07 05:14:18 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 05:14:18 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 05:14:18 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_43
+2025-04-07 05:14:18 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_43\VanillaTransformer_comb_43_best_val.pth
+2025-04-07 05:14:25 [INFO]    -> New best validation model saved.
+2025-04-07 05:14:25 [INFO] Epoch 1/50 | Train Loss: 1.109800 | Val Loss: 1.217389 | LR: 5.0e-04
+2025-04-07 05:14:33 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:14:33 [INFO] Epoch 2/50 | Train Loss: 1.032841 | Val Loss: 1.228554 | LR: 5.0e-04
+2025-04-07 05:14:41 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:14:41 [INFO] Epoch 3/50 | Train Loss: 1.008038 | Val Loss: 1.219645 | LR: 5.0e-04
+2025-04-07 05:14:48 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:14:48 [INFO] Epoch 4/50 | Train Loss: 1.004700 | Val Loss: 1.238188 | LR: 5.0e-04
+2025-04-07 05:14:56 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:14:56 [INFO] Epoch 5/50 | Train Loss: 0.995736 | Val Loss: 1.217393 | LR: 5.0e-04
+2025-04-07 05:15:03 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:15:03 [INFO] Epoch 6/50 | Train Loss: 0.995041 | Val Loss: 1.222414 | LR: 5.0e-04
+2025-04-07 05:15:11 [INFO]    -> New best validation model saved.
+2025-04-07 05:15:11 [INFO] Epoch 7/50 | Train Loss: 0.994152 | Val Loss: 1.216910 | LR: 5.0e-04
+2025-04-07 05:15:18 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:15:18 [INFO] Epoch 8/50 | Train Loss: 0.961430 | Val Loss: 1.220404 | LR: 5.0e-04
+2025-04-07 05:15:26 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:15:26 [INFO] Epoch 9/50 | Train Loss: 0.987187 | Val Loss: 1.222463 | LR: 5.0e-04
+2025-04-07 05:15:34 [INFO]    -> New best validation model saved.
+2025-04-07 05:15:34 [INFO] Epoch 10/50 | Train Loss: 0.981879 | Val Loss: 1.216783 | LR: 5.0e-04
+2025-04-07 05:15:41 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:15:41 [INFO] Epoch 11/50 | Train Loss: 0.983897 | Val Loss: 1.218685 | LR: 5.0e-04
+2025-04-07 05:15:49 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:15:49 [INFO] Epoch 12/50 | Train Loss: 0.983953 | Val Loss: 1.218182 | LR: 5.0e-04
+2025-04-07 05:15:56 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:15:56 [INFO] Epoch 13/50 | Train Loss: 0.983011 | Val Loss: 1.217302 | LR: 5.0e-04
+2025-04-07 05:16:04 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:16:04 [INFO] Epoch 14/50 | Train Loss: 0.978865 | Val Loss: 1.217836 | LR: 5.0e-04
+2025-04-07 05:16:12 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:16:12 [INFO] Epoch 15/50 | Train Loss: 0.981370 | Val Loss: 1.217103 | LR: 5.0e-04
+2025-04-07 05:16:19 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:16:19 [INFO] Epoch 16/50 | Train Loss: 0.980043 | Val Loss: 1.218398 | LR: 5.0e-04
+2025-04-07 05:16:27 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:16:27 [INFO] Epoch 17/50 | Train Loss: 0.976674 | Val Loss: 1.218910 | LR: 5.0e-04
+2025-04-07 05:16:34 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:16:34 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:16:34 [INFO] Training complete. Best Validation Loss: 1.216783
+2025-04-07 05:16:34 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_43\VanillaTransformer_comb_43_loss_curve.png
+2025-04-07 05:16:34 [INFO] Comb 43 finished. Best Val Loss: 1.216783
+2025-04-07 05:16:34 [INFO] Time for comb 43: 136.50s.
+2025-04-07 05:16:34 [INFO] 
+--- Combination 44/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 2} ---
+2025-04-07 05:16:34 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 05:16:34 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 05:16:34 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_44
+2025-04-07 05:16:34 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_44\VanillaTransformer_comb_44_best_val.pth
+2025-04-07 05:16:49 [INFO]    -> New best validation model saved.
+2025-04-07 05:16:49 [INFO] Epoch 1/50 | Train Loss: 1.339908 | Val Loss: 1.235155 | LR: 5.0e-04
+2025-04-07 05:17:03 [INFO]    -> New best validation model saved.
+2025-04-07 05:17:03 [INFO] Epoch 2/50 | Train Loss: 1.042671 | Val Loss: 1.218451 | LR: 5.0e-04
+2025-04-07 05:17:18 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:17:18 [INFO] Epoch 3/50 | Train Loss: 1.020621 | Val Loss: 1.220326 | LR: 5.0e-04
+2025-04-07 05:17:33 [INFO]    -> New best validation model saved.
+2025-04-07 05:17:33 [INFO] Epoch 4/50 | Train Loss: 1.001054 | Val Loss: 1.217237 | LR: 5.0e-04
+2025-04-07 05:17:47 [INFO]    -> New best validation model saved.
+2025-04-07 05:17:47 [INFO] Epoch 5/50 | Train Loss: 1.003378 | Val Loss: 1.215295 | LR: 5.0e-04
+2025-04-07 05:18:02 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:18:02 [INFO] Epoch 6/50 | Train Loss: 0.994174 | Val Loss: 1.222830 | LR: 5.0e-04
+2025-04-07 05:18:16 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:18:16 [INFO] Epoch 7/50 | Train Loss: 0.998690 | Val Loss: 1.219102 | LR: 5.0e-04
+2025-04-07 05:18:31 [INFO]    -> New best validation model saved.
+2025-04-07 05:18:31 [INFO] Epoch 8/50 | Train Loss: 0.990869 | Val Loss: 1.213971 | LR: 5.0e-04
+2025-04-07 05:18:45 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:18:45 [INFO] Epoch 9/50 | Train Loss: 0.969254 | Val Loss: 1.217896 | LR: 5.0e-04
+2025-04-07 05:19:00 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:19:00 [INFO] Epoch 10/50 | Train Loss: 0.991567 | Val Loss: 1.214783 | LR: 5.0e-04
+2025-04-07 05:19:14 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:19:14 [INFO] Epoch 11/50 | Train Loss: 0.986005 | Val Loss: 1.217259 | LR: 5.0e-04
+2025-04-07 05:19:29 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:19:29 [INFO] Epoch 12/50 | Train Loss: 0.983404 | Val Loss: 1.217097 | LR: 5.0e-04
+2025-04-07 05:19:44 [INFO]    -> New best validation model saved.
+2025-04-07 05:19:44 [INFO] Epoch 13/50 | Train Loss: 0.986885 | Val Loss: 1.213757 | LR: 5.0e-04
+2025-04-07 05:19:58 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:19:58 [INFO] Epoch 14/50 | Train Loss: 0.985075 | Val Loss: 1.216266 | LR: 5.0e-04
+2025-04-07 05:20:13 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:20:13 [INFO] Epoch 15/50 | Train Loss: 0.971737 | Val Loss: 1.214312 | LR: 5.0e-04
+2025-04-07 05:20:27 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:20:27 [INFO] Epoch 16/50 | Train Loss: 0.981606 | Val Loss: 1.214110 | LR: 5.0e-04
+2025-04-07 05:20:42 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:20:42 [INFO] Epoch 17/50 | Train Loss: 0.984712 | Val Loss: 1.218411 | LR: 5.0e-04
+2025-04-07 05:20:56 [INFO]    -> New best validation model saved.
+2025-04-07 05:20:56 [INFO] Epoch 18/50 | Train Loss: 0.944477 | Val Loss: 1.213358 | LR: 5.0e-04
+2025-04-07 05:21:11 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:21:11 [INFO] Epoch 19/50 | Train Loss: 0.983423 | Val Loss: 1.214006 | LR: 5.0e-04
+2025-04-07 05:21:25 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:21:25 [INFO] Epoch 20/50 | Train Loss: 0.980363 | Val Loss: 1.222051 | LR: 5.0e-04
+2025-04-07 05:21:40 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:21:40 [INFO] Epoch 21/50 | Train Loss: 0.979445 | Val Loss: 1.214432 | LR: 5.0e-04
+2025-04-07 05:21:55 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:21:55 [INFO] Epoch 22/50 | Train Loss: 0.978859 | Val Loss: 1.214902 | LR: 5.0e-04
+2025-04-07 05:22:09 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:22:09 [INFO] Epoch 23/50 | Train Loss: 0.981155 | Val Loss: 1.217669 | LR: 5.0e-04
+2025-04-07 05:22:24 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:22:24 [INFO] Epoch 24/50 | Train Loss: 0.978363 | Val Loss: 1.225262 | LR: 5.0e-04
+2025-04-07 05:22:38 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:22:38 [INFO] Epoch 25/50 | Train Loss: 0.954300 | Val Loss: 1.218853 | LR: 5.0e-04
+2025-04-07 05:22:53 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:22:53 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:22:53 [INFO] Training complete. Best Validation Loss: 1.213358
+2025-04-07 05:22:53 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_44\VanillaTransformer_comb_44_loss_curve.png
+2025-04-07 05:22:53 [INFO] Comb 44 finished. Best Val Loss: 1.213358
+2025-04-07 05:22:53 [INFO] Time for comb 44: 378.57s.
+2025-04-07 05:22:53 [INFO] 
+--- Combination 45/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 64, 'num_encoder_layers': 3} ---
+2025-04-07 05:22:53 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 05:22:53 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 05:22:53 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_45
+2025-04-07 05:22:53 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_45\VanillaTransformer_comb_45_best_val.pth
+2025-04-07 05:23:14 [INFO]    -> New best validation model saved.
+2025-04-07 05:23:14 [INFO] Epoch 1/50 | Train Loss: 1.045826 | Val Loss: 1.218110 | LR: 5.0e-04
+2025-04-07 05:23:36 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:23:36 [INFO] Epoch 2/50 | Train Loss: 1.009122 | Val Loss: 1.219145 | LR: 5.0e-04
+2025-04-07 05:23:58 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:23:58 [INFO] Epoch 3/50 | Train Loss: 1.001272 | Val Loss: 1.222573 | LR: 5.0e-04
+2025-04-07 05:24:19 [INFO]    -> New best validation model saved.
+2025-04-07 05:24:19 [INFO] Epoch 4/50 | Train Loss: 0.993884 | Val Loss: 1.215418 | LR: 5.0e-04
+2025-04-07 05:24:41 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:24:41 [INFO] Epoch 5/50 | Train Loss: 0.987080 | Val Loss: 1.216024 | LR: 5.0e-04
+2025-04-07 05:25:02 [INFO]    -> New best validation model saved.
+2025-04-07 05:25:02 [INFO] Epoch 6/50 | Train Loss: 0.985415 | Val Loss: 1.214731 | LR: 5.0e-04
+2025-04-07 05:25:24 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:25:24 [INFO] Epoch 7/50 | Train Loss: 0.987238 | Val Loss: 1.227949 | LR: 5.0e-04
+2025-04-07 05:25:45 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:25:45 [INFO] Epoch 8/50 | Train Loss: 0.989090 | Val Loss: 1.219209 | LR: 5.0e-04
+2025-04-07 05:26:07 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:26:07 [INFO] Epoch 9/50 | Train Loss: 0.983142 | Val Loss: 1.217019 | LR: 5.0e-04
+2025-04-07 05:26:28 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:26:28 [INFO] Epoch 10/50 | Train Loss: 0.983459 | Val Loss: 1.216041 | LR: 5.0e-04
+2025-04-07 05:26:50 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:26:50 [INFO] Epoch 11/50 | Train Loss: 0.984505 | Val Loss: 1.226092 | LR: 5.0e-04
+2025-04-07 05:27:11 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:27:11 [INFO] Epoch 12/50 | Train Loss: 0.986643 | Val Loss: 1.217471 | LR: 5.0e-04
+2025-04-07 05:27:33 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:27:33 [INFO] Epoch 13/50 | Train Loss: 0.983671 | Val Loss: 1.216583 | LR: 5.0e-04
+2025-04-07 05:27:54 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:27:54 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:27:54 [INFO] Training complete. Best Validation Loss: 1.214731
+2025-04-07 05:27:54 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_45\VanillaTransformer_comb_45_loss_curve.png
+2025-04-07 05:27:54 [INFO] Comb 45 finished. Best Val Loss: 1.214731
+2025-04-07 05:27:54 [INFO] Time for comb 45: 301.56s.
+2025-04-07 05:27:54 [INFO] 
+--- Combination 46/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 1} ---
+2025-04-07 05:27:54 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 05:27:54 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 05:27:54 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_46
+2025-04-07 05:27:54 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_46\VanillaTransformer_comb_46_best_val.pth
+2025-04-07 05:28:10 [INFO]    -> New best validation model saved.
+2025-04-07 05:28:10 [INFO] Epoch 1/50 | Train Loss: 1.204211 | Val Loss: 1.243720 | LR: 5.0e-04
+2025-04-07 05:28:25 [INFO]    -> New best validation model saved.
+2025-04-07 05:28:25 [INFO] Epoch 2/50 | Train Loss: 1.042236 | Val Loss: 1.230456 | LR: 5.0e-04
+2025-04-07 05:28:40 [INFO]    -> New best validation model saved.
+2025-04-07 05:28:40 [INFO] Epoch 3/50 | Train Loss: 1.017336 | Val Loss: 1.223968 | LR: 5.0e-04
+2025-04-07 05:28:55 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:28:55 [INFO] Epoch 4/50 | Train Loss: 1.003698 | Val Loss: 1.226585 | LR: 5.0e-04
+2025-04-07 05:29:10 [INFO]    -> New best validation model saved.
+2025-04-07 05:29:10 [INFO] Epoch 5/50 | Train Loss: 0.998494 | Val Loss: 1.216166 | LR: 5.0e-04
+2025-04-07 05:29:25 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:29:25 [INFO] Epoch 6/50 | Train Loss: 0.997664 | Val Loss: 1.216723 | LR: 5.0e-04
+2025-04-07 05:29:40 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:29:40 [INFO] Epoch 7/50 | Train Loss: 0.990992 | Val Loss: 1.225737 | LR: 5.0e-04
+2025-04-07 05:29:55 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:29:55 [INFO] Epoch 8/50 | Train Loss: 0.980427 | Val Loss: 1.222161 | LR: 5.0e-04
+2025-04-07 05:30:10 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:30:10 [INFO] Epoch 9/50 | Train Loss: 0.978032 | Val Loss: 1.218041 | LR: 5.0e-04
+2025-04-07 05:30:25 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:30:25 [INFO] Epoch 10/50 | Train Loss: 0.986978 | Val Loss: 1.216692 | LR: 5.0e-04
+2025-04-07 05:30:40 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:30:40 [INFO] Epoch 11/50 | Train Loss: 0.984278 | Val Loss: 1.218716 | LR: 5.0e-04
+2025-04-07 05:30:55 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:30:55 [INFO] Epoch 12/50 | Train Loss: 0.988437 | Val Loss: 1.224171 | LR: 5.0e-04
+2025-04-07 05:31:10 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:31:10 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:31:10 [INFO] Training complete. Best Validation Loss: 1.216166
+2025-04-07 05:31:10 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_46\VanillaTransformer_comb_46_loss_curve.png
+2025-04-07 05:31:10 [INFO] Comb 46 finished. Best Val Loss: 1.216166
+2025-04-07 05:31:10 [INFO] Time for comb 46: 195.84s.
+2025-04-07 05:31:10 [INFO] 
+--- Combination 47/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 2} ---
+2025-04-07 05:31:10 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 05:31:10 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 05:31:10 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_47
+2025-04-07 05:31:10 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_47\VanillaTransformer_comb_47_best_val.pth
+2025-04-07 05:31:39 [INFO]    -> New best validation model saved.
+2025-04-07 05:31:39 [INFO] Epoch 1/50 | Train Loss: 1.108860 | Val Loss: 1.222979 | LR: 5.0e-04
+2025-04-07 05:32:08 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:32:08 [INFO] Epoch 2/50 | Train Loss: 1.027092 | Val Loss: 1.231859 | LR: 5.0e-04
+2025-04-07 05:32:37 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:32:37 [INFO] Epoch 3/50 | Train Loss: 1.014240 | Val Loss: 1.223607 | LR: 5.0e-04
+2025-04-07 05:33:06 [INFO]    -> New best validation model saved.
+2025-04-07 05:33:06 [INFO] Epoch 4/50 | Train Loss: 1.000968 | Val Loss: 1.217840 | LR: 5.0e-04
+2025-04-07 05:33:35 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:33:35 [INFO] Epoch 5/50 | Train Loss: 0.998213 | Val Loss: 1.228191 | LR: 5.0e-04
+2025-04-07 05:34:04 [INFO]    -> New best validation model saved.
+2025-04-07 05:34:04 [INFO] Epoch 6/50 | Train Loss: 1.001815 | Val Loss: 1.215628 | LR: 5.0e-04
+2025-04-07 05:34:33 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:34:33 [INFO] Epoch 7/50 | Train Loss: 0.987358 | Val Loss: 1.219998 | LR: 5.0e-04
+2025-04-07 05:35:02 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:35:02 [INFO] Epoch 8/50 | Train Loss: 0.989338 | Val Loss: 1.224030 | LR: 5.0e-04
+2025-04-07 05:35:31 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:35:31 [INFO] Epoch 9/50 | Train Loss: 0.983476 | Val Loss: 1.225313 | LR: 5.0e-04
+2025-04-07 05:36:00 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:36:00 [INFO] Epoch 10/50 | Train Loss: 0.987605 | Val Loss: 1.217828 | LR: 5.0e-04
+2025-04-07 05:36:29 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:36:29 [INFO] Epoch 11/50 | Train Loss: 0.985750 | Val Loss: 1.220083 | LR: 5.0e-04
+2025-04-07 05:36:58 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:36:58 [INFO] Epoch 12/50 | Train Loss: 0.983756 | Val Loss: 1.215738 | LR: 5.0e-04
+2025-04-07 05:37:27 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:37:27 [INFO] Epoch 13/50 | Train Loss: 0.984066 | Val Loss: 1.219329 | LR: 5.0e-04
+2025-04-07 05:37:56 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:37:56 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:37:56 [INFO] Training complete. Best Validation Loss: 1.215628
+2025-04-07 05:37:57 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_47\VanillaTransformer_comb_47_loss_curve.png
+2025-04-07 05:37:57 [INFO] Comb 47 finished. Best Val Loss: 1.215628
+2025-04-07 05:37:57 [INFO] Time for comb 47: 406.20s.
+2025-04-07 05:37:57 [INFO] 
+--- Combination 48/48: {'learning_rate': 0.0005, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 3} ---
+2025-04-07 05:37:57 [INFO] Initialized RankLoss with lambda_rank=0.5 and reduction='mean'
+2025-04-07 05:37:57 [INFO] Using LR scheduler: ReduceLROnPlateau with params {}
+2025-04-07 05:37:57 [INFO] Starting training for 50 epochs. Model: VanillaTransformer_comb_48
+2025-04-07 05:37:57 [INFO] Saving best model to: ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_48\VanillaTransformer_comb_48_best_val.pth
+2025-04-07 05:38:40 [INFO]    -> New best validation model saved.
+2025-04-07 05:38:40 [INFO] Epoch 1/50 | Train Loss: 1.043871 | Val Loss: 1.262831 | LR: 5.0e-04
+2025-04-07 05:39:23 [INFO]    -> New best validation model saved.
+2025-04-07 05:39:23 [INFO] Epoch 2/50 | Train Loss: 1.019373 | Val Loss: 1.216389 | LR: 5.0e-04
+2025-04-07 05:40:05 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:40:05 [INFO] Epoch 3/50 | Train Loss: 1.013658 | Val Loss: 1.224797 | LR: 5.0e-04
+2025-04-07 05:40:48 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:40:48 [INFO] Epoch 4/50 | Train Loss: 1.004197 | Val Loss: 1.218478 | LR: 5.0e-04
+2025-04-07 05:41:31 [INFO]    -> New best validation model saved.
+2025-04-07 05:41:31 [INFO] Epoch 5/50 | Train Loss: 0.998645 | Val Loss: 1.215027 | LR: 5.0e-04
+2025-04-07 05:42:14 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:42:14 [INFO] Epoch 6/50 | Train Loss: 0.985919 | Val Loss: 1.224046 | LR: 5.0e-04
+2025-04-07 05:42:57 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:42:57 [INFO] Epoch 7/50 | Train Loss: 0.988929 | Val Loss: 1.215770 | LR: 5.0e-04
+2025-04-07 05:43:40 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:43:40 [INFO] Epoch 8/50 | Train Loss: 0.989249 | Val Loss: 1.217847 | LR: 5.0e-04
+2025-04-07 05:44:23 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:44:23 [INFO] Epoch 9/50 | Train Loss: 0.987693 | Val Loss: 1.227843 | LR: 5.0e-04
+2025-04-07 05:45:06 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:45:06 [INFO] Epoch 10/50 | Train Loss: 0.993976 | Val Loss: 1.216747 | LR: 5.0e-04
+2025-04-07 05:45:49 [INFO]    -> New best validation model saved.
+2025-04-07 05:45:49 [INFO] Epoch 11/50 | Train Loss: 0.983980 | Val Loss: 1.214633 | LR: 5.0e-04
+2025-04-07 05:46:32 [INFO]    -> No improvement in validation loss for 1 epoch(s).
+2025-04-07 05:46:32 [INFO] Epoch 12/50 | Train Loss: 0.984307 | Val Loss: 1.218330 | LR: 5.0e-04
+2025-04-07 05:47:15 [INFO]    -> No improvement in validation loss for 2 epoch(s).
+2025-04-07 05:47:15 [INFO] Epoch 13/50 | Train Loss: 0.986894 | Val Loss: 1.218194 | LR: 5.0e-04
+2025-04-07 05:47:58 [INFO]    -> No improvement in validation loss for 3 epoch(s).
+2025-04-07 05:47:58 [INFO] Epoch 14/50 | Train Loss: 0.980537 | Val Loss: 1.215144 | LR: 5.0e-04
+2025-04-07 05:48:41 [INFO]    -> No improvement in validation loss for 4 epoch(s).
+2025-04-07 05:48:41 [INFO] Epoch 15/50 | Train Loss: 0.984692 | Val Loss: 1.215348 | LR: 5.0e-04
+2025-04-07 05:49:24 [INFO]    -> No improvement in validation loss for 5 epoch(s).
+2025-04-07 05:49:24 [INFO] Epoch 16/50 | Train Loss: 0.973703 | Val Loss: 1.216544 | LR: 5.0e-04
+2025-04-07 05:50:07 [INFO]    -> No improvement in validation loss for 6 epoch(s).
+2025-04-07 05:50:07 [INFO] Epoch 17/50 | Train Loss: 0.961523 | Val Loss: 1.226435 | LR: 5.0e-04
+2025-04-07 05:50:50 [INFO]    -> No improvement in validation loss for 7 epoch(s).
+2025-04-07 05:50:50 [INFO] Epoch 18/50 | Train Loss: 0.969074 | Val Loss: 1.217784 | LR: 5.0e-04
+2025-04-07 05:51:33 [INFO]    -> No improvement in validation loss for 8 epoch(s).
+2025-04-07 05:51:33 [INFO] Early stopping triggered after 8 epochs with no improvement.
+2025-04-07 05:51:33 [INFO] Training complete. Best Validation Loss: 1.214633
+2025-04-07 05:51:33 [INFO] Loss curve saved to ..\data\exp_result\models\VanillaTransformer_GridSearch\temp_comb_48\VanillaTransformer_comb_48_loss_curve.png
+2025-04-07 05:51:33 [INFO] Comb 48 finished. Best Val Loss: 1.214633
+2025-04-07 05:51:33 [INFO] Time for comb 48: 816.22s.
+2025-04-07 05:51:33 [INFO] 
+--- Grid Search Finished ---
+2025-04-07 05:51:33 [INFO] Total time: 17348.57 seconds.
+2025-04-07 05:51:33 [INFO] Best Val Loss: 1.212125
+2025-04-07 05:51:33 [INFO] Best Params: {'learning_rate': 0.001, 'batch_size': 64, 'd_ff': 128, 'dropout': 0.2, 'd_model': 128, 'num_encoder_layers': 2}
+2025-04-07 05:51:33 [INFO] Best model saved to: ..\data\exp_result\models\VanillaTransformer_GridSearch\VanillaTransformer_best_grid_model.pth
+2025-04-07 05:51:33 [INFO] Best configuration saved to: ..\data\exp_result\models\VanillaTransformer_GridSearch\best_grid_params.yaml
+2025-04-07 05:51:33 [INFO] Grid search summary saved to: ..\data\exp_result\models\VanillaTransformer_GridSearch\grid_search_summary.csv
+2025-04-07 05:51:33 [INFO] --- Grid Search Script Finished ---
+2025-04-07 05:51:33 [INFO] Successfully loaded configuration from ../experiments/configs/training_config_TransformerCA.yaml
