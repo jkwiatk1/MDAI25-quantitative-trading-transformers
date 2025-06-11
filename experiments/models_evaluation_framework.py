@@ -11,7 +11,7 @@ import torch
 import yaml
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from torch.utils.data import DataLoader
 
 from experiments.utils.data_loading import (
@@ -43,6 +43,8 @@ from models.PortfolioMASTER import build_MASTER
 from models.PortfolioiTransformer import build_PortfolioITransformer
 from models.PortfolioTransformerCA import build_TransformerCA
 
+
+drop_tickers_list = ['CEG', 'GEV']
 
 def setup_logging(log_file):
     """Konfiguruje logowanie do pliku i konsoli."""
@@ -97,7 +99,8 @@ def normalize_data_correctly(train_data_dict, test_data_dict, tickers, features_
                 logging.warning(f"Feature '{feature}' missing for ticker '{ticker}' in train or test set. Skipping.")
                 continue
 
-            scaler = StandardScaler()
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            # scaler = StandardScaler()
             try:
                 # --- Fit ONLY on training data ---
                 scaler.fit(train_df[[feature]])
@@ -135,7 +138,7 @@ def main(config_path: str):
     # --- Setup ---
     model_name = config["model"]["name"]
     output_base_dir = Path(config["data"].get("output_dir", "results"))
-    output_dir = output_base_dir / f"{model_name}_GridSearch" / f"Evaluation_{config['portfolio']['top_k']}_best_assets"
+    output_dir = output_base_dir / f"{model_name}_GridSearch" / f"Evaluation_{config['portfolio']['top_k']}_best_assets_0406"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     log_file = output_dir / "evaluation.log"
@@ -159,6 +162,8 @@ def main(config_path: str):
 
     try:
         selected_tickers = get_tickers(config)
+        selected_tickers = [ticker for ticker in selected_tickers if ticker not in drop_tickers_list]
+
         stock_amount = len(selected_tickers)
         if stock_amount == 0: raise ValueError("No tickers specified or loaded.")
         logging.info(f"Processing {stock_amount} tickers.")
@@ -189,12 +194,14 @@ def main(config_path: str):
 
         train_data_dict = {}
         eval_data_dict = {}
+        eval_data_dict_orginal = {}
         for ticker in selected_tickers:
             df_ticker = data_final_features[ticker]
             n_samples_ticker = len(df_ticker)
             train_end_idx_ticker = int(train_split_ratio * n_samples_ticker)
             train_data_dict[ticker] = df_ticker.iloc[:train_end_idx_ticker]
             eval_data_dict[ticker] = df_ticker.iloc[train_end_idx_ticker:]
+            eval_data_dict_orginal[ticker] = df_ticker.iloc[train_end_idx_ticker:]
         logging.info(
             f"Data split: Train size={len(train_data_dict[first_ticker])}, Eval size={len(eval_data_dict[first_ticker])}")
 
@@ -213,6 +220,9 @@ def main(config_path: str):
         target_col_index = preproc_cols.index(target_col_name)
         eval_sequences, eval_targets_scaled, _ = prepare_sequential_data(
             eval_data_scaled_dict, selected_tickers, lookback, target_col_index
+        )
+        _, eval_targets_orginal, _ = prepare_sequential_data(
+            eval_data_dict_orginal, selected_tickers, lookback, target_col_index
         )
         logging.info(
             f"Evaluation sequences prepared. Seq shape: {eval_sequences.shape}, Tgt shape: {eval_targets_scaled.shape}")
@@ -414,15 +424,17 @@ def main(config_path: str):
         # Odwrócenie transformacji tylko dla targetów (do metryk portfelowych)
         _, targets_inv = inverse_transform_predictions(predictions_scaled, targets_scaled_eval, selected_tickers, fitted_scalers, target_col_name)
 
+        targets_orginal = eval_targets_orginal.squeeze(-1).numpy()
+
         # Precision@k (używa odwróconych targetów)
         portfolio_top_k = config["portfolio"].get("top_k", 5)  # Pobierz k z sekcji portfolio configu
-        precision_at_k_value = calculate_precision_at_k(predictions_scaled, targets_inv, top_k=portfolio_top_k)
+        precision_at_k_value = calculate_precision_at_k(predictions_scaled, targets_orginal, top_k=portfolio_top_k)
         predictive_metrics[f'Precision@{portfolio_top_k}'] = precision_at_k_value
 
         # Metryki portfelowe (używają oryginalnych predykcji i odwróconych targetów)
         portfolio_risk_free_rate = config["portfolio"].get("risk_free_rate", 0.043)
         portfolio_metrics, portfolio_value_curve = calculate_portfolio_performance(
-            predictions_scaled, targets_inv, top_k=portfolio_top_k, risk_free_rate=portfolio_risk_free_rate
+            predictions_scaled, targets_orginal, top_k=portfolio_top_k, risk_free_rate=portfolio_risk_free_rate
         )
 
         all_metrics = {**portfolio_metrics, **predictive_metrics, f"Eval Loss ({eval_loss_type})": eval_loss}
@@ -492,7 +504,7 @@ def main(config_path: str):
         curve_df.to_csv(curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
         logging.info(f"Saved portfolio value curve data to {curve_path}")
 
-        comp_output_dir = output_base_dir / f"evaluation_final_Top{portfolio_top_k}" / model_name
+        comp_output_dir = output_base_dir / f"evaluation_final_Top{portfolio_top_k}_0406" / model_name
         comp_output_dir.mkdir(parents=True, exist_ok=True)
         comp_curve_path = comp_output_dir / f"{model_name}_portfolio_value_curve.csv"
         curve_df.to_csv(comp_curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))

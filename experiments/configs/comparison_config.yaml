@@ -1,12 +1,12 @@
-results_base_dir: '../data/exp_result/models/evaluation_final_Top5'
+results_base_dir: '../data/exp_result/models/evaluation_final_Top5_0406'
 models_to_compare:
    - VanillaTransformer
-   - CrossFormer
+#   - CrossFormer
    - MASTER
-   - iTransformer
+#   - iTransformer
    - TransformerCA
 benchmark_data:
    path: '../data/data_download/kaggle_data/preprocess/sp500_index_historical_data.xlsx'
    column_name: 'S&P500'
    date_column: 'Date'
-comparison_output_dir: '../data/exp_result/models/evaluation_final_Top5'
+comparison_output_dir: '../data/exp_result/models/evaluation_final_Top5_0406'
