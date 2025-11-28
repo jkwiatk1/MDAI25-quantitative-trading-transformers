@@ -5,17 +5,14 @@ from torch.nn import TransformerEncoder, TransformerEncoderLayer
 
 
 class PositionalEncoding(nn.Module):
-    """Standard Positional Encoding using sin/cos. Expects input shape [Seq Len, Batch Eff, Dim]."""
+    """Sinusoidal positional encoding. Expects input shape [seq_len, batch, d_model]."""
 
     def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 1000):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
         position = torch.arange(max_len).unsqueeze(1)
-        div_term = torch.exp(
-            torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model)
-        )
-        # Using register_buffer is correct for non-parameter tensors part of the model state
-        # Shape [max_len, 1, d_model] for broadcasting with [T, B*N, D]
+        div_term = torch.exp(torch.arange(0, d_model, 2) * (-math.log(10000.0) / d_model))
+        
         pe = torch.zeros(max_len, 1, d_model)
         pe[:, 0, 0::2] = torch.sin(position * div_term)
         pe[:, 0, 1::2] = torch.cos(position * div_term)
@@ -24,22 +21,19 @@ class PositionalEncoding(nn.Module):
     def forward(self, x):
         """
         Args:
-            x: Tensor, shape [seq_len, batch_eff, d_model]
+            x: Tensor of shape [seq_len, batch, d_model]
         """
-        # Add positional encoding up to the sequence length of x
-        # self.pe[:x.size(0)] has shape [seq_len, 1, d_model], broadcasts correctly
-        x = x + self.pe[: x.size(0)]
+        x = x + self.pe[:x.size(0)]
         return self.dropout(x)
 
 
 class PortfolioVanillaTransformer(nn.Module):
     """
-    A simplified Transformer model inspired by the original Vaswani et al. architecture,
-    adapted for portfolio selection by processing each stock's time series independently.
-    It applies self-attention only along the time dimension for each stock.
+    Vanilla transformer for portfolio selection. Processes each stock's time series
+    independently using self-attention along the time dimension.
 
-    Input: [Batch, Time(T), Stocks(N), Features(F)]
-    Output: [Batch, Stocks(N), 1] (Predicted Returns)
+    Input: [Batch, Time, Stocks, Features]
+    Output: [Batch, Stocks, 1] (predicted returns)
     """
 
     def __init__(
@@ -60,47 +54,34 @@ class PortfolioVanillaTransformer(nn.Module):
         self.lookback = lookback
         self.d_model = d_model
 
-        # --- Input Processing ---
-        # Project input features (F) to the model dimension (D)
         self.feature_proj = nn.Linear(financial_features_amount, d_model)
-        # Standard positional encoding for the time dimension
         self.pos_encoder = PositionalEncoding(d_model, dropout, max_len=lookback)
-        # Dropout after projection and encoding
         self.input_dropout = nn.Dropout(dropout)
 
-        # --- Transformer Encoder ---
-        # Define a single encoder layer using the standard PyTorch module
-        # batch_first=False because we will provide input as [T, B*N, D]
         encoder_layer = TransformerEncoderLayer(
             d_model=d_model,
             nhead=n_heads,
             dim_feedforward=d_ff,
             dropout=dropout,
-            activation="relu",  # Standard activation in original Transformer
-            batch_first=False,  # Input shape is [T, BatchEff, D]
-            norm_first=False  # Use Post-LN (Normalization after Add) like original Transformer
-            # Set norm_first=True for Pre-LN (Normalization before Add)
+            activation="relu",
+            batch_first=False,
+            norm_first=False
         )
-        # Stack multiple encoder layers
-        # Optional final normalization after the stack (often beneficial)
         encoder_norm = nn.LayerNorm(d_model) if use_final_norm else None
         self.transformer_encoder = TransformerEncoder(
             encoder_layer=encoder_layer,
             num_layers=num_encoder_layers,
             norm=encoder_norm,
         )
-
-        # --- Output Head ---
-        # Project the final representation of each stock to a single prediction value
         self.projection_head = nn.Linear(d_model, 1)
 
     def forward(self, x):
         """
         Args:
-            x: Input tensor, shape [B, T, N, F]
-               B = batch_size, T = lookback, N = stock_amount, F = financial_features_amount
+            x: Input tensor of shape [batch, time, stocks, features]
+        
         Returns:
-            Output tensor, shape [B, N, 1] (predicted returns)
+            Predicted returns of shape [batch, stocks, 1]
         """
         B, T, N, F = x.shape
         # Validate input shapes
@@ -137,66 +118,45 @@ class PortfolioVanillaTransformer(nn.Module):
         predictions = self.projection_head(last_step_output)
 
         # 7. Reshape to final output format: [B*N, 1] -> [B, N, 1]
-        predictions = predictions.view(B, N, 1)
-
-        return predictions
+        return predictions.view(B, N, 1)
 
 
 def build_PortfolioVanillaTransformer(
-    stock_amount: int,  # Number of stocks (N)
-    financial_features_amount: int,  # Number of features per stock (F)
-    lookback: int,  # Lookback window size (T)
-    d_model: int = 64,  # Internal dimension of the transformer
-    n_heads: int = 4,  # Number of attention heads
-    d_ff: int = 128,  # Dimension of the feed-forward layer
-    dropout: float = 0.1,  # Dropout rate
-    num_encoder_layers: int = 2,  # Number of encoder layers (e.g., 2)
-    use_final_norm: bool = True,  # Add LayerNorm after encoder stack
-    # Note: activation and norm_first are implicitly set inside PortfolioVanillaTransformer
-    # to match original Transformer defaults (relu, Post-LN/norm_first=False)
+    stock_amount: int,
+    financial_features_amount: int,
+    lookback: int,
+    d_model: int = 64,
+    n_heads: int = 4,
+    d_ff: int = 128,
+    dropout: float = 0.1,
+    num_encoder_layers: int = 2,
+    use_final_norm: bool = True,
     device: torch.device = torch.device("cpu"),
 ) -> PortfolioVanillaTransformer:
     """
-    Factory function to build the PortfolioVanillaTransformer model.
+    Build vanilla transformer model for portfolio optimization.
 
     Args:
-        stock_amount: Number of stocks (N).
-        financial_features_amount: Number of features per stock (F).
-        lookback: Lookback window size (T).
-        d_model: Internal embedding dimension. Defaults to 64.
-        n_heads: Number of attention heads. Defaults to 4.
-        d_ff: Dimension of the feed-forward network. Defaults to 128.
-        dropout: Dropout rate. Defaults to 0.1.
-        num_encoder_layers: Number of stacked Transformer encoder layers. Defaults to 2.
-        use_final_norm: Whether to add a LayerNorm after the encoder stack. Defaults to True.
-        device: The torch device to place the model on. Defaults to "cpu".
-
+        stock_amount: Number of stocks
+        financial_features_amount: Number of features per stock
+        lookback: Time series lookback window
+        d_model: Model dimension
+        n_heads: Number of attention heads
+        d_ff: Feed-forward dimension
+        dropout: Dropout rate
+        num_encoder_layers: Number of encoder layers
+        use_final_norm: Apply layer norm after encoder stack
+        device: Target device
+    
     Returns:
-        An instance of the PortfolioVanillaTransformer model on the specified device.
-
-    Raises:
-        ValueError: If d_model is not divisible by n_heads.
+        Configured model instance
     """
-    # --- Configuration Logging ---
-    print("-" * 30)
-    print(f"Building PortfolioVanillaTransformer")
-    print(
-        f"  Data Params: Stocks={stock_amount}, Features={financial_features_amount}, Lookback={lookback}"
-    )
-    print(
-        f"  Arch Params: d_model={d_model}, n_heads={n_heads}, d_ff={d_ff}, layers={num_encoder_layers}"
-    )
-    print(f"  Other Params: dropout={dropout}, final_norm={use_final_norm}")
-    print(f"  Target Device: {device}")
-    print("-" * 30)
-
-    # --- Validation ---
     if d_model % n_heads != 0:
-        raise ValueError(
-            f"d_model ({d_model}) must be divisible by n_heads ({n_heads})"
-        )
+        raise ValueError(f"d_model ({d_model}) must be divisible by n_heads ({n_heads})")
 
-    # --- Model Instantiation ---
+    print(f"Building PortfolioVanillaTransformer: stocks={stock_amount}, features={financial_features_amount}, "
+          f"lookback={lookback}, d_model={d_model}, n_heads={n_heads}, layers={num_encoder_layers}")
+
     model = PortfolioVanillaTransformer(
         stock_amount=stock_amount,
         financial_features_amount=financial_features_amount,
@@ -207,11 +167,7 @@ def build_PortfolioVanillaTransformer(
         dropout=dropout,
         num_encoder_layers=num_encoder_layers,
         use_final_norm=use_final_norm
-        # activation='relu' and norm_first=False are implicitly used
-        # by nn.TransformerEncoderLayer default inside the model class
     )
-
-    # --- Move to Device and Return ---
     return model.to(device)
 
 

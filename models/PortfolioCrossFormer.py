@@ -5,39 +5,45 @@ from math import sqrt
 
 
 class DSW_embedding(nn.Module):
+    """Dimension-Segment-Wise embedding that segments time series and embeds each segment."""
+    
     def __init__(self, seg_len, d_model):
         super(DSW_embedding, self).__init__()
         self.seg_len = seg_len
         self.linear = nn.Linear(seg_len, d_model)
 
     def forward(self, x):
-        # x shape: [batch, ts_len, ts_dim]
+        """Embed segmented time series.
+        
+        Args:
+            x: Input of shape [batch, ts_len, ts_dim]
+        
+        Returns:
+            Embedded segments of shape [batch, ts_dim, seg_num, d_model]
+        """
         batch, ts_len, ts_dim = x.shape
-        # Upewnij się, że ts_len jest podzielne przez seg_len
         assert ts_len % self.seg_len == 0, "ts_len must be divisible by seg_len"
         seg_num = ts_len // self.seg_len
 
-        # x_segment = rearrange(x, 'b (seg_num seg_len) d -> (b d seg_num) seg_len', seg_len=self.seg_len) # <--- ZMIANA Z EINOPS
-        # 1. Podziel wymiar czasu: [b, seg_num, seg_len, d]
+        # Segment time dimension: [batch, seg_num, seg_len, ts_dim]
         x_segment = x.view(batch, seg_num, self.seg_len, ts_dim)
-        # 2. Zmień kolejność wymiarów: [b, d, seg_num, seg_len]
+        # Rearrange to [batch, ts_dim, seg_num, seg_len]
         x_segment = x_segment.permute(0, 3, 1, 2).contiguous()
-        # 3. Połącz wymiary b, d, seg_num: [(b * d * seg_num), seg_len]
+        # Flatten to [(batch * ts_dim * seg_num), seg_len]
         x_segment = x_segment.view(batch * ts_dim * seg_num, self.seg_len)
 
-        x_embed = self.linear(x_segment)  # [(b * d * seg_num), d_model]
+        # Apply linear embedding
+        x_embed = self.linear(x_segment)
 
-        # x_embed = rearrange(x_embed, '(b d seg_num) d_model -> b d seg_num d_model', b=batch, d=ts_dim) # <--- ZMIANA Z EINOPS
-        # Przywróć oryginalne wymiary: [b, d, seg_num, d_model]
-        x_embed = x_embed.view(
-            batch, ts_dim, seg_num, -1
-        )  # -1 automatycznie dopasuje d_model
+        # Restore original dimensions: [batch, ts_dim, seg_num, d_model]
+        x_embed = x_embed.view(batch, ts_dim, seg_num, -1)
 
         return x_embed
 
 
 class FullAttention(nn.Module):
-    # Bez zmian, nie używa einops
+    """Full attention mechanism with scaled dot-product."""
+    
     def __init__(self, scale=None, attention_dropout=0.1):
         super(FullAttention, self).__init__()
         self.scale = scale
@@ -57,7 +63,8 @@ class FullAttention(nn.Module):
 
 
 class AttentionLayer(nn.Module):
-    # Bez zmian, nie używa einops
+    """Multi-head attention layer with projections."""
+    
     def __init__(self, d_model, n_heads, d_keys=None, d_values=None, dropout=0.1):
         super(AttentionLayer, self).__init__()
         d_keys = d_keys or (d_model // n_heads)
@@ -83,6 +90,8 @@ class AttentionLayer(nn.Module):
 
 
 class TwoStageAttentionLayer(nn.Module):
+    """Two-stage attention: temporal attention followed by cross-dimensional attention."""
+    
     def __init__(self, seg_num, factor, d_model, n_heads, d_ff=None, dropout=0.1):
         super(TwoStageAttentionLayer, self).__init__()
         d_ff = d_ff or 4 * d_model
@@ -110,56 +119,41 @@ class TwoStageAttentionLayer(nn.Module):
             raise AssertionError(
                 f"Input seg_num {actual_seg_num} != expected seg_num {self.seg_num_expected} for TSA Layer's router.")
 
-        # Cross Time Stage
-        # time_in = rearrange(x, 'b ts_d seg_num d_model -> (b ts_d) seg_num d_model') # <--- ZMIANA Z EINOPS
-        # Połącz wymiary b i ts_d
+        # Cross Time Stage: attention across time segments
         time_in = x.reshape(batch * ts_d, actual_seg_num, d_model)
 
         time_enc = self.time_attention(time_in, time_in, time_in)
         dim_in = time_in + self.dropout(time_enc)
         dim_in = self.norm1(dim_in)
         dim_in = dim_in + self.dropout(self.MLP1(dim_in))
-        dim_in = self.norm2(dim_in)  # dim_in shape: [(b * ts_d), actual_seg_num, d_model]
+        dim_in = self.norm2(dim_in)
 
-        # Cross Dimension Stage
-        # dim_send = rearrange(dim_in, '(b ts_d) seg_num d_model -> (b seg_num) ts_d d_model', b=batch) # <--- ZMIANA Z EINOPS
-        # 1. Przywróć 4D: [b, ts_d, seg_num, d_model]
+        # Cross Dimension Stage: attention across dimensions
+        # Reshape: [(b * ts_d), seg_num, d_model] -> [(b * seg_num), ts_d, d_model]
         dim_send_prep = dim_in.view(batch, ts_d, actual_seg_num, d_model)
-        # 2. Zmień kolejność: [b, seg_num, ts_d, d_model]
         dim_send_prep = dim_send_prep.permute(0, 2, 1, 3).contiguous()
-        # 3. Połącz b i seg_num: [(b * seg_num), ts_d, d_model]
         dim_send = dim_send_prep.view(batch * actual_seg_num, ts_d, d_model)
 
-        # batch_router = repeat(self.router, 'seg_num factor d_model -> (repeat seg_num) factor d_model', repeat=batch) # <--- ZMIANA Z EINOPS
-        # 1. Dodaj wymiar batch: [1, seg_num, factor, d_model]
-        router_prep = self.router.unsqueeze(0)
-        # 2. Rozszerz wymiar batch: [b, seg_num, factor, d_model]
-        router_prep = router_prep.expand(
-            batch, -1, -1, -1
-        )  # -1 oznacza zachowanie rozmiaru
-        # 3. Połącz wymiary b i seg_num: [(b * seg_num), factor, d_model]
-        # Router ma teraz [self.seg_num_expected, factor, d_model]
-        # Rozszerzamy go do [batch * self.seg_num_expected, factor, d_model]
-        batch_router = self.router.repeat(batch, 1, 1)  # Powtórz batch razy
+        # Expand router for batch dimension
+        batch_router = self.router.repeat(batch, 1, 1)
 
         dim_buffer = self.dim_sender(batch_router, dim_send, dim_send)  # [(b * seg_num), factor, d_model]
         dim_receive = self.dim_receiver(dim_send, dim_buffer, dim_buffer)  # [(b * seg_num), ts_d, d_model]
         dim_enc = dim_send + self.dropout(dim_receive)
         dim_enc = self.norm3(dim_enc)
         dim_enc = dim_enc + self.dropout(self.MLP2(dim_enc))
-        dim_enc = self.norm4(dim_enc)  # dim_enc shape: [(b * seg_num), ts_d, d_model]
+        dim_enc = self.norm4(dim_enc)
 
-        # final_out = rearrange(dim_enc, '(b seg_num) ts_d d_model -> b ts_d seg_num d_model', b=batch) # <--- ZMIANA Z EINOPS
-        # 1. Przywróć 4D: [b, seg_num, ts_d, d_model]
+        # Reshape back to [batch, ts_d, seg_num, d_model]
         final_out = dim_enc.view(batch, actual_seg_num, ts_d, d_model)
-        # 2. Zmień kolejność z powrotem: [b, ts_d, seg_num, d_model]
-        final_out = final_out.permute(0, 2, 1, 3).contiguous() # [b, ts_d, actual_seg_num, d_model]
+        final_out = final_out.permute(0, 2, 1, 3).contiguous()
 
         return final_out
 
 
 class SegMerging(nn.Module):
-    # Bez zmian, nie używa einops
+    """Merge adjacent segments by concatenating and projecting."""
+    
     def __init__(self, d_model, win_size, norm_layer=nn.LayerNorm):
         super().__init__()
         self.d_model = d_model
@@ -168,48 +162,44 @@ class SegMerging(nn.Module):
         self.norm = norm_layer(win_size * d_model)
 
     def forward(self, x):
-        """x: B, ts_d, L, d_model"""
+        """Merge segments. Input shape: [batch, ts_d, seg_num, d_model]"""
         batch_size, ts_d, seg_num, d_model = x.shape
         pad_num = seg_num % self.win_size
         if pad_num != 0:
             pad_num = self.win_size - pad_num
-            # Bierzemy ostatni segment i powtarzamy go 'pad_num' razy
-            last_segment = x[:, :, -1:, :]  # Kształt: [B, ts_d, 1, d_model]
-            padding = last_segment.repeat(1, 1, pad_num, 1)  # Kształt: [B, ts_d, pad_num, d_model]
-            x = torch.cat([x, padding], dim=-2)  # Kształt połączony: [B, ts_d, seg_num + pad_num, d_model]
-            # seg_num + pad_num jest teraz wielokrotnością win_size
-            seg_num = x.shape[2]  # Zaktualizuj seg_num po paddingu
+            # Pad by repeating last segment
+            last_segment = x[:, :, -1:, :]
+            padding = last_segment.repeat(1, 1, pad_num, 1)
+            x = torch.cat([x, padding], dim=-2)
+            seg_num = x.shape[2]
 
-        # Upewnij się, że seg_num jest teraz podzielne przez win_size
         assert (
             seg_num % self.win_size == 0
         ), "Padded seg_num should be divisible by win_size"
         new_seg_num = seg_num // self.win_size
 
-        # Zamiast pętli i listy, użyj reshape i permute
-        # 1. Reshape do: [B, ts_d, new_seg_num, win_size, d_model]
+        # Reshape and merge segments
         x = x.view(batch_size, ts_d, new_seg_num, self.win_size, d_model)
-        # 2. Przenieś win_size obok d_model: [B, ts_d, new_seg_num, d_model, win_size]
         x = x.permute(0, 1, 2, 4, 3).contiguous()
-        # 3. Połącz d_model i win_size: [B, ts_d, new_seg_num, win_size * d_model]
         x = x.view(batch_size, ts_d, new_seg_num, self.win_size * d_model)
 
         x = self.norm(x)
-        x = self.linear_trans(x)  # Zwraca [B, ts_d, new_seg_num, d_model]
+        x = self.linear_trans(x)
         return x
 
 
 class scale_block(nn.Module):
-    # Bez zmian, nie używa einops
+    """Scale block that optionally merges segments and applies two-stage attention."""
+    
     def __init__(self, win_size, d_model, n_heads, d_ff, depth, dropout, input_seg_num, factor=10):
         super(scale_block, self).__init__()
         self.win_size = win_size
         if win_size > 1:
             self.merge_layer = SegMerging(d_model, win_size, nn.LayerNorm)
-            self.output_seg_num = ceil(input_seg_num / win_size) if win_size > 1 else input_seg_num
+            self.output_seg_num = ceil(input_seg_num / win_size)
         else:
             self.merge_layer = None
-            self.output_seg_num = input_seg_num  # Liczba segmentów się nie zmienia
+            self.output_seg_num = input_seg_num
 
         self.encode_layers = nn.ModuleList()
         for i in range(depth):
@@ -220,51 +210,40 @@ class scale_block(nn.Module):
             )
 
     def forward(self, x):
-        # x: [B, ts_d, L_in, d_model], gdzie L_in = input_seg_num
+        """Process through scale block. Input: [batch, ts_d, seg_num, d_model]"""
         if self.merge_layer is not None:
-            x = self.merge_layer(x)  # Kształt L się zmienia na output_seg_num
-        # Teraz x ma kształt [B, ts_d, output_seg_num, d_model]
+            x = self.merge_layer(x)
         for layer in self.encode_layers:
-            x = layer(x)  # Każda warstwa TSA oczekuje output_seg_num
+            x = layer(x)
         return x
 
 
 class Encoder(nn.Module):
+    """Multi-scale encoder with progressive segment merging."""
+    
     def __init__(self, e_blocks, win_size, d_model, n_heads, d_ff, block_depth, dropout, in_seg_num, factor=10):
         super(Encoder, self).__init__()
         self.encode_blocks = nn.ModuleList()
-        current_seg_num = in_seg_num # Liczba segmentów na wejściu do bieżącego bloku
+        current_seg_num = in_seg_num
 
-        # --- ZMIANA: Poprawne przekazywanie liczby segmentów ---
-        # Blok 0 (win_size=1)
+        # First block with win_size=1 (no merging)
         self.encode_blocks.append(
             scale_block(1, d_model, n_heads, d_ff, block_depth, dropout, current_seg_num, factor)
         )
-        # Liczba segmentów po bloku 0 = current_seg_num (bo win_size=1)
 
+        # Subsequent blocks with segment merging
         for i in range(1, e_blocks):
-            # Utwórz blok, przekazując aktualną liczbę segmentów (wejściową)
             block = scale_block(win_size, d_model, n_heads, d_ff, block_depth, dropout, current_seg_num, factor)
             self.encode_blocks.append(block)
-            # Zaktualizuj liczbę segmentów na WYJŚCIU tego bloku
             current_seg_num = block.output_seg_num
 
     def forward(self, x):
-        # x: [B, ts_d, L_in, d_model]
-        encode_x = []  # Przechowuje wyjścia z różnych skal
-
-        # Przetwarzanie przez bloki
+        """Process through encoder blocks. Returns list of multi-scale outputs."""
+        encode_x = []
         current_x = x
         for block in self.encode_blocks:
-            current_x = block(
-                current_x
-            )  # Wyjście z bloku staje się wejściem do następnego
+            current_x = block(current_x)
             encode_x.append(current_x)
-
-        # encode_x to lista tensorów o kształtach:
-        # [B, ts_d, L_in, d_model],
-        # [B, ts_d, L_in/win, d_model],
-        # [B, ts_d, L_in/win^2, d_model], ...
         return encode_x
 
 
@@ -282,19 +261,17 @@ class PortfolioCrossformer(nn.Module):
         self.aggregation_type = aggregation_type
         self.device = device
 
-        # Padding i obliczenie liczby segmentów
+        # Calculate padding and segment numbers
         self.pad_in_len = ceil(1.0 * in_len / seg_len) * seg_len
         self.in_len_add = self.pad_in_len - self.in_len
         self.in_seg_num = self.pad_in_len // seg_len
 
-        # Embedding
+        # Embedding layers
         self.enc_value_embedding = DSW_embedding(seg_len, d_model)
-        self.enc_pos_embedding = nn.Parameter(
-            torch.randn(1, self.data_dim, self.in_seg_num, d_model)
-        )
-        self.pre_norm = nn.LayerNorm(d_model)  # Norma na wejściu do enkodera
+        self.enc_pos_embedding = nn.Parameter(torch.randn(1, self.data_dim, self.in_seg_num, d_model))
+        self.pre_norm = nn.LayerNorm(d_model)
 
-        # Encoder
+        # Multi-scale encoder
         self.encoder = Encoder(
             e_layers,
             win_size,
@@ -307,7 +284,7 @@ class PortfolioCrossformer(nn.Module):
             factor=factor,
         )
 
-        # Obliczanie final_seg_num (bez zmian)
+        # Calculate final segment number after merging
         self.final_seg_num = self.in_seg_num
         if e_layers > 0:
             temp_seg_num = self.in_seg_num

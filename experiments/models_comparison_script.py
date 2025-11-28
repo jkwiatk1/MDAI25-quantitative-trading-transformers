@@ -9,7 +9,7 @@ import logging
 import os
 
 def setup_logging(log_file, level=logging.INFO):
-    """Konfiguruje logowanie do pliku i konsoli."""
+    """Configure logging to file and console."""
     log_dir = Path(log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
     for handler in logging.root.handlers[:]: logging.root.removeHandler(handler)
@@ -22,7 +22,7 @@ def setup_logging(log_file, level=logging.INFO):
     logging.info("Comparison script logging setup complete.")
 
 def load_config(config_path):
-    """Wczytuje konfigurację z pliku YAML."""
+    """Load configuration from YAML file."""
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -33,12 +33,12 @@ def load_config(config_path):
         raise
 
 def load_portfolio_curve(file_path):
-    """Wczytuje krzywą wartości portfela z CSV."""
+    """Load portfolio value curve from CSV."""
     try:
-        df = pd.read_csv(file_path, index_col=0, parse_dates=True) # Zakładamy, że pierwsza kolumna to data/indeks
-        # Upewnij się, że nazywa się 'PortfolioValue' lub dostosuj
+        df = pd.read_csv(file_path, index_col=0, parse_dates=True)
+        # Ensure column is named 'PortfolioValue' or adapt
         if 'PortfolioValue' not in df.columns:
-             # Spróbuj znaleźć pierwszą kolumnę numeryczną, jeśli nazwa jest inna
+             # Try to find first numeric column if name is different
              num_cols = df.select_dtypes(include=np.number).columns
              if not num_cols.empty:
                   col_name = num_cols[0]
@@ -47,7 +47,7 @@ def load_portfolio_curve(file_path):
              else:
                   raise ValueError(f"No numeric portfolio value column found in {file_path}")
 
-        # Usuń placeholder 'start' jeśli istnieje
+        # Remove 'start' placeholder if it exists
         if 'start' in df.index:
              df = df.drop('start')
         df.index = pd.to_datetime(df.index)
@@ -57,44 +57,44 @@ def load_portfolio_curve(file_path):
         return None
 
 def load_benchmark_data(file_path, index_col_name='S&P500', date_col='Date'):
-    """Wczytuje i przetwarza dane benchmarku."""
+    """Load and process benchmark data."""
     try:
         df = pd.read_excel(file_path)
 
-        # Konwersja daty
+        # Convert date column
         df[date_col] = pd.to_datetime(df[date_col])
         df = df.set_index(date_col)
 
-        # Konwersja wartości indeksu (obsługa przecinków jako separatorów tysięcy)
+        # Convert index values (handle commas as thousands separators)
         if df[index_col_name].dtype == 'object':
             df[index_col_name] = df[index_col_name].str.replace(',', '', regex=False).astype(float)
         else:
             df[index_col_name] = df[index_col_name].astype(float)
 
-        # Sortowanie wg daty
+        # Sort by date
         df = df.sort_index()
 
-        # Obliczenie dziennych zwrotów
+        # Calculate daily returns
         df['DailyReturn'] = df[index_col_name].pct_change().fillna(0)
 
-        # Obliczenie skumulowanej wartości (zaczynając od 1.0)
+        # Calculate cumulative value curve (starting from 1.0)
         df['ValueCurve'] = (1 + df['DailyReturn']).cumprod()
-        # Upewnij się, że zaczyna się od 1.0 - znajdź pierwszy niezerowy zwrot
+        # Ensure it starts at 1.0 - find first non-zero return
         first_valid_index = df['DailyReturn'].ne(0).idxmax()
-        # Przesuń krzywą, aby zaczynała się od 1 w dniu poprzedzającym pierwszy zwrot
-        start_value = df.loc[:first_valid_index, 'ValueCurve'].iloc[-2] # wartość przed pierwszym zwrotem
+        # Shift curve to start at 1 on the day before first return
+        start_value = df.loc[:first_valid_index, 'ValueCurve'].iloc[-2]
         df['ValueCurve'] = df['ValueCurve'] / start_value
 
-        # Jeśli pierwszy dzień ma być 1.0
+        # Set first day to 1.0
         df.loc[df.index < first_valid_index, 'ValueCurve'] = 1.0
 
-        return df[['ValueCurve']] # Zwróć tylko krzywą wartości z poprawnym indeksem daty
+        return df[['ValueCurve']]
     except Exception as e:
         logging.error(f"Error loading or processing benchmark data from {file_path}: {e}", exc_info=True)
         return None
 
 def main_comparison(config):
-    """Główna funkcja skryptu porównawczego."""
+    """Main comparison function."""
     results_base_dir = Path(config['results_base_dir'])
     model_names = config['models_to_compare']
     benchmark_file = config['benchmark_data']['path']
@@ -110,14 +110,14 @@ def main_comparison(config):
     logging.info(f"Results base directory: {results_base_dir}")
     logging.info(f"Comparison output directory: {output_dir_comp}")
 
-    # --- Wczytaj Dane Benchmarku ---
+    # Load benchmark data
     logging.info(f"Loading benchmark data from: {benchmark_file}")
     df_benchmark_curve = load_benchmark_data(benchmark_file, benchmark_col, benchmark_date_col)
     if df_benchmark_curve is None:
         logging.error("Failed to load benchmark data. Exiting.")
         return
 
-    # --- Wczytaj Wyniki Modeli ---
+    # Load model results
     model_curves = {}
     min_date = pd.Timestamp.max
     max_date = pd.Timestamp.min
@@ -129,7 +129,7 @@ def main_comparison(config):
             curve = load_portfolio_curve(curve_path)
             if curve is not None:
                 model_curves[model_name] = curve
-                # Aktualizuj zakres dat na podstawie wczytanych krzywych modeli
+                # Update date range based on loaded model curves
                 min_date = min(min_date, curve.index.min())
                 max_date = max(max_date, curve.index.max())
             else:
@@ -144,144 +144,82 @@ def main_comparison(config):
     logging.info(f"Data loaded for {len(model_curves)} models.")
     logging.info(f"Common analysis period determined by models: {min_date.date()} to {max_date.date()}")
 
-    # --- Przytnij Benchmark do Wspólnego Okresu ---
-    # Dodaj jeden dzień przed min_date, aby uzyskać wartość początkową 1.0 dla benchmarku
-    # start_date_bm = df_benchmark_curve.index[df_benchmark_curve.index < min_date].max()
-    # if pd.isna(start_date_bm):
-    #     start_date_bm = min_date # Jeśli nie ma wcześniejszej daty
-    # df_benchmark_curve_aligned = df_benchmark_curve.loc[start_date_bm:max_date].copy()
-    # # Znormalizuj benchmark, aby zaczynał się od 1.0 na początku okresu modeli
-    # df_benchmark_curve_aligned['ValueCurve'] = df_benchmark_curve_aligned['ValueCurve'] / df_benchmark_curve_aligned['ValueCurve'].iloc[0]
-    # # Usuń datę przed startem modeli, jeśli została dodana
-    # df_benchmark_curve_aligned = df_benchmark_curve_aligned[df_benchmark_curve_aligned.index >= min_date]
+    # Align benchmark to common period
     df_benchmark_test_period = df_benchmark_curve[
         (df_benchmark_curve.index >= min_date) & (df_benchmark_curve.index <= max_date)]
     if df_benchmark_test_period.empty: logging.error("No benchmark data for common period."); return
-    # Znormalizuj benchmark, aby zaczynał się od 1.0 w dniu `min_date`
-    benchmark_start_value = df_benchmark_test_period.iloc[0]['ValueCurve']  # Wartość na początku okresu
+    # Normalize benchmark to start at 1.0 on min_date
+    benchmark_start_value = df_benchmark_test_period.iloc[0]['ValueCurve']
     df_benchmark_curve_aligned = df_benchmark_test_period['ValueCurve'] / benchmark_start_value
 
-
-    # --- Generuj Wykres Porównawczy ---
-    # plt.style.use('seaborn-v0_8-darkgrid') # Użyj stylu dla lepszego wyglądu
-    # plt.style.use('seaborn-v0_8-paper') # Styl bardziej 'papierowy', mniej siatki
-    # plt.style.use('seaborn-v0_8-ticks') # Inny styl
-    plt.style.use('seaborn-v0_8-darkgrid')  # Możesz zostawić darkgrid lub wybrać inny
+    # Generate comparison plot
+    plt.style.use('seaborn-v0_8-darkgrid')
     plt.figure(figsize=(14, 8))
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    # 1. Definicja stylów (więcej niż tylko kolory)
-    # Możesz dostosować markery, style linii, kolory
+    # Define plot styles for different models
     model_styles = [
         {'color': 'tab:blue', 'linestyle': '-', 'marker': 'o', 'markersize': 3, 'markevery': 50},
-        # Np. co 50 punktów marker
         {'color': 'tab:orange', 'linestyle': '--', 'marker': 's', 'markersize': 3, 'markevery': 55},
         {'color': 'tab:green', 'linestyle': ':', 'marker': '^', 'markersize': 3, 'markevery': 60},
         {'color': 'tab:red', 'linestyle': '-.', 'marker': 'd', 'markersize': 3, 'markevery': 65},
         {'color': 'tab:purple', 'linestyle': (0, (3, 1, 1, 1)), 'marker': 'x', 'markersize': 4, 'markevery': 70},
-        # Bardziej złożony styl linii
-        # Dodaj więcej stylów, jeśli masz więcej modeli
     ]
     benchmark_style = {'color': 'black', 'linestyle': '--', 'linewidth': 2}
-    ewp_style = {'color': 'grey', 'linestyle': ':', 'linewidth': 2}  # Styl dla EWP, jeśli go dodasz
 
-    # 2. Wykres Benchmarku S&P 500
+    # Plot benchmark
     ax.plot(df_benchmark_curve_aligned.index, df_benchmark_curve_aligned,
             label=f"{benchmark_col} (Buy & Hold)", **benchmark_style)
 
-    # 3. Wykresy Modeli (Iteruj po modelach i stylach)
+    # Plot models
     style_idx = 0
-    sorted_model_names = sorted(model_curves.keys())  # Sortuj nazwy dla spójnej kolejności/kolorów
+    sorted_model_names = sorted(model_curves.keys())
     for model_name in sorted_model_names:
-        if model_name == f"{benchmark_col} (B&H)" or model_name == "Equal-Weighted Portfolio": continue  # Pomiń benchmarki tutaj
+        if model_name == f"{benchmark_col} (B&H)" or model_name == "Equal-Weighted Portfolio": 
+            continue
 
         curve = model_curves[model_name]
         curve_aligned = curve.loc[min_date:max_date]
-        curve_normalized = curve_aligned / curve_aligned.iloc[0]  # Normalizuj do 1.0
+        curve_normalized = curve_aligned / curve_aligned.iloc[0]
 
-        style = model_styles[style_idx % len(model_styles)]  # Pobierz styl cyklicznie
+        style = model_styles[style_idx % len(model_styles)]
         ax.plot(curve_normalized.index, curve_normalized,
                 label=model_name,
                 linewidth=1.5,
                 **style)
         style_idx += 1
 
-    # 4. Ustawienia Wykresu
+    # Configure plot settings
     ax.set_title(f"Portfolio Value Comparison ({min_date.strftime('%Y-%m-%d')} to {max_date.strftime('%Y-%m-%d')})",
                  fontsize=14)
     ax.set_ylabel("Portfolio Value (Normalized to 1.0 at Start)", fontsize=11)
     ax.set_xlabel("Date", fontsize=11)
-    # ax.set_yscale('log')  # Skala logarytmiczna
 
-    # Lepsze formatowanie osi X
+    # Format X-axis for dates
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=5, maxticks=10))
     fig.autofmt_xdate()
 
-    # Siatka
+    # Grid
     ax.grid(True, which='major', linestyle='--', linewidth=0.5, color='grey')
-    # ax.grid(True, which='minor', linestyle=':', linewidth=0.3, color='lightgrey')  # Siatka pomocnicza dla skali log
 
-    # Legenda (można dostosować położenie)
-    ax.legend(fontsize=9, loc='upper left')  # np. w lewym górnym rogu
+    # Legend
+    ax.legend(fontsize=9, loc='upper left')
 
-    # Usunięcie niepotrzebnych "ramek" wykresu
+    # Remove unnecessary spines
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
 
-    plt.tight_layout()  # Dopasuj układ
+    plt.tight_layout()
 
-    # 5. Zapisz Wykres z Przezroczystym Tłem
+    # Save plot with transparent background
     comparison_plot_path = output_dir_comp / "model_vs_benchmark_comparison.png"
-    # Dodaj transparent=True
     plt.savefig(comparison_plot_path, dpi=300, bbox_inches='tight', transparent=True)
     logging.info(f"Comparison plot saved to {comparison_plot_path}")
-    plt.close(fig)  # Zamknij figurę
-
+    plt.close(fig)
     logging.info("--- Comparison Script Finished ---")
 
-
-    # # Wykres Benchmarku
-    # plt.plot(df_benchmark_curve_aligned.index, df_benchmark_curve_aligned['ValueCurve'],
-    #          label=f"{benchmark_col} (Buy & Hold)", linewidth=2, linestyle='--', color='black')
-    #
-    # # Wykresy Modeli
-    # colors = plt.cm.viridis(np.linspace(0, 1, len(model_curves))) # Paleta kolorów
-    # for i, (model_name, curve) in enumerate(model_curves.items()):
-    #     # Przytnij krzywą modelu do wspólnego okresu
-    #     curve_aligned = curve.loc[min_date:max_date]
-    #     # Znormalizuj, aby zaczynała się od 1.0 na początku okresu
-    #     curve_aligned = curve_aligned / curve_aligned.iloc[0]
-    #     plt.plot(curve_aligned.index, curve_aligned, label=model_name, linewidth=1.5, color=colors[i])
-    #
-    # # Ustawienia Wykresu
-    # plt.title(f"Portfolio Value Comparison ({min_date.date()} to {max_date.date()})", fontsize=16)
-    # plt.ylabel("Portfolio Value (Normalized to 1.0 at Start)", fontsize=12)
-    # plt.xlabel("Date", fontsize=12)
-    # plt.yscale('log') # Skala logarytmiczna często jest lepsza dla zwrotów skumulowanych
-    # plt.legend(fontsize=10)
-    # plt.grid(True, which='both', linestyle='-', linewidth=0.5)
-    # plt.tight_layout()
-    #
-    # # Formatowanie osi X dla dat
-    # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m'))
-    # plt.gca().xaxis.set_major_locator(mdates.MonthLocator(interval=max(1, len(df_benchmark_curve_aligned)//12//6))) # Około 6-12 etykiet
-    # plt.gcf().autofmt_xdate() # Automatyczne formatowanie etykiet dat
-    #
-    # # Zapisz wykres
-    # comparison_plot_path = output_dir_comp / "model_vs_benchmark_comparison.png"
-    # plt.savefig(comparison_plot_path, dpi=300)
-    # logging.info(f"Comparison plot saved to {comparison_plot_path}")
-    # # plt.show() # Odkomentuj, jeśli chcesz wyświetlić
-    # plt.close()
-    #
-    # # --- (Opcjonalnie) Generuj Tabelę Porównawczą Metryk ---
-    # # Możesz wczytać pliki evaluation_results.csv/.txt dla każdego modelu
-    # # i stworzyć zbiorczą tabelę porównawczą metryk.
-    # # ... (kod do wczytania i agregacji metryk) ...
-    #
-    # logging.info("--- Comparison Script Finished ---")
 
 # python .\models_comparison_script.py --config .\configs\comparison_config.yaml
 if __name__ == "__main__":
@@ -293,34 +231,3 @@ if __name__ == "__main__":
     comparison_config = load_config(args.config)
     if comparison_config:
         main_comparison(comparison_config)
-
-"""
-
-**Wyjaśnienie Skryptu Porównawczego:**
-
-1.  **Konfiguracja (`comparison_config.yaml`):** Skrypt wymaga pliku konfiguracyjnego YAML, który określa:
-    *   `results_base_dir`: Główny katalog, w którym znajdują się podkatalogi z wynikami każdego modelu (np. `results/PortfolioCrossFormer`, `results/PortfolioMASTER`).
-    *   `models_to_compare`: Lista nazw modeli (muszą odpowiadać nazwom podkatalogów i plików).
-    *   `benchmark_data`: Ścieżka do pliku z danymi S&P 500 oraz nazwy kolumn z wartością indeksu i datą.
-    *   `comparison_output_dir`: Katalog, w którym zostanie zapisany wynikowy wykres porównawczy i logi.
-2.  **Ładowanie Danych Benchmarku:** Funkcja `load_benchmark_data` wczytuje dane S&P 500, konwertuje daty i wartości, oblicza dzienne zwroty i **kluczowe: oblicza skumulowaną krzywą wartości (`ValueCurve`)**, normalizując ją tak, by zaczynała się od 1.0.
-3.  **Ładowanie Wyników Modeli:** Skrypt iteruje po liście `models_to_compare`, znajduje odpowiedni plik `{ModelName}_portfolio_value_curve.csv` w `results_base_dir`, wczytuje krzywą wartości za pomocą `load_portfolio_curve`. Określa wspólny zakres dat (`min_date`, `max_date`) na podstawie wczytanych krzywych modeli.
-4.  **Przycinanie i Normalizacja:** Dane benchmarku oraz krzywe modeli są przycinane do wspólnego okresu (`min_date` do `max_date`). Następnie są **normalizowane**, aby *każda krzywa zaczynała się od wartości 1.0* na początku wspólnego okresu. To jest kluczowe dla wizualnego porównania wzrostu.
-5.  **Generowanie Wykresu:** Tworzony jest wykres za pomocą Matplotlib:
-    *   Krzywa benchmarku jest rysowana (np. linią przerywaną).
-    *   Krzywe wartości dla każdego modelu są rysowane (różnymi kolorami).
-    *   Dodawane są tytuły, etykiety, legenda.
-    *   **Używana jest skala logarytmiczna (`yscale('log')`)**, która jest bardzo przydatna do wizualizacji wzrostu kapitału w długim okresie, ponieważ równe odległości na osi Y odpowiadają równym *procentowym* zmianom.
-    *   Oś X jest formatowana jako daty.
-    *   Wykres jest zapisywany do pliku PNG.
-6.  **(Opcjonalnie) Tabela Porównawcza Metryk:** Skrypt można łatwo rozszerzyć, aby wczytywał również pliki `evaluation_results.csv` lub `.txt` dla każdego modelu i tworzył zbiorczą tabelę porównującą kluczowe metryki (CR, AR, SR, MDD, IC, ICIR, P@k) – podobną do tych, które generowaliśmy wcześniej w LaTeXu.
-
-**Jak Uruchomić:**
-
-
-1.  Zapisz powyższy kod jako `comparison_script.py`.
-2.  Stwórz plik `comparison_config.yaml` i wypełnij go odpowiednimi ścieżkami i nazwami modeli.
-3.  Uruchom z linii komend: `python comparison_script.py --config path/to/comparison_config.yaml`
-
-Ten skrypt pozwoli Ci efektywnie porównać wyniki wszystkich Twoich modeli z benchmarkiem rynkowym i między sobą.
-"""

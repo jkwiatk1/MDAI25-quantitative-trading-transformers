@@ -1,19 +1,12 @@
 import logging
-import os
 import yaml
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 from pathlib import Path
 from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, ExponentialLR
-from types import SimpleNamespace
-import itertools  # Potrzebne do generowania kombinacji
-import argparse
-import time  # Do mierzenia czasu
-from torch.utils.data import DataLoader
-from pathlib import Path
-from torch.optim.lr_scheduler import ReduceLROnPlateau, StepLR, ExponentialLR
-from types import SimpleNamespace
+import itertools
+import time
 
 from experiments.utils.data_loading import (
     fill_missing_days,
@@ -42,7 +35,7 @@ from models.PortfolioVanillaTransformer import build_PortfolioVanillaTransformer
 
 
 def setup_logging(log_file, level=logging.INFO):
-    """Konfiguruje logowanie do pliku i konsoli."""
+    """Configure logging to file and console."""
     log_dir = Path(log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
     for handler in logging.root.handlers[:]:
@@ -57,7 +50,7 @@ def setup_logging(log_file, level=logging.INFO):
 
 
 def load_config(config_path):
-    """Wczytuje konfigurację z pliku YAML."""
+    """Load configuration from YAML file."""
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -526,3 +519,17 @@ run_grid_search(config)
 #
 #     # Przykład wywołania:
 #     # python your_grid_search_script_name.py --config experiments/configs/grid_search_config_TransformerCA.yaml
+
+# if __name__ == "__main__":
+#     import argparse
+#     parser = argparse.ArgumentParser(
+#         description="Run hyperparameter grid search for portfolio models"
+#     )
+#     parser.add_argument(
+#         "--config",
+#         type=str,
+#         required=True,
+#         help="Path to the YAML configuration file containing the grid search setup.",
+#     )
+#     args = parser.parse_args()
+#     run_grid_search(args.config)

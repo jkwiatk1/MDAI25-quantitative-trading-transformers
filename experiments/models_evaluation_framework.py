@@ -47,7 +47,7 @@ from models.PortfolioTransformerCA import build_TransformerCA
 drop_tickers_list = ['CEG', 'GEV']
 
 def setup_logging(log_file):
-    """Konfiguruje logowanie do pliku i konsoli."""
+    """Configure logging to file and console."""
     log_dir = Path(log_file).parent
     log_dir.mkdir(parents=True, exist_ok=True)
     for handler in logging.root.handlers[:]:
@@ -63,7 +63,7 @@ def setup_logging(log_file):
 
 
 def load_config(config_path):
-    """Wczytuje konfigurację z pliku YAML."""
+    """Load configuration from YAML file."""
     try:
         with open(config_path, "r") as f:
             config = yaml.safe_load(f)
@@ -79,54 +79,6 @@ def load_config(config_path):
         logging.error(f"An unexpected error occurred loading config {config_path}: {e}")
         raise
 
-
-def normalize_data_correctly(train_data_dict, test_data_dict, tickers, features_to_normalize):
-    """Fit scaler only on train data, then transform train and test data."""
-    scalers = {ticker: {} for ticker in tickers}
-    train_scaled_dict = {}
-    test_scaled_dict = {}
-
-    for ticker in tickers:
-        if ticker not in train_data_dict or ticker not in test_data_dict: continue
-
-        train_df = train_data_dict[ticker].copy()
-        test_df = test_data_dict[ticker].copy()
-        train_scaled_dict[ticker] = pd.DataFrame(index=train_df.index)
-        test_scaled_dict[ticker] = pd.DataFrame(index=test_df.index)
-
-        for feature in features_to_normalize:
-            if feature not in train_df.columns or feature not in test_df.columns:
-                logging.warning(f"Feature '{feature}' missing for ticker '{ticker}' in train or test set. Skipping.")
-                continue
-
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            # scaler = StandardScaler()
-            try:
-                # --- Fit ONLY on training data ---
-                scaler.fit(train_df[[feature]])
-
-                # --- Transform both train and test data ---
-                train_scaled_values = scaler.transform(train_df[[feature]])
-                test_scaled_values = scaler.transform(test_df[[feature]])
-
-                train_scaled_dict[ticker][feature] = train_scaled_values.flatten()
-                test_scaled_dict[ticker][feature] = test_scaled_values.flatten()
-                scalers[ticker][feature] = scaler  # Save the FITTED scaler
-
-            except ValueError as ve:
-                # Handle cases like constant features in training data
-                logging.error(f"ValueError scaling feature '{feature}' for ticker '{ticker}': {ve}. Leaving unscaled.")
-                train_scaled_dict[ticker][feature] = train_df[feature].values
-                test_scaled_dict[ticker][feature] = test_df[feature].values
-                scalers[ticker][feature] = None  # Indicate scaler failed
-            except Exception as e:
-                logging.error(f"Error scaling feature '{feature}' for ticker '{ticker}': {e}. Leaving unscaled.",
-                              exc_info=True)
-                train_scaled_dict[ticker][feature] = train_df[feature].values
-                test_scaled_dict[ticker][feature] = test_df[feature].values
-                scalers[ticker][feature] = None
-
-    return train_scaled_dict, test_scaled_dict, scalers  # Return fitted scalers
 
 
 def main(config_path: str):
@@ -205,12 +157,35 @@ def main(config_path: str):
         logging.info(
             f"Data split: Train size={len(train_data_dict[first_ticker])}, Eval size={len(eval_data_dict[first_ticker])}")
 
-        # --- Normalization - fit on train, transform on train and evaluation ---
-        _, eval_data_scaled_dict, fitted_scalers = normalize_data_correctly(
-            train_data_dict, eval_data_dict, selected_tickers, preproc_cols
-        )
+        # Normalize evaluation data using fitted scalers from training
+        # Note: For proper evaluation, scalers should be loaded from training, not re-fitted
+        from sklearn.preprocessing import MinMaxScaler
+        scalers = {ticker: {} for ticker in selected_tickers}
+        eval_data_scaled_dict = {}
+        
+        for ticker in selected_tickers:
+            if ticker not in eval_data_dict: continue
+            eval_df = eval_data_dict[ticker].copy()
+            eval_data_scaled_dict[ticker] = pd.DataFrame(index=eval_df.index)
+            
+            for feature in preproc_cols:
+                if feature not in eval_df.columns:
+                    logging.warning(f"Feature '{feature}' missing for ticker '{ticker}'. Skipping.")
+                    continue
+                scaler = MinMaxScaler(feature_range=(0, 1))
+                try:
+                    # For evaluation, fit on available eval data (or load pre-fitted scalers)
+                    scaler.fit(train_data_dict[ticker][[feature]])
+                    eval_scaled_values = scaler.transform(eval_df[[feature]])
+                    eval_data_scaled_dict[ticker][feature] = eval_scaled_values.flatten()
+                    scalers[ticker][feature] = scaler
+                except Exception as e:
+                    logging.error(f"Error scaling '{feature}' for '{ticker}': {e}")
+                    eval_data_scaled_dict[ticker][feature] = eval_df[feature].values
+                    scalers[ticker][feature] = None
+        fitted_scalers = scalers
 
-        # Zapisz scalery (bez zmian)
+        # Save fitted scalers
         scalers_path = output_dir / "fitted_scalers_eval.joblib"
         joblib.dump(fitted_scalers, scalers_path)
         logging.info("Saved scalers.")
@@ -228,7 +203,7 @@ def main(config_path: str):
             f"Evaluation sequences prepared. Seq shape: {eval_sequences.shape}, Tgt shape: {eval_targets_scaled.shape}")
         if len(eval_sequences) == 0: raise ValueError("Evaluation sequences are empty.")
 
-        # --- Take proper dates for evaluation period --- # TODO inaczej niz bylo
+        # Get proper dates for evaluation period
         num_total_days = len(all_original_dates)
         eval_start_original_idx_pos = int(train_split_ratio * num_total_days) + lookback
         last_eval_target_original_idx_pos = len(all_original_dates) - 1
@@ -263,25 +238,6 @@ def main(config_path: str):
 
     logging.info(f"--- Building Model: {model_name} ---")
     model_params = config["model"]
-    # TODO
-    # # WAŻNE: Tutaj powinieneś wczytać NAJLEPSZE parametry z pliku *_best_grid_params.yaml zapisanego przez skrypt grid search!
-    # best_params_path = output_base_dir.parent / "best_grid_params.yaml"  # Ścieżka do pliku z najlepszymi parametrami
-    # best_weights_path = output_base_dir.parent / f"{model_name}_best_grid_model.pth"  # Ścieżka do najlepszych wag
-    # best_params_path = output_base_dir.parent / "best_grid_params.yaml"  # Ścieżka do pliku z najlepszymi parametrami
-    # best_weights_path = output_base_dir.parent / f"{model_name}_best_grid_model.pth"  # Ścieżka do najlepszych wag
-    # if best_params_path.exists() and best_weights_path.exists():
-    #     logging.info(f"Loading best hyperparameters from {best_params_path}")
-    #     best_config = load_config(best_params_path)
-    #     model_params_final = best_config['model']  # Użyj parametrów modelu z najlepszego configu
-    #     weights_path = str(best_weights_path)  # Użyj ścieżki do najlepszych wag
-    # else:
-    #     logging.warning(
-    #         f"Best grid search results not found at {output_base_dir.parent}. Using parameters from current config.")
-    #     model_params_final = config['model']  # Użyj parametrów z bieżącego configu
-    #     weights_path = config["model"].get("weights_path")  # Użyj wag z bieżącego configu
-    #
-    # if not weights_path or not Path(weights_path).exists(): logging.error(
-    #     f"Weights path not found: {weights_path}"); return
 
     try:
         common_params_build = {
@@ -476,30 +432,6 @@ def main(config_path: str):
                     f"Length mismatch for curve dates ({len(curve_dates)}) vs curve values ({len(portfolio_value_curve)}). Saving without date index.")
         else:
             logging.warning("Cannot determine start date for curve index. Saving without date index.")
-        # if actual_eval_dates is not None:
-        #     start_curve_date = actual_eval_dates.min() - pd.Timedelta(days=1)
-        #     curve_dates_idx = pd.DatetimeIndex([start_curve_date]).append(actual_eval_dates)
-        #
-        #     if len(curve_dates_idx) == len(curve_df):
-        #         curve_df.index = curve_dates_idx
-        #     else:
-        #         logging.warning("Curve date index length mismatch.")
-        #         curve_df.index = pd.RangeIndex(len(curve_df))
-        # else:
-        #     curve_df.index = pd.RangeIndex(len(curve_df))
-        #
-        #
-        # if eval_start_original_idx_pos >= 0:
-        #     curve_dates = all_original_dates[eval_start_original_idx_pos: last_eval_target_original_idx_pos + 1]
-        #     if len(curve_dates) == len(portfolio_value_curve):
-        #         curve_df.index = pd.to_datetime(curve_dates)
-        #         logging.info(f"Portfolio curve dates set from {curve_dates.min().date()} to {curve_dates.max().date()}")
-        #     else:
-        #         logging.warning(
-        #             f"Length mismatch for curve dates ({len(curve_dates)}) vs curve values ({len(portfolio_value_curve)}). Saving without date index.")
-        # else:
-        #     logging.warning("Cannot determine start date for curve index. Saving without date index.")
-
         curve_path = output_dir / f"{model_name}_portfolio_value_curve.csv"
         curve_df.to_csv(curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
         logging.info(f"Saved portfolio value curve data to {curve_path}")
@@ -522,10 +454,10 @@ def main(config_path: str):
             plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator(minticks=5, maxticks=10))
             plt.gcf().autofmt_xdate()
         else:
-            # Fallback, jeśli nie ma dat
+            # Fallback if no dates available
             plt.plot(np.arange(len(portfolio_value_curve)), portfolio_value_curve, linestyle="-",
                      label=f"{model_name} Portfolio Value")
-            plt.xlabel(f"Time Points (Test Period + Start, {len(portfolio_value_curve)} points)")
+            plt.xlabel(f"Time Points ({len(portfolio_value_curve)} points)")
 
         plt.ylabel("Portfolio Value (Starts at 1.0)")
         plt.title(f"Portfolio Value Over Time ({model_name}, Top-{portfolio_top_k} Strategy)")
@@ -587,16 +519,3 @@ if __name__ == "__main__":
                 print(f"CRITICAL ERROR running {model_name_to_run}. Check logs for details.")
 
         print(f"\n--- Finished Evaluation for: {model_name_to_run} ---")
-
-# if __name__ == "__main__":
-#     # Użyj argparse do przekazywania ścieżki do configu
-#     parser = argparse.ArgumentParser(description="Evaluate trained model and compute portfolio metrics.")
-#     parser.add_argument("--config", type=str, required=True, help="Path to the YAML configuration file for the model evaluation.")
-#     args = parser.parse_args()
-#
-#     main(args.config) # Przekaż ścieżkę do configu do funkcji main
-#
-#     # Przykładowe wywołanie z linii komend:
-#     # python your_evaluation_script_name.py --config experiments/configs/test_config_VanillaTransformer.yaml
-#     # python your_evaluation_script_name.py --config experiments/configs/test_config_CrossFormer.yaml
-#     # ... itd.
