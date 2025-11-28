@@ -8,16 +8,13 @@ from scipy.stats import spearmanr, pearsonr
 
 
 class RankLoss(nn.Module):
-    """
-    Pairwise Ranking Loss for portfolio optimization.
-    Combines MSE loss with a pairwise ranking term.
-    """
+    """Pairwise ranking loss combining MSE with ranking term for portfolio optimization."""
+    
     def __init__(self, lambda_rank=0.5, reduction='mean'):
         """
         Args:
-            lambda_rank (float): Weighting factor for the ranking loss term.
-            reduction (str): Specifies the reduction to apply to the output:
-                             'none' | 'mean' | 'sum'. Default: 'mean'
+            lambda_rank: Weight for ranking loss term [0, 1]
+            reduction: 'none' | 'mean' | 'sum'
         """
         super(RankLoss, self).__init__()
         if not (0 <= lambda_rank <= 1):
@@ -27,63 +24,41 @@ class RankLoss(nn.Module):
         logging.info(f"Initialized RankLoss with lambda_rank={lambda_rank} and reduction='{reduction}'")
 
     def forward(self, predicted_returns, true_returns):
-        """
-        Computes the loss value.
-
-        Args:
-            predicted_returns (torch.Tensor): Tensor of predicted returns, shape [B, N, 1] or [B, N].
-            true_returns (torch.Tensor): Tensor of actual returns, shape [B, N, 1] or [B, N].
-
-        Returns:
-            torch.Tensor: Computed loss value (scalar if reduction is 'mean' or 'sum').
-        """
-        # Ensure shapes are [B, N] before proceeding
+        """Compute combined MSE and ranking loss. Input: [B, N, 1] or [B, N]"""
+        # Ensure [B, N] shape
         if predicted_returns.shape[-1] == 1:
             predicted_returns = predicted_returns.squeeze(-1)
         if true_returns.shape[-1] == 1:
             true_returns = true_returns.squeeze(-1)
 
         if predicted_returns.shape != true_returns.shape:
-             raise ValueError(f"Shape mismatch after squeeze: preds {predicted_returns.shape}, true {true_returns.shape}")
-        if predicted_returns.dim() != 2: # should be [B, N]
-             raise ValueError(f"Expected 2D tensors (Batch, Stocks), but got shape {predicted_returns.shape}")
+             raise ValueError(f"Shape mismatch: preds {predicted_returns.shape}, true {true_returns.shape}")
+        if predicted_returns.dim() != 2:
+             raise ValueError(f"Expected 2D tensors [Batch, Stocks], got {predicted_returns.shape}")
 
         B, N = predicted_returns.shape
 
-        # --- 1. MSE Loss ---
-        # Calculate MSE per sample if reduction is needed later
-        mse_loss_per_sample = F.mse_loss(predicted_returns, true_returns, reduction='none').mean(dim=1) # [B]
+        # MSE loss
+        mse_loss_per_sample = F.mse_loss(predicted_returns, true_returns, reduction='none').mean(dim=1)
 
         # --- 2. Rank Loss - Pairwise Ranking ---
         # [B, N, 1] - [B, 1, N] -> [B, N, N]
         pred_pairwise_diff = predicted_returns.unsqueeze(2) - predicted_returns.unsqueeze(1)
         true_pairwise_diff = true_returns.unsqueeze(2) - true_returns.unsqueeze(1)
-
-        # Calculate sign of true differences. Handle zeros: sign(0) = 0
         sign_true_diff = torch.sign(true_pairwise_diff)
-
-        # Calculate the ranking loss term: relu(-pred_diff * sign_true_diff)
-        # This penalizes pairs where sign(pred_diff) != sign(true_diff)
-        # Note: - a * sign(b) is positive only if a and b have different signs.
         rank_term = F.relu(-pred_pairwise_diff * sign_true_diff)
-
-        # Sum the rank term over all pairs (N*N) for each sample in the batch
-        # Avoid summing diagonal (i==j) where diff is always 0? Not strictly necessary with sign(0)=0.
-        # Sum over last two dimensions (pairs i, j)
-        rank_loss_per_sample = torch.sum(rank_term, dim=(1, 2)) # [B]
+        rank_loss_per_sample = torch.sum(rank_term, dim=(1, 2))
 
         # Normalize rank loss by the number of pairs? (N*N or N*(N-1)) - Optional but often helpful
         # Normalizing helps make lambda_rank less sensitive to the number of stocks (N)
         num_pairs = N * (N - 1) # Number of off-diagonal pairs
         if num_pairs > 0:
              rank_loss_per_sample = rank_loss_per_sample / num_pairs
-        # else: handle N=1 case if necessary (rank loss is 0)
 
-        # --- 3. Combine Losses ---
-        # Combine MSE and Rank loss for each sample
-        combined_loss_per_sample = mse_loss_per_sample + self.lambda_rank * rank_loss_per_sample # [B]
+        # Combine losses
+        combined_loss_per_sample = mse_loss_per_sample + self.lambda_rank * rank_loss_per_sample
 
-        # --- 4. Apply Reduction ---
+        # Apply reduction
         if self.reduction == 'mean':
             final_loss = torch.mean(combined_loss_per_sample)
         elif self.reduction == 'sum':
@@ -92,11 +67,6 @@ class RankLoss(nn.Module):
             final_loss = combined_loss_per_sample
         else:
             raise ValueError(f"Invalid reduction type: {self.reduction}")
-
-        # --- DEBUGGING ---
-        # if torch.isnan(final_loss) or torch.isinf(final_loss): logging.error("NaN or Inf detected
-        # in RankLoss!") logging.error(f"MSE mean: {torch.mean(mse_loss_per_sample).item()}, Rank mean: {torch.mean(
-        # rank_loss_per_sample).item()}")
 
         return final_loss
 
@@ -115,24 +85,12 @@ class WeightedMAELoss(nn.Module):
 
 
 def select_portfolio(predicted_returns, threshold=0.02):
-    """
-    Selects stocks for the portfolio based on predicted returns.
-
-    :param predicted_returns: tensor of predicted returns
-    :param threshold: selection threshold
-    :return: indices of selected stocks
-    """
+    """Select stocks with predicted returns above threshold."""
     return (predicted_returns > threshold).nonzero(as_tuple=True)[0]
 
 
 def portfolio_performance(selected_returns):
-
-    """
-    Computes portfolio performance metrics.
-
-    :param selected_returns: tensor of returns for selected stocks
-    :return: dictionary with performance metrics
-    """
+    """Compute portfolio metrics: mean return, std dev, Sharpe ratio."""
     mean_return = torch.mean(selected_returns)
     std_return = torch.std(selected_returns)
     sharpe_ratio = mean_return / (std_return + 1e-6)
@@ -146,38 +104,32 @@ def portfolio_performance(selected_returns):
 
 def compute_portfolio_metrics(predictions, targets, tickers, top_k=5, risk_free_rate=0.02):
     """
-    Compute portfolio performance metrics.
-    :param predictions: Predicted returns [num_samples, num_stocks]
-    :param targets: Actual returns [num_samples, num_stocks]
-    :param tickers: List of stock tickers in correct order
-    :param top_k: Number of stocks to include in portfolio
-    :param risk_free_rate: Annualized risk-free rate (default 2%)
-    :return: Dictionary of portfolio metrics
+    Compute portfolio metrics using top-k strategy.
+    
+    Args:
+        predictions: Predicted returns [samples, stocks]
+        targets: Actual returns [samples, stocks]
+        tickers: List of ticker symbols
+        top_k: Number of stocks to select
+        risk_free_rate: Annualized risk-free rate
+    
+    Returns:
+        Metrics dict, cumulative returns array
     """
 
-    # Select top-k stocks based on predicted returns
-    top_indices = np.argsort(-predictions, axis=1)[:, :top_k]  # Indices of top stocks per sample
-
-    # Compute portfolio returns (actual returns of selected stocks)
+    top_indices = np.argsort(-predictions, axis=1)[:, :top_k]
     selected_returns = np.take_along_axis(targets, top_indices, axis=1)
-    # portfolio_returns = np.sum(selected_returns, axis=1)  # Sum across selected stocks
     portfolio_returns = np.mean(selected_returns, axis=1)
-    # Compute IRR (Cumulative Investment Return)
-    irr = np.sum(selected_returns / (1 + selected_returns), axis=1)  # Sum across selected stocks per timestep
+    irr = np.sum(selected_returns / (1 + selected_returns), axis=1)
 
-    #  Compute cumulative return
-    cumulative_returns = np.cumsum(portfolio_returns)  # Cumulative return
-    cumulative_return = portfolio_returns.sum()  # Final cumulative return
-
-    # Compute annualized return (assuming 252 trading days per year)
+    cumulative_returns = np.cumsum(portfolio_returns)
+    cumulative_return = portfolio_returns.sum()
     annualized_return = (1 + cumulative_return) ** (252 / len(portfolio_returns)) - 1
 
-    # Compute Sharpe Ratio
-    daily_risk_free = risk_free_rate / 252  # Convert annualized to daily
+    daily_risk_free = risk_free_rate / 252
     excess_returns = portfolio_returns - daily_risk_free
-    sharpe_ratio = np.mean(excess_returns) / (np.std(excess_returns) + 1e-6)  # Avoid division by zero
+    sharpe_ratio = np.mean(excess_returns) / (np.std(excess_returns) + 1e-6)
 
-    # Compute Maximum Drawdown
     peak = np.maximum.accumulate(cumulative_returns)
     drawdown = (cumulative_returns - peak) / peak
     max_drawdown = np.min(drawdown)
@@ -193,23 +145,18 @@ def compute_portfolio_metrics(predictions, targets, tickers, top_k=5, risk_free_
 
 def calculate_portfolio_performance(predictions, targets, top_k=5, risk_free_rate=0.0, trading_days_per_year=252):
     """
-    Calculates portfolio performance metrics based on a daily rebalanced top-K strategy
-    with equal weighting. Uses geometric compounding for cumulative returns.
-
+    Calculate portfolio metrics using daily rebalanced top-K strategy with geometric compounding.
+    
     Args:
-        predictions (np.ndarray): Predicted returns [num_samples/days, num_stocks].
-        targets (np.ndarray): Actual realized returns [num_samples/days, num_stocks].
-        top_k (int): Number of stocks with highest predicted returns to select daily.
-        risk_free_rate (float): Annualized risk-free rate (e.g., 0.02 for 2%). Default is 0.0.
-        trading_days_per_year (int): Number of trading days assumed in a year for annualization.
-
+        predictions: Predicted returns [days, stocks]
+        targets: Actual returns [days, stocks]
+        top_k: Number of top stocks to select daily
+        risk_free_rate: Annualized risk-free rate
+        trading_days_per_year: Trading days for annualization
+    
     Returns:
-        tuple:
-            - dict: Dictionary containing portfolio performance metrics:
-                    'Cumulative Return (%)', 'Annualized Return (%)',
-                    'Annualized Volatility (%)', 'Annualized Sharpe Ratio',
-                    'Maximum Drawdown (%)'
-            - np.ndarray: Array representing the daily cumulative portfolio value (starting from 1.0).
+        Metrics dict (cumulative return, annualized return/volatility, Sharpe, max drawdown in %)
+        Portfolio value curve array
     """
     if predictions.shape != targets.shape:
         raise ValueError("Predictions and targets must have the same shape.")
@@ -322,16 +269,14 @@ def calculate_portfolio_performance(predictions, targets, top_k=5, risk_free_rat
 
 def calculate_predictive_quality(predictions, targets):
     """
-    Calculates Information Coefficient (IC - Spearman and Pearson) and ICIR.
-    Assumes predictions and targets are already aligned and potentially scaled.
-
+    Calculate Information Coefficient (IC) and ICIR using Spearman and Pearson correlations.
+    
     Args:
-        predictions (np.ndarray): Predicted returns [num_samples/days, num_stocks].
-        targets (np.ndarray): Actual realized returns [num_samples/days, num_stocks].
-
+        predictions: Predicted returns [days, stocks]
+        targets: Actual returns [days, stocks]
+    
     Returns:
-        dict: Dictionary containing 'IC (Spearman)', 'ICIR (Spearman)',
-                'IC (Pearson)', 'ICIR (Pearson)'.
+        Dict with IC/ICIR for Spearman and Pearson
     """
     if predictions.shape != targets.shape:
         raise ValueError("Predictions and targets must have the same shape.")
@@ -421,7 +366,7 @@ def calculate_predictive_quality(predictions, targets):
 
 
 def calculate_precision_at_k(predictions, targets, top_k):
-    """Calculates Precision@k: % of top-k stocks with positive actual return."""
+    """Calculate Precision@k: percentage of top-k predicted stocks with positive actual returns."""
     num_samples, num_stocks = predictions.shape
     precisions = []
     if top_k > num_stocks:

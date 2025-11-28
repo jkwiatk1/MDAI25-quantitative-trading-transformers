@@ -9,13 +9,13 @@ from torch.utils.data import Dataset
 
 
 def split_data_chronologically(data_dict, tickers, train_ratio, val_ratio):
-    """Dzieli słownik DataFrame'ów chronologicznie na train, val, test."""
+    """Split data dictionary chronologically into train, validation, and test sets."""
     if not (0 < train_ratio < 1) or not (0 < val_ratio < 1) or not (train_ratio + val_ratio < 1):
          raise ValueError("Invalid split ratios. Must be > 0 and < 1, and train+val < 1.")
 
     train_data_dict = {}
     val_data_dict = {}
-    test_data_dict = {} # Mimo że nie używamy w grid search, funkcja może zwracać
+    test_data_dict = {}
 
     for ticker in tickers:
         if ticker not in data_dict: continue
@@ -28,7 +28,7 @@ def split_data_chronologically(data_dict, tickers, train_ratio, val_ratio):
 
         train_data_dict[ticker] = df.iloc[:train_end_idx]
         val_data_dict[ticker] = df.iloc[train_end_idx:val_end_idx]
-        test_data_dict[ticker] = df.iloc[val_end_idx:] # Reszta to test
+        test_data_dict[ticker] = df.iloc[val_end_idx:]
 
         if len(train_data_dict[ticker]) == 0 or len(val_data_dict[ticker]) == 0:
              logging.warning(f"Train or Val split resulted in empty DataFrame for ticker {ticker}. Check ratios/data length.")
@@ -37,19 +37,19 @@ def split_data_chronologically(data_dict, tickers, train_ratio, val_ratio):
 
 def prepare_sequential_data_CrossFormer(data_scaled, tickers_to_use, lookback, patch_size, target_col_index=0):
     """
-     Prepares data in the format (Batch, Stocks, Patches, Patch_Size, Features) for CrossFormer.
-
+    Prepare data in patch-based format for CrossFormer: [Batch, Stocks, Patches, Patch_Size, Features]
+    
     Args:
-        data_scaled (dict[str, pd.DataFrame]): Dictionary {ticker: DataFrame[Time, Features]}
-        tickers_to_use (list[str]): List of actions to use
-        lookback (int): Number of historical days for prediction
-        patch_size (int): Number of days in one patch
-        target_col_index (int): Target column index (default 0)
-
+        data_scaled: Dictionary {ticker: DataFrame[Time, Features]}
+        tickers_to_use: List of ticker symbols
+        lookback: Historical window size (must be divisible by patch_size)
+        patch_size: Number of timesteps per patch
+        target_col_index: Target column index (default 0)
+    
     Returns:
-        X (torch.Tensor): Input data  (Batch, Stocks, Patches, Patch_Size, Features)
-        y (torch.Tensor): Target data (Batch, Stocks, 1)
-        ticker_mapping (dict): Map {ticker: indeks}
+        X: Input tensor [Batch, Stocks, Patches, Patch_Size, Features]
+        y: Target tensor [Batch, Stocks, 1]
+        ticker_mapping: {ticker: index} mapping
     """
     assert lookback % patch_size == 0, "Lookback must be a multiple of patch_size!"
 
@@ -61,23 +61,21 @@ def prepare_sequential_data_CrossFormer(data_scaled, tickers_to_use, lookback, p
 
     data_matrix = np.stack(
         [data_scaled[ticker].values for ticker in tickers_to_use], axis=1
-    )  # (Time, Stocks, Features)
+    )
 
-    num_patches = lookback // patch_size  # Number of patches in the lookback window
+    num_patches = lookback // patch_size
 
     X, y = [], []
     for i in range(num_time - lookback):
-        sequence = data_matrix[i : i + lookback]  # (Lookback, Stocks, Features)
-
-        # Segmentation (Patches)
-        patches = np.array(np.split(sequence, num_patches, axis=0))  # (Patches, Patch_Size, Stocks, Features)
-        patches = np.transpose(patches, (2, 0, 1, 3))  # (Stocks, Patches, Patch_Size, Features)
+        sequence = data_matrix[i : i + lookback]
+        patches = np.array(np.split(sequence, num_patches, axis=0))
+        patches = np.transpose(patches, (2, 0, 1, 3))
 
         X.append(patches)
-        y.append(data_matrix[i + lookback, :, target_col_index])  # (Stocks,)
+        y.append(data_matrix[i + lookback, :, target_col_index])
 
-    X = torch.tensor(np.array(X), dtype=torch.float32)  # (Batch, Stocks, Patches, Patch_Size, Features)
-    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(-1)  # (Batch, Stocks, 1)
+    X = torch.tensor(np.array(X), dtype=torch.float32)
+    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(-1)
 
     return X, y, ticker_mapping
 
@@ -86,111 +84,85 @@ def prepare_sequential_data(
     data_scaled, tickers_to_use, lookback, target_col_index=0
 ):
     """
-    Converts data into format (Batch, Time, Stocks, Features)
-
+    Prepare sequential data: [Batch, Time, Stocks, Features]
+    
     Args:
-        data_scaled (dict[str, pd.DataFrame]): Dictionary {ticker: DataFrame[Time, Features]}
-        tickers_to_use (list[str]): List of actions to use
-        lookback (int): Number of historical days for prediction
-
+        data_scaled: Dictionary {ticker: DataFrame[Time, Features]}
+        tickers_to_use: List of ticker symbols
+        lookback: Historical window size
+        target_col_index: Target column index (default 0)
+    
     Returns:
-        X (torch.Tensor): Input data (Batch, Time, Stocks, Features)
-        y (torch.Tensor): target data (Batch, Stocks, 1)
-        ticker_mapping (dict): Mapping stock names to indexes
+        X: Input tensor [Batch, Time, Stocks, Features]
+        y: Target tensor [Batch, Stocks, 1]
+        ticker_mapping: {ticker: index} mapping
     """
     ticker_mapping = {ticker: idx for idx, ticker in enumerate(tickers_to_use)}
 
     num_time, num_features = data_scaled[tickers_to_use[0]].shape
     num_stocks = len(tickers_to_use)
 
-    assert num_time > lookback, "Not enough period time in data to create a sequence!"
+    assert num_time > lookback, "Not enough time steps in data to create a sequence!"
 
     data_matrix = np.stack(
         [data_scaled[ticker].values for ticker in tickers_to_use], axis=1
-    )  # (Time, Stocks, Features)
+    )
 
-    # Sequences
     X, y = [], []
     for i in range(num_time - lookback):
-        X.append(data_matrix[i : i + lookback])  # (Time, Stocks, Features)
+        X.append(data_matrix[i : i + lookback])
         y.append(data_matrix[i + lookback, :, target_col_index])
 
-    X = torch.tensor(
-        np.array(X), dtype=torch.float32
-    )  # (Batch, Time, Stocks, Features)
-    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(
-        -1
-    )  # (Batch, Stocks, 1)
+    X = torch.tensor(np.array(X), dtype=torch.float32)
+    y = torch.tensor(np.array(y), dtype=torch.float32).unsqueeze(-1)
 
     return X, y, ticker_mapping
 
 
 def prepare_combined_data(data_scaled, tickers_to_use, lookback):
-    """
-    Combine all tickers into a single dataset with size [Time, Features*Stocks]
-    Args:
-        data_scaled:
-        tickers_to_use:
-        lookback:
-
-    Returns: [Time, Features*Stocks]
-
-    """
+    """Combine all tickers into a single dataset [Time, Features*Stocks]"""
     combined_data = []
-    ticker_mapping = {
-        ticker: idx for idx, ticker in enumerate(tickers_to_use)
-    }  # Assign IDs to tickers
+    ticker_mapping = {ticker: idx for idx, ticker in enumerate(tickers_to_use)}
 
     for ticker in tickers_to_use:
         df = data_scaled[ticker].copy()
-        df["ticker id"] = ticker_mapping[ticker]  # Add ticker ID
-        # ticker_id_col = df.pop('ticker id')
+        df["ticker id"] = ticker_mapping[ticker]
         df = df.add_suffix(f"_{ticker}")
-        # df['ticker id'] = ticker_id_col
         combined_data.append(df)
 
     combined_data = pd.concat(combined_data, axis=1)
-
-    # # Concatenate data for all tickers
-    # combined_data = pd.concat(combined_data, keys=tickers_to_use)
     return combined_data, ticker_mapping
 
 
-# Adjusted create_sequences function
 def create_combined_sequences(
     data, lookback, cols_to_use=["Close"], target_col="Close"
 ):
     """
     Create sequences and targets for time series forecasting.
-
+    
     Args:
-        data (pd.DataFrame): Input DataFrame with time series data.
-        lookback (int): Number of past time steps to include in each sequence.
-
+        data: Input DataFrame
+        lookback: Historical window size
+        cols_to_use: Feature columns to include
+        target_col: Target column name
+    
     Returns:
-        sequences (np.array): Array of input sequences.
-        targets (np.array): Array of target values.
+        sequences: Input sequences array
+        targets: Target values array
     """
     if cols_to_use is None:
         cols_to_use = ["Close", "Intraday", "Daily", "Turnover"]
     sequences, targets = [], []
 
-    # Select columns matching the specified keywords
     columns_to_include = []
     for col in cols_to_use:
         columns_to_include += data.filter(like=col, axis=1).columns.tolist()
 
-    # Column order matches the input DataFrame order
     columns_to_include = [col for col in data.columns if col in columns_to_include]
-
-    # Filter "Close" columns for multi-target values
     target_columns = [col for col in columns_to_include if target_col in col]
 
     for i in range(len(data) - lookback):
-        # Extract sequence of features
         seq = data.iloc[i : i + lookback][columns_to_include].values
-
-        # Extract targets for all "Close" columns
         target = data.iloc[i + lookback][target_columns].values
         sequences.append(seq)
         targets.append(target)
@@ -199,17 +171,7 @@ def create_combined_sequences(
 
 
 def normalize_data(df, tickers, features_to_normalize):
-    """
-    Normalize features using MinMaxScaler for each ticker.
-
-    Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-
-    Returns:
-        dict of pd.DataFrame: Normalized data.
-        dict: Dictionary of scalers used for each feature.
-    """
+    """Normalize features using MinMaxScaler for each ticker. Returns normalized data and scalers."""
     scalers = {ticker: {} for ticker in tickers}
 
     for ticker in tickers:
@@ -221,7 +183,7 @@ def normalize_data(df, tickers, features_to_normalize):
     return df, scalers
 
 def fit_and_transform_data(train_data_dict, val_data_dict, tickers, features_to_normalize):
-    """Dopasowuje scalery na danych treningowych i transformuje zbiory train/val."""
+    """Fit scalers on training data and transform train/val sets."""
     scalers = {ticker: {} for ticker in tickers}
     train_scaled_dict = {}
     val_scaled_dict = {}
@@ -231,7 +193,7 @@ def fit_and_transform_data(train_data_dict, val_data_dict, tickers, features_to_
 
         train_df = train_data_dict[ticker].copy()
         val_df = val_data_dict[ticker].copy()
-        train_scaled_dict[ticker] = pd.DataFrame(index=train_df.index) # Zachowaj indeks
+        train_scaled_dict[ticker] = pd.DataFrame(index=train_df.index)
         val_scaled_dict[ticker] = pd.DataFrame(index=val_df.index)
 
         for feature in features_to_normalize:
@@ -240,19 +202,16 @@ def fit_and_transform_data(train_data_dict, val_data_dict, tickers, features_to_
                  continue
 
             scaler = StandardScaler()
-            # --- Kluczowe: Fit tylko na danych treningowych ---
             try:
                  scaler.fit(train_df[[feature]])
-                 # --- Transformuj oba zbiory TYM SAMYM scalerem ---
                  train_scaled_values = scaler.transform(train_df[[feature]])
                  val_scaled_values = scaler.transform(val_df[[feature]])
 
                  train_scaled_dict[ticker][feature] = train_scaled_values.flatten()
                  val_scaled_dict[ticker][feature] = val_scaled_values.flatten()
-                 scalers[ticker][feature] = scaler # Zapisz dopasowany scaler
+                 scalers[ticker][feature] = scaler
             except Exception as e:
                  logging.error(f"Error scaling feature '{feature}' for ticker '{ticker}': {e}. Leaving unscaled.")
-                 # W razie błędu, użyj oryginalnych danych (lub wypełnij NaN/0)
                  train_scaled_dict[ticker][feature] = train_df[feature].values
                  val_scaled_dict[ticker][feature] = val_df[feature].values
 
@@ -260,9 +219,8 @@ def fit_and_transform_data(train_data_dict, val_data_dict, tickers, features_to_
     return train_scaled_dict, val_scaled_dict, scalers
 
 
-# Datasets for multi-ticker
 class MultiTickerDataset(Dataset):
-    """Dataset for data in format (Batch, Time, Stocks*Features)"""
+    """Dataset for flattened multi-ticker data: [Batch, Time, Stocks*Features]"""
     def __init__(self, sequences, targets):
         self.sequences = torch.tensor(sequences, dtype=torch.float32)
         self.targets = torch.tensor(targets, dtype=torch.float32)
@@ -275,7 +233,7 @@ class MultiTickerDataset(Dataset):
 
 
 class MultiStockDataset(Dataset):
-    """Dataset for data in format (Batch, Time, Stocks, Features)"""
+    """Dataset for multi-stock data: [Batch, Time, Stocks, Features]"""
 
     def __init__(self, X, y):
         self.X = X

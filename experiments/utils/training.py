@@ -32,19 +32,10 @@ def train_model(
         model_name: str = "model"
 ):
     """
-    Trains the model, tracks losses, early stopping, and saves the best model.
-    Args:
-        model: PyTorch model to be trained.
-        train_loader: DataLoader for training data.
-        val_loader: DataLoader for validation data.
-        criterion: Loss function.
-        optimizer: Optimizer for model training.
-        device: Device to run training ('cpu' or 'cuda').
-        n_epochs: Number of epochs.
-        save_path: Directory where the best model and plots will be saved.
-        patience: Number of epochs to wait for improvement before early stopping.
+    Train model with early stopping and save best checkpoint.
+    
     Returns:
-        Path to the best model saved.
+        Path to best model, best validation loss
     """
     # Initialization
     save_path = Path(save_path)
@@ -126,21 +117,7 @@ def run_epoch(model: nn.Module,
               optimizer: torch.optim.Optimizer = None,
               scaler: torch.cuda.amp.GradScaler = None,
               train: bool = True):
-    """
-    Runs a single epoch of training or validation/evaluation.
-
-    Args:
-        model: Model in pytorch framework.
-        data_loader: DataLoader for the current dataset split.
-        criterion: The loss function.
-        device: The device to run on ('cpu' or 'cuda').
-        optimizer: The optimizer (only required if train=True).
-        scaler: GradScaler for AMP (only required if train=True and AMP is enabled).
-        train: Boolean indicating if this is a training epoch (requires optimizer/scaler).
-
-    Returns:
-        float: The average loss for the epoch.
-    """
+    """Run single epoch of training or evaluation. Returns average loss."""
     if train:
         if optimizer is None:
             raise ValueError("Optimizer must be provided for training.")
@@ -167,26 +144,13 @@ def run_epoch(model: nn.Module,
             if train:
                 optimizer.zero_grad(set_to_none=True)
                 if amp_enabled:
-                    # Previous TODO
-                    # scaler.scale(loss).backward()  # Backward pass with gradient scaling
-                    # scaler.step(optimizer)  # Update optimizer with scaled gradients
-                    # scaler.update()
-
-                    # New for iTransformer
                     scaler.scale(loss).backward()
-                    scaler.unscale_(optimizer)  # Potrzebne przed clip_grad_norm_
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)  # Lub inna wartość max_norm
+                    scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     scaler.step(optimizer)
                     scaler.update()
-
                 else:
-                    # Previous TODO
-                    # loss.backward()
-                    # optimizer.step()
-
-                    # TODO for itransformer
                     loss.backward()
-                    # Optional: Gradient Clipping
                     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
                     optimizer.step()
 
@@ -272,68 +236,57 @@ def plot_losses(train_losses, val_losses, save_path: Path, model_name: str):
 
 def inverse_transform_predictions(predictions_scaled, targets_scaled, tickers, all_scalers, target_col_name):
     """
-    Applies inverse transformation to scaled predictions and targets for each stock,
-    using a nested dictionary of scalers.
-
+    Apply inverse transformation to scaled predictions and targets using nested scaler dictionary.
+    
     Args:
-        predictions_scaled (np.ndarray): Scaled predictions array, shape (num_samples, num_tickers).
-        targets_scaled (np.ndarray): Scaled true targets array, shape (num_samples, num_tickers).
-        tickers (list): List of ticker symbols corresponding to the columns in predictions/targets.
-        all_scalers (dict): Nested dictionary of scalers: {ticker: {feature_name: scaler_object}}.
-        target_col_name (str): The name of the target column to inverse transform.
-
+        predictions_scaled: Scaled predictions [samples, tickers]
+        targets_scaled: Scaled targets [samples, tickers]
+        tickers: List of ticker symbols
+        all_scalers: {ticker: {feature: scaler}} nested dict
+        target_col_name: Target column name
+    
     Returns:
-        tuple(np.ndarray, np.ndarray): Inverse transformed predictions and targets,
-                                       same shape as input arrays. Returns original arrays if inverse
-                                       transform cannot be performed.
+        Inverse transformed predictions and targets
     """
     if predictions_scaled.shape[1] != len(tickers) or targets_scaled.shape[1] != len(tickers):
         logging.error(f"Shape mismatch: Predictions columns ({predictions_scaled.shape[1]}) or "
                       f"Targets columns ({targets_scaled.shape[1]}) do not match number of tickers ({len(tickers)}).")
-        # Zwróć oryginalne dane, aby uniknąć crashu, ale zaloguj błąd
         return predictions_scaled, targets_scaled
 
     num_samples, num_tickers = predictions_scaled.shape
     predictions_inv = np.zeros_like(predictions_scaled)
     targets_inv = np.zeros_like(targets_scaled)
-    transform_successful = True  # Flaga do śledzenia czy transformacja się udała
+    transform_successful = True
 
     for i, ticker in enumerate(tickers):
         if ticker not in all_scalers:
-            logging.warning(f"No scalers found for ticker '{ticker}'. Skipping inverse transform for this ticker.")
-            predictions_inv[:, i] = predictions_scaled[:, i]  # Kopiuj oryginalne wartości
+            logging.warning(f"No scalers found for ticker '{ticker}'. Skipping inverse transform.")
+            predictions_inv[:, i] = predictions_scaled[:, i]
             targets_inv[:, i] = targets_scaled[:, i]
             transform_successful = False
-            continue  # Przejdź do następnego tickera
+            continue
 
         ticker_scalers = all_scalers[ticker]
         if target_col_name not in ticker_scalers:
-            logging.warning(f"Scaler for target column '{target_col_name}' not found for ticker '{ticker}'. "
-                            f"Skipping inverse transform for this ticker.")
-            predictions_inv[:, i] = predictions_scaled[:, i]  # Kopiuj oryginalne wartości
+            logging.warning(f"Scaler for target column '{target_col_name}' not found for ticker '{ticker}'.")
+            predictions_inv[:, i] = predictions_scaled[:, i]
             targets_inv[:, i] = targets_scaled[:, i]
             transform_successful = False
-            continue  # Przejdź do następnego tickera
+            continue
 
         target_scaler = ticker_scalers[target_col_name]
         try:
-            # Scalery sklearn oczekują wejścia 2D (n_samples, n_features=1)
-            # Trzeba dodać i usunąć wymiar
             preds_col = predictions_scaled[:, i].reshape(-1, 1)
             targets_col = targets_scaled[:, i].reshape(-1, 1)
 
-            # Odwróć transformację
             preds_inv_col = target_scaler.inverse_transform(preds_col)
             targets_inv_col = target_scaler.inverse_transform(targets_col)
 
-            # Zapisz wyniki z powrotem do macierzy wyjściowych
             predictions_inv[:, i] = preds_inv_col.flatten()
             targets_inv[:, i] = targets_inv_col.flatten()
 
         except Exception as e:
-            logging.error(f"Error during inverse transform for ticker '{ticker}', target '{target_col_name}': {e}",
-                          exc_info=True)
-            # W razie błędu, użyj oryginalnych przeskalowanych wartości dla tego tickera
+            logging.error(f"Error during inverse transform for ticker '{ticker}': {e}", exc_info=True)
             predictions_inv[:, i] = predictions_scaled[:, i]
             targets_inv[:, i] = targets_scaled[:, i]
             transform_successful = False
@@ -346,16 +299,7 @@ def inverse_transform_predictions(predictions_scaled, targets_scaled, tickers, a
 
 
 def plot_predictions(test_predictions, test_targets, tickers, save_path=None, dates=None, model_name=None):
-    """
-    Plots for tickers with date labels on the X-axis.
-
-    Args:
-        test_predictions: Array of predictions.
-        test_targets: Array of true values.
-        tickers: List of ticker names.
-        save_path: Directory to save plots (optional).
-        dates: DatetimeIndex or list of date strings for X-axis labels.
-    """
+    """Plot predictions vs targets for each ticker with optional date labels."""
     save_path = Path(save_path) / "plots"
     save_path.mkdir(parents=True, exist_ok=True)
 
@@ -367,21 +311,19 @@ def plot_predictions(test_predictions, test_targets, tickers, save_path=None, da
     plt.xlabel("Time Steps")
     plt.ylabel("Values")
 
-    # Set X-axis labels
     if dates is not None:
         date_labels = dates.strftime('%Y-%m-%d') if hasattr(dates, 'strftime') else dates
-        plt.xticks(ticks=range(0, len(dates), len(dates) // 10),  # Show ~10 ticks
+        plt.xticks(ticks=range(0, len(dates), len(dates) // 10),
                    labels=date_labels[::len(dates) // 10],
                    rotation=45)
     else:
-        plt.xticks(ticks=range(len(test_targets)))  # Default indexing from 0
+        plt.xticks(ticks=range(len(test_targets)))
 
-    # plt.show()
     if save_path is not None:
         plt.savefig(save_path / f"All_predictions")
         plt.close()
 
-    # Separe plots for each ticker
+    # Individual ticker plots
     for i, ticker in enumerate(tickers):
         plt.figure(figsize=(10, 5))
         if len(tickers) == 1:

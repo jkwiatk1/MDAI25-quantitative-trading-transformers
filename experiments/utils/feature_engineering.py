@@ -10,20 +10,16 @@ def calc_input_features(
     time_step=20,
 ):
     """
-    Calculate input features for all tickers, including:
-    - intraday profit, NOT USED
-    - daily profit,
-    - turnover,
-    - cumulative features.
-
+    Calculate input features including daily profit, turnover, and cumulative features.
+    
     Args:
-        df (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-        cols (list): Column names used for calculation.
-        time_step (int): Time step for cumulative calculations.
-
+        df: Dictionary {ticker: DataFrame}
+        tickers: List of ticker symbols
+        cols: Features to calculate
+        time_step: Lookback window for cumulative calculations
+    
     Returns:
-        dict of pd.DataFrame: Updated dictionary of DataFrames with all features.
+        Dictionary with calculated features
     """
 
     df = calc_cumulative_features(df, tickers, time_step, cols)
@@ -32,16 +28,16 @@ def calc_input_features(
 
 def calc_cumulative_features(df_dict, tickers, time_step, cols):
     """
-    Calculate cumulative daily profit and turnover features for each ticker.
-
+    Calculate cumulative features (daily profit, turnover) for each ticker.
+    
     Args:
-        df_dict (dict of pd.DataFrame): Dictionary of DataFrames for each ticker.
-        tickers (list): List of ticker symbols.
-        time_step (int): Lookback window for cumulative calculations.
-        cols (list): List of cumulative features to calculate.
-
+        df_dict: Dictionary {ticker: DataFrame}
+        tickers: List of ticker symbols
+        time_step: Lookback window
+        cols: Features to calculate
+    
     Returns:
-        dict: A dictionary {ticker: pd.DataFrame} with calculated features.
+        Dictionary with cumulative features
     """
     if not cols:
         logging.warning(
