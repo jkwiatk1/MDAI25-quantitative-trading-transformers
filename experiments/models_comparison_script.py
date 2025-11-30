@@ -97,6 +97,7 @@ def main_comparison(config):
     """Main comparison function."""
     results_base_dir = Path(config['results_base_dir'])
     model_names = config['models_to_compare']
+    results_suffix = config['results_suffix']
     benchmark_file = config['benchmark_data']['path']
     benchmark_col = config['benchmark_data']['column_name']
     benchmark_date_col = config['benchmark_data']['date_column']
@@ -123,7 +124,7 @@ def main_comparison(config):
     max_date = pd.Timestamp.min
 
     for model_name in model_names:
-        curve_path = results_base_dir / model_name / f"{model_name}_portfolio_value_curve.csv"
+        curve_path = results_base_dir / f"{model_name}_GridSearch" / results_suffix / f"{model_name}_portfolio_value_curve.csv"
         if curve_path.exists():
             logging.info(f"Loading results for {model_name} from {curve_path}")
             curve = load_portfolio_curve(curve_path)

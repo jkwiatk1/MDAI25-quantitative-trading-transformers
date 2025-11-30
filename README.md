@@ -12,7 +12,7 @@ This project implements and compares multiple transformer architectures for pred
 - **iTransformer**: Inverted transformer treating stocks as tokens ([paper](https://arxiv.org/pdf/2310.06625))
 - **CrossFormer**: Cross-dimensional transformer with segment-wise operations ([paper](https://arxiv.org/pdf/2108.00154))
 - **TransformerCA**: Transformer with cross-attention mechanism
-- **MASTER**: Multi-scale attention transformer ([paper](https://arxiv.org/pdf/2404.00424))
+- **MASTER**: Multi-scale attention transformer ([paper](https://arxiv.org/abs/2312.15235))
 
 ## Project Structure
 
@@ -67,8 +67,3 @@ Edit YAML files in `experiments/configs/` to customize:
 - pandas, numpy, scikit-learn
 - matplotlib, seaborn
 - YAML
-
-## Legacy Scripts
-
-Older individual training and evaluation scripts have been moved to `experiments/legacy/` for reference.
-**Always use the unified framework scripts above for new work.**

@@ -1,8 +1,5 @@
 import logging
-import os
 from pathlib import Path
-from types import SimpleNamespace
-import argparse
 
 import joblib
 import numpy as np
@@ -23,7 +20,6 @@ from experiments.utils.data_loading import (
 from experiments.utils.datasets import (
     MultiStockDataset,
     prepare_sequential_data,
-    normalize_data,
 )
 from experiments.utils.feature_engineering import calc_input_features
 from experiments.utils.metrics import (
@@ -44,7 +40,8 @@ from models.PortfolioiTransformer import build_PortfolioITransformer
 from models.PortfolioTransformerCA import build_TransformerCA
 
 
-drop_tickers_list = ['CEG', 'GEV']
+# drop_tickers_list = ['CEG', 'GEV']
+OUTPUT_FOLDER_SUFFIX = "_1011"
 
 def setup_logging(log_file):
     """Configure logging to file and console."""
@@ -90,7 +87,7 @@ def main(config_path: str):
     # --- Setup ---
     model_name = config["model"]["name"]
     output_base_dir = Path(config["data"].get("output_dir", "results"))
-    output_dir = output_base_dir / f"{model_name}_GridSearch" / f"Evaluation_{config['portfolio']['top_k']}_best_assets_0406"
+    output_dir = output_base_dir / f"{model_name}_GridSearch" / f"Evaluation_{config['portfolio']['top_k']}_best_assets{OUTPUT_FOLDER_SUFFIX}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     log_file = output_dir / "evaluation.log"
@@ -114,7 +111,7 @@ def main(config_path: str):
 
     try:
         selected_tickers = get_tickers(config)
-        selected_tickers = [ticker for ticker in selected_tickers if ticker not in drop_tickers_list]
+        # selected_tickers = [ticker for ticker in selected_tickers if ticker not in drop_tickers_list]
 
         stock_amount = len(selected_tickers)
         if stock_amount == 0: raise ValueError("No tickers specified or loaded.")
@@ -157,9 +154,6 @@ def main(config_path: str):
         logging.info(
             f"Data split: Train size={len(train_data_dict[first_ticker])}, Eval size={len(eval_data_dict[first_ticker])}")
 
-        # Normalize evaluation data using fitted scalers from training
-        # Note: For proper evaluation, scalers should be loaded from training, not re-fitted
-        from sklearn.preprocessing import MinMaxScaler
         scalers = {ticker: {} for ticker in selected_tickers}
         eval_data_scaled_dict = {}
         
@@ -214,9 +208,8 @@ def main(config_path: str):
         if len(actual_eval_dates) != len(eval_sequences):
             logging.warning(
                 f"Length mismatch: actual_eval_dates ({len(actual_eval_dates)}) vs eval_sequences ({len(eval_sequences)}). Using sequence length for dates.")
-            # Dostosuj daty do długości sekwencji, jeśli jest rozbieżność (np. z powodu niepełnych sekwencji na końcu)
             actual_eval_dates = actual_eval_dates[:len(eval_sequences)]
-            if len(actual_eval_dates) != len(eval_sequences):  # Jeśli nadal źle, użyj indeksu liczbowego
+            if len(actual_eval_dates) != len(eval_sequences):
                 logging.error("Cannot align dates with evaluation sequences. Plotting without dates.")
                 actual_eval_dates = None
 
@@ -374,20 +367,16 @@ def main(config_path: str):
 
     logging.info("--- Calculating Metrics on Combined Val+Test Set ---")
     try:
-        # Metryki predykcyjne (na danych przeskalowanych)
         predictive_metrics = calculate_predictive_quality(predictions_scaled, targets_scaled_eval)
 
-        # Odwrócenie transformacji tylko dla targetów (do metryk portfelowych)
         _, targets_inv = inverse_transform_predictions(predictions_scaled, targets_scaled_eval, selected_tickers, fitted_scalers, target_col_name)
 
         targets_orginal = eval_targets_orginal.squeeze(-1).numpy()
 
-        # Precision@k (używa odwróconych targetów)
-        portfolio_top_k = config["portfolio"].get("top_k", 5)  # Pobierz k z sekcji portfolio configu
+        portfolio_top_k = config["portfolio"].get("top_k", 5)
         precision_at_k_value = calculate_precision_at_k(predictions_scaled, targets_orginal, top_k=portfolio_top_k)
         predictive_metrics[f'Precision@{portfolio_top_k}'] = precision_at_k_value
 
-        # Metryki portfelowe (używają oryginalnych predykcji i odwróconych targetów)
         portfolio_risk_free_rate = config["portfolio"].get("risk_free_rate", 0.043)
         portfolio_metrics, portfolio_value_curve = calculate_portfolio_performance(
             predictions_scaled, targets_orginal, top_k=portfolio_top_k, risk_free_rate=portfolio_risk_free_rate
@@ -436,7 +425,7 @@ def main(config_path: str):
         curve_df.to_csv(curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
         logging.info(f"Saved portfolio value curve data to {curve_path}")
 
-        comp_output_dir = output_base_dir / f"evaluation_final_Top{portfolio_top_k}_0406" / model_name
+        comp_output_dir = output_base_dir / f"evaluation_final_Top{portfolio_top_k}" / model_name
         comp_output_dir.mkdir(parents=True, exist_ok=True)
         comp_curve_path = comp_output_dir / f"{model_name}_portfolio_value_curve.csv"
         curve_df.to_csv(comp_curve_path, index=isinstance(curve_df.index, pd.DatetimeIndex))
@@ -501,7 +490,6 @@ if __name__ == "__main__":
         }
     ]
 
-    # Iteracja po liście modeli
     for model in models_to_run:
         model_name_to_run = model["model_name"]
         config_file_path = model["config_file_path"]

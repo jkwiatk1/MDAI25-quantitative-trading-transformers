@@ -181,7 +181,7 @@ def run_grid_search(config_path: str):
     try:
         start_date = pd.to_datetime(config["data"]["start_date"])
         end_date = pd.to_datetime(config["data"]["end_date"])
-        lookback = config["training"]["lookback"]
+        lookback = config["model"]["lookback"]
         selected_tickers = get_tickers(config)
         stock_amount = len(selected_tickers)
         if stock_amount == 0:
@@ -206,7 +206,7 @@ def run_grid_search(config_path: str):
         data = {key: value[preproc_cols] for key, value in data.items() if key in data}
         data_scaled, _ = normalize_data(
             data, selected_tickers, preproc_cols
-        )  # Scalery nie są potrzebne tutaj
+        )
 
         target_col_name = config["data"].get("preproc_target_col", preproc_cols[0])
         target_col_index = preproc_cols.index(target_col_name)
@@ -220,8 +220,6 @@ def run_grid_search(config_path: str):
         val_split_ratio = config["training"]["val_split"]
         num_samples = len(sequences)
         train_size_abs = int((1 - test_split_ratio) * num_samples)
-        # test_sequences = sequences[train_size_abs:] # Niepotrzebne do grid search
-        # test_targets = targets[train_size_abs:]
 
         if val_split_ratio <= 0 or val_split_ratio >= 1:
             raise ValueError("val_split must be > 0 and < 1 for grid search.")

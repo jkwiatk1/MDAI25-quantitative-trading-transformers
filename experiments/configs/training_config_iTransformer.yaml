@@ -24,7 +24,7 @@ data:
 model:
   name: "iTransformer"
   d_model: 16
-#  lookback: 20
+  lookback: 20
 #  n_heads: 2
   n_heads: 1
   num_encoder_layers: 1
@@ -32,12 +32,12 @@ model:
   dropout: 0.1
   mlp_hidden_layers: 1
   mlp_add_output_norm: True
-  weights_path: "../data/exp_result/models/iTransformer/iTransformer_best_val.pth"
+#  weights_path: "../data/exp_result/models/iTransformer/iTransformer_best_val.pth"
+  weights_path: "${data.output_dir}/iTransformer/iTransformer_best_val.pth"
 training:
   loss_function: RankLoss # RankLoss /  MSE
   n_epochs: 50
-  lookback: 20
-#  batch_size: 64
+  batch_size: 64
   learning_rate: 0.004
   test_split: 0.15
   val_split: 0.15
@@ -53,11 +53,9 @@ training:
 
 grid_search:
   learning_rate: [0.0001, 0.00005] # , 0.0001
-  batch_size: [64]
   d_ff: [64, 128]
   dropout: [0.1, 0.2]
   d_model: [64, 128]
   num_encoder_layers: [1, 2, 3]
   mlp_hidden_layers: [ 1, 2 ]
   mlp_add_output_norm: [ True, False ]
-  # lambda_rank: [0.3, 0.5, 0.7]

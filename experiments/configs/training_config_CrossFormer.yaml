@@ -24,21 +24,20 @@ data:
 model:
   name: "CrossFormer"
   d_model: 16
-#  lookback: 20
+  lookback: 20
   n_heads: 2
   num_encoder_layers: 1  # == e_layers
   d_ff: 64
   dropout: 0.1
-  seg_len: 10 # Długość segmentu dla DSW embedding.
-  win_size: 10 # Rozmiar okna dla SegMerging.
-  factor: 1 # Wymiar routera w TwoStageAttentionLayer.
+  seg_len: 10 # segment len for DSW embedding
+  win_size: 10 # window size for SegMerging.
+  factor: 1 # router size in TwoStageAttentionLayer.
   e_layers: 1
-  weights_path: "../data/exp_result/models/CrossFormer/CrossFormer_best_val.pth"
+  weights_path: "${data.output_dir}/CrossFormer/CrossFormer_best_val.pth"
 training:
   loss_function: RankLoss # RankLoss /  MSE
   n_epochs: 50
-  lookback: 20
-#  batch_size: 32
+  batch_size: 32
   learning_rate: 0.004
   test_split: 0.15
   val_split: 0.15
@@ -54,9 +53,7 @@ training:
 
 grid_search:
   learning_rate: [0.001, 0.0005] # , 0.0001
-  batch_size: [64]
   d_ff: [64, 128]
   dropout: [0.1, 0.2]
   d_model: [64, 128]
   num_encoder_layers: [1, 2, 3]
-  # lambda_rank: [0.3, 0.5, 0.7]
